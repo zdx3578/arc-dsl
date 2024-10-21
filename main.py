@@ -12,7 +12,7 @@ import solvers
 
 
 def get_data(train=True):
-    path = f'../data/{"training" if train else "evaluation"}'
+    path = f'/home/zdx/github/VSAHDC/ARC-AGI/data/{"training" if train else "evaluation"}'
     data = {}
     for fn in os.listdir(path):
         with open(f'{path}/{fn}') as f:
@@ -104,11 +104,13 @@ def test_solvers_correctness(data, solvers_module):
     n_correct = 0
     n = len(data["train"])
     for key in tqdm.tqdm(data['train'].keys(), total=n):
+        key='32597951'
         task = data['train'][key] + data['test'][key]
         try:
             solver = getattr(solvers_module, f'solve_{key}')
             for ex in task:
                 assert solver(ex['input']) == ex['output']
+            print(n_correct)
             n_correct += 1
         except:
             pass
