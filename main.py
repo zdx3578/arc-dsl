@@ -112,8 +112,8 @@ def test_solvers_correctness(data, solvers_module):
                 assert solver(ex['input']) == ex['output']
             print(n_correct)
             n_correct += 1
-        except:
-            pass
+        except Exception as e:
+            print(f"An error occurred: {e}")
     print(f'{n_correct} out of {n} tasks solved correctly.')
 
 
