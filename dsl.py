@@ -1,5 +1,6 @@
 from arc_types import *
 import numpy as np
+from constants import *
 
 
 
@@ -12,6 +13,35 @@ def isVerticalMirror(grid):
 
 def isDiagonalMirror(grid):
     return np.array_equal(grid, np.transpose(grid))
+
+def is_subgrid(small_grid, big_grid):
+    return
+
+def has_same_obj(I, O):
+    return
+
+def composeObject(I):
+    remove bg 
+    return
+
+def unique_objects(I, O):
+    # 使用 set 存储唯一的结果
+    unique_results = {
+        objects(I, F, T, T),
+        objects(I, F, F, T),
+        objects(I, T, F, T),
+        objects(I, T, T, T),
+        objects(O, F, T, T),
+        objects(O, F, F, T),
+        objects(O, T, F, T),
+        objects(O, T, T, T),
+    }
+    return unique_results
+
+
+
+
+
 
 
 
@@ -773,34 +803,40 @@ def objects(
     diagonal: Boolean,
     without_bg: Boolean
 ) -> Objects:
-    """ objects occurring on the grid """
+    """ Extract objects occurring on the grid """
+    # 计算背景颜色
     bg = mostcolor(grid) if without_bg else None
-    objs = set()
-    occupied = set()
-    h, w = len(grid), len(grid[0])
-    unvisited = asindices(grid)
-    diagfun = neighbors if diagonal else dneighbors
+    
+    objs = set()  # 存放所有对象
+    occupied = set()  # 记录已经属于某个对象的单元格
+    h, w = len(grid), len(grid[0])  # 网格的高度和宽度
+    unvisited = asindices(grid)  # 获取所有单元格的坐标
+    diagfun = neighbors if diagonal else dneighbors  # 确定邻居获取函数
+    
     for loc in unvisited:
         if loc in occupied:
-            continue
-        val = grid[loc[0]][loc[1]]
+            continue  # 如果该单元格已经属于某个对象，则跳过
+        val = grid[loc[0]][loc[1]]  # 获取当前单元格的值
         if val == bg:
-            continue
-        obj = {(val, loc)}
-        cands = {loc}
+            continue  # 如果该单元格是背景颜色，跳过
+        obj = {(val, loc)}  # 创建一个新对象，包含当前单元格
+        cands = {loc}  # 候选单元格集合，用于扩展对象
         while len(cands) > 0:
             neighborhood = set()
             for cand in cands:
-                v = grid[cand[0]][cand[1]]
+                v = grid[cand[0]][cand[1]]  # 获取候选单元格的值
                 if (val == v) if univalued else (v != bg):
-                    obj.add((v, cand))
-                    occupied.add(cand)
+                    obj.add((v, cand))  # 如果符合条件，将该单元格加入对象
+                    occupied.add(cand)  # 标记该单元格为已占用
+                    # 获取邻居单元格，并过滤掉越界的单元格
                     neighborhood |= {
                         (i, j) for i, j in diagfun(cand) if 0 <= i < h and 0 <= j < w
                     }
-            cands = neighborhood - occupied
-        objs.add(frozenset(obj))
-    return frozenset(objs)
+            cands = neighborhood - occupied  # 更新候选单元格集合，去掉已占用的单元格
+        objs.add(frozenset(obj))  # 将当前对象加入对象集合
+    
+    return frozenset(objs)  # 返回所有对象
+
 
 
 def partition(

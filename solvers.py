@@ -13,9 +13,10 @@ def preEstimate(I, O):
     # 判断形状是否一致
     if shape_I == shape_O:
         print("The shapes of I and O are the same.")
+        'IsameO'
     else:
         print("The shapes of I and O are different.")
-    
+        'IdiffO'
     return {
         "shape_I": shape_I,
         "shape_O": shape_O,
