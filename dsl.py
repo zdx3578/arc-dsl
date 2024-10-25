@@ -1,4 +1,19 @@
 from arc_types import *
+import numpy as np
+
+
+
+def isHorizontalMirror(grid):
+    return np.array_equal(grid, np.fliplr(grid))
+
+# 判断是否是上下镜像对称
+def isVerticalMirror(grid):
+    return np.array_equal(grid, np.flipud(grid))
+
+def isDiagonalMirror(grid):
+    return np.array_equal(grid, np.transpose(grid))
+
+
 
 
 def identity(
