@@ -4,39 +4,6 @@ from constants import *
 
 
 
-def isHorizontalMirror(grid):
-    return np.array_equal(grid, np.fliplr(grid))
-
-# 判断是否是上下镜像对称
-def isVerticalMirror(grid):
-    return np.array_equal(grid, np.flipud(grid))
-
-def isDiagonalMirror(grid):
-    return np.array_equal(grid, np.transpose(grid))
-
-def is_subgrid(small_grid, big_grid):
-    return
-
-def has_same_obj(I, O):
-    return
-
-def composeObject(I):
-    remove bg 
-    return
-
-def unique_objects(I, O):
-    # 使用 set 存储唯一的结果
-    unique_results = {
-        objects(I, F, T, T),
-        objects(I, F, F, T),
-        objects(I, T, F, T),
-        objects(I, T, T, T),
-        objects(O, F, T, T),
-        objects(O, F, F, T),
-        objects(O, T, F, T),
-        objects(O, T, T, T),
-    }
-    return unique_results
 
 
 
