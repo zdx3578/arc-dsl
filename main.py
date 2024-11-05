@@ -110,22 +110,44 @@ def test_solvers_formatting(solvers_module, dsl_module):
         except:
             pass
     print(f'{n_correct} out of {n} solvers formatted correctly.')
+    
+
 
 
 def test_solvers_correctness(data, solvers_module):
     """ tests the implemented solvers for correctness """
+    
+    with open('solvers.py', 'r', encoding='utf-8') as file:
+        code = file.read()
+    pattern = r"def solve_([a-fA-F0-9]+)\(I\):"
+    import re
+    # 获取所有匹配的函数名
+    solvers = re.findall(pattern, code)
+
+
     n_correct = 0
     n = len(data["train"])
-    for key in range(1): # tqdm.tqdm(data['train'].keys(), total=n):
-        key='67a3c6ac'
-        task = data['train'][key] + data['test'][key]
+    # for key in range(1): # tqdm.tqdm(data['train'].keys(), total=n):
+    for i, key in enumerate(solvers, start=1):
+        # key='5bd6f4ac'
+        # task = data['train'][key] + data['test'][key]
+        print(key)
+        task = {}
+        task['train'] = data['train'][key]
+        task['test'] = data['test'][key]
         try:
             solver = getattr(solvers_module, f'solve_{key}')
-            for ex in task:
-                prepare(ex['input'],ex['output'])
+            
+            
+            # preparetask(task)
+            solve_arc_task(task)
+            
+            for ex in task['train']:
+                # prepare_diff(ex['input'],ex['output'])
                 assert solver(ex['input']) == ex['output']
-            print(n_correct)
+            
             n_correct += 1
+            print(n_correct)
         except Exception as e:
             logging.error("捕获到异常：%s", e)
             logging.error("详细错误信息：\n%s", traceback.format_exc())

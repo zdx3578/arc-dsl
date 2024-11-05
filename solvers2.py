@@ -8,37 +8,220 @@ from collections import defaultdict
 
 
 
-def is_vmirror_equal(obj) -> bool:
-    """判断对象在进行垂直镜像操作后是否与原对象相等"""
-    return obj == vmirror(obj)
 
-def isHorizontalMirror(piece) -> bool:
-    """判断是否是上下镜像对称"""
-    return piece == hmirror(piece)
+from typing import Dict, Any, List, Tuple
 
-def isVerticalMirror(piece) -> bool:
-    """判断是否是左右镜像对称"""
-    return piece == vmirror(piece)
+def initialize_flags() -> Dict[str, bool]:
+    """
+    初始化一组标志变量。
+    
+    返回:
+    - Dict[str, bool]: 标志变量的字典，默认为 False。
+    """
+    return {
+        "is_mirror": [],
+        "is_fun_ok": [],
+        "is_scale": [],
+        "is_rotation": [],
+        "is_translation": [],
+        "is_color_transform": [],
+        # 可以添加更多标志变量
+    }
 
-def isDiagonalMirror(piece) -> bool:
-    """判断是否是对角线镜像对称"""
-    return piece == dmirror(piece)
+def solve_arc_task(task):
+    """
+    解决ARC任务的主框架，使用标志变量管理不同的特征。
+    
+    参数:
+    - task: 包含多个输入输出对的ARC任务数据，格式为
+      {'train': [(input1, output1), (input2, output2), ...], 'test': [test_input]}
+    
+    返回:
+    - List: 解决任务的方案或结果。
+    """
+    # 初始化标志变量
+    flags = initialize_flags()
+    
+    # train_data = task['train']
+    # test_data = task['test']
 
-def iscounterdiagonalMirror(piece: Piece) -> bool:
-    """判断对象是否是逆对角线镜像对称"""
-    return piece == cmirror(piece)
+    # 尝试逐个处理每个输入输出对
+    solutions = []
+    
 
-def isrot90(grid: Grid) -> bool:
-    """判断对象是否是90度旋转对称"""
-    return grid == rot90(grid)
+    solution = solve_individual(task, flags)
+    if solution:
+        return solution
+        solutions.append(solution)
+    else:
+        print("单独处理失败，需进一步尝试联合处理。")
 
-def isrot180(grid: Grid) -> bool:
-    """判断对象是否是180度旋转对称"""
-    return grid == rot180(grid)
+    # 如果单独处理失败或无法找到方案，尝试整体处理
+    if len(solutions) != len(train_data):
+        combined_solution = solve_combined([pair[0] for pair in train_data], [pair[1] for pair in train_data], flags)
+        if combined_solution:
+            solutions = combined_solution
 
-def isrot270(grid: Grid) -> bool:
-    """判断对象是否是270度旋转对称"""
-    return grid == rot270(grid)
+    # 用解决方案应用于测试数据
+    results = [apply_solution(test_input, solutions) for test_input in test_data]
+    return results
+
+def solve_individual(task, flags: Dict[str, bool]):
+    """
+    尝试单独处理每个输入输出对，根据标志变量确定操作。
+    """
+    train_data = task['train']
+    
+    I = train_data[0]['input']
+    O = train_data[0]['output']
+    
+    height_i, width_i = height(I), width(I)    # 输入对象的高度和宽度
+    height_o, width_o = height(O), width(O)    # 输出对象的高度和宽度
+    
+    height_ratio = height_o / height_i
+    width_ratio = width_o / width_i
+    
+    if height_ratio == 1 and width_ratio == 1:
+        print("输入和输出的高度和宽度都保持不变")
+        # 处理无缩放的情况
+        functions = [
+            vmirror,
+            hmirror,
+            cmirror,
+            dmirror,
+            rot90,
+            rot180,
+            rot270
+        ]
+        
+        for fun in functions:
+            result = do_fun_task(fun, task, flags)  # 执行 do_fun_task
+            
+            if  result:
+                return result  
+        
+        
+        
+        
+        
+        
+    elif height_ratio == 2 and width_ratio == 2:
+        print("输入和输出的高度和宽度均为 2 倍")
+        # 处理高度和宽度均为 2 倍的情况
+
+    elif height_ratio == 3 and width_ratio == 3:
+        print("输入和输出的高度和宽度均为 3 倍")
+        # 处理高度和宽度均为 3 倍的情况
+        
+    elif height_ratio == 2 and width_ratio == 1:
+        print("高度为 2 倍，宽度保持不变")
+        # 处理高度为 2 倍，宽度不变的情况
+
+    elif height_ratio == 1 and width_ratio == 2:
+        print("高度保持不变，宽度为 2 倍")
+        # 处理高度不变，宽度为 2 倍的情况
+
+    elif height_ratio == 3 and width_ratio == 1:
+        print("高度为 3 倍，宽度保持不变")
+        # 处理高度为 3 倍，宽度不变的情况
+
+    elif height_ratio == 1 and width_ratio == 3:
+        print("高度保持不变，宽度为 3 倍")
+        # 处理高度不变，宽度为 3 倍的情况
+
+    elif height_ratio == 2 and width_ratio == 3:
+        print("高度为 2 倍，宽度为 3 倍")
+        # 处理高度为 2 倍，宽度为 3 倍的情况
+
+    elif height_ratio == 3 and width_ratio == 2:
+        print("高度为 3 倍，宽度为 2 倍")
+        # 处理高度为 3 倍，宽度为 2 倍的情况
+
+    else:
+        print("高度和宽度的比率不在预期范围内")
+        # 处理其他情况
+    
+    do_fun_task(vmirror,task,flags)
+    
+    
+    return None
+
+
+def do_fun_task(fun: Callable, task: Dict, flags: Dict[str, List[bool]]) -> str:
+    """
+    尝试单独处理每个输入输出对，根据传入的函数 fun 检查每对输入输出是否满足条件。
+    """
+    
+    train_data = task['train']
+    test_data = task['test']
+    
+    for data_pair in train_data:
+        input_grid = data_pair['input']
+        output_grid = data_pair['output']
+        
+        # 使用传入的函数 fun 来检查是否满足条件
+        transformed = fun(input_grid)
+        if transformed == output_grid:
+            # flags["is_fun_ok"].append(True)
+            continue  # 结束本轮循环，直接进行下一个 data_pair
+        else:
+            print(f"failed : {fun.__name__}")
+            # return f'failed {fun.__name__}'
+            return False
+    print(f"all ok : {fun.__name__}")
+    testin = fun(test_data[0]['input'])
+    assert testin == test_data[0]['output']
+
+    return testin
+
+
+
+
+
+def solve_combined(input_grids, output_grids, flags: Dict[str, bool]):
+    """
+    尝试将多个输入和多个输出整体处理，使用标志变量辅助判断。
+    """
+    # 示例：根据标志条件判断
+    if flags["is_mirror"] and flags["is_scale"]:
+        return handle_combined_mirror_scale(input_grids, output_grids)
+    elif flags["is_rotation"]:
+        return handle_combined_rotation(input_grids, output_grids)
+    # 可以添加更多组合操作
+
+    return None
+
+def apply_solution(test_input, solution):
+    """
+    将解决方案应用于测试输入。
+    """
+    return solution(test_input)
+
+
+
+def check_scale_condition(original, scaled, factor):
+    """
+    检查缩放条件，判断 scaled 是否是 original 的某种缩放（水平、垂直、整体放大或缩小）。
+    返回相应的缩放结果和缩放类型。
+    """
+    hupscaled = hupscale(original, factor)
+    if scaled == hupscaled:
+        return hupscaled, "horizontal upscale"
+
+    vupscaled = vupscale(original, factor)
+    if scaled == vupscaled:
+        return vupscaled, "vertical upscale"
+
+    upscaled = upscale(original, factor)
+    if scaled == upscaled:
+        return upscaled, "upscale"
+
+    downscaled = downscale(original, factor)
+    if scaled == downscaled:
+        return downscaled, "downscale"
+
+    # 若没有匹配的缩放条件，返回 None
+    return None, "no scale match"
 
 
 
@@ -48,8 +231,32 @@ def isrot270(grid: Grid) -> bool:
 
 
 
-def is_subgrid(small_grid, big_grid):
-    return
+
+
+
+
+
+
+
+def handle_scale(input_grid, output_grid):
+    """处理缩放的逻辑"""
+    return lambda x: x  # 示例处理函数
+
+
+def handle_combined_mirror_scale(input_grids, output_grids):
+    """处理组合镜像和缩放的逻辑"""
+    return lambda x: x  # 示例处理函数
+
+def handle_combined_rotation(input_grids, output_grids):
+    """处理组合旋转的逻辑"""
+    return lambda x: x  # 示例处理函数
+
+
+
+
+
+
+
 
 def has_same_obj(I, O):
     return
@@ -75,9 +282,23 @@ def unique_objects(I, O):
 
 
 
+def prepare_diff_insec(I,O):
+    
+    # 调用 objects 函数两次
+    oi = objects(I, False, True, True)
+    oo = objects(O, False, True, True)
+    
 
 
-def prepare00(I,O):
+    same_objects = oi.intersection(oo) 
+    # 获取对称差集
+    diff_objects = oi.symmetric_difference(oo)
+    
+    
+
+
+
+def prepare_diff000(I,O):
     
     # 调用 objects 函数两次
     oi = objects(I, False, True, True)
@@ -98,6 +319,7 @@ def prepare00(I,O):
     print("输出对象的宽度:", width_o)
 
 
+    same_objects = oi.intersection(oo) 
     # 获取对称差集
     diff_objects = oi.symmetric_difference(oo)
 
@@ -136,32 +358,10 @@ def prepare00(I,O):
             print("  第二个 frozenset 特有的坐标:", merged_diffs[value]["diff2"])
             
         
-        combined_diff = {}
-        for value, pos in diff1_unique + diff2_unique:
-            if value not in combined_diff:
-                combined_diff[value] = []
-            combined_diff[value].append(pos)
-
-        # 展示为二维矩阵的格式
-        for key, positions in sorted(combined_diff.items()):
-            print(f"数值 {key} 的不同元素位置：")
-            
-            # 获取最大行和列用于确定矩阵的大小
-            max_row = max(pos[0] for pos in positions) + 1
-            max_col = max(pos[1] for pos in positions) + 1
-            matrix = [[' ' for _ in range(max_col)] for _ in range(max_row)]
-            
-            # 填充矩阵中的位置
-            for row, col in positions:
-                matrix[row][col] = str(key)
-            
-            # 打印二维矩阵
-            for row in matrix:
-                print(" ".join(row))
-            print("\n" + "-"*20 + "\n")    
+        
+        display_diff_matrices(diff1_unique,diff1_unique)
         
         
-
 
         # 定义特有的坐标
         # diff1_coords = [(1, 0), (2, 2), (3, 1), (5, 3)]  # 第一个 frozenset 特有的坐标
@@ -212,16 +412,88 @@ def prepare00(I,O):
         print("X 维度和是否匹配输入/输出高度:", x_sum_matches_height)
         print("Y 维度和是否匹配输入/输出宽度:", y_sum_matches_width)
 
-
-
-
-        
-        
+ 
     else:
         
         print("todo ！ 执行 ！  不同部分不止两个 frozenset 或无差异。")
-
-
-    
     return 0
 
+
+from typing import List, Tuple, Optional
+
+def display_diff_matrices(diff1: List[Tuple[int, Tuple[int, int]]], 
+                          diff2: List[Tuple[int, Tuple[int, int]]], 
+                          diff3: Optional[List[Tuple[int, Tuple[int, int]]]] = None):
+    """
+    展示不同元素位置的二维矩阵。
+    
+    参数:
+    - diff1, diff2: 必填，每个包含不同元素及其位置的集合。
+    - diff3: 可选，额外的不同元素及其位置集合。
+    """
+    combined_diff = {}
+    
+    # 合并所有不同元素的位置
+    for value, pos in diff1 + diff2 + (diff3 if diff3 else []):
+        if value not in combined_diff:
+            combined_diff[value] = []
+        combined_diff[value].append(pos)
+    
+    # 展示每个数值在二维矩阵中的位置
+    for key, positions in sorted(combined_diff.items()):
+        print(f"数值 {key} 的不同元素位置：")
+        
+        # 确定矩阵的大小
+        max_row = max(pos[0] for pos in positions) + 1
+        max_col = max(pos[1] for pos in positions) + 1
+        matrix = [[' ' for _ in range(max_col)] for _ in range(max_row)]
+        
+        # 填充矩阵
+        for row, col in positions:
+            matrix[row][col] = str(key)
+        
+        # 打印矩阵
+        for row in matrix:
+            print(" ".join(row))
+        print("\n" + "-"*20 + "\n")
+
+
+
+
+def is_subgrid(grid1, grid2):
+    """判断较小的网格是否是较大网格的一个部分"""
+    
+    # 获取两个矩阵的大小
+    rows1, cols1 = len(grid1), len(grid1[0])
+    rows2, cols2 = len(grid2), len(grid2[0])
+
+    # 确定较大的矩阵和较小的矩阵
+    if rows1 >= rows2 and cols1 >= cols2:
+        big_grid, small_grid = grid1, grid2
+        big_rows, big_cols, small_rows, small_cols = rows1, cols1, rows2, cols2
+    elif rows2 >= rows1 and cols2 >= cols1:
+        big_grid, small_grid = grid2, grid1
+        big_rows, big_cols, small_rows, small_cols = rows2, cols2, rows1, cols1
+    else:
+        return False  # 两个矩阵形状不兼容，无法嵌套
+
+    # 遍历大矩阵，检查是否存在小矩阵匹配的位置
+    for i in range(big_rows - small_rows + 1):
+        for j in range(big_cols - small_cols + 1):
+            match = True
+            # 检查大矩阵的当前位置是否与小矩阵完全匹配
+            for x in range(small_rows):
+                for y in range(small_cols):
+                    if big_grid[i + x][j + y] != small_grid[x][y]:
+                        match = False
+                        break
+                if not match:
+                    break
+            if match:
+                return True  # 找到匹配位置，返回 True
+
+    return False  # 未找到匹配位置，返回 False
+
+
+
+# print(is_subgrid(big_grid, small_grid))  # 输出 True 或 False
