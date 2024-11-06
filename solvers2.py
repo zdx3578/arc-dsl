@@ -22,6 +22,7 @@ def initialize_flags() -> Dict[str, bool]:
         "is_mirror": [],
         "is_fun_ok": [],
         "is_scale": [],
+        "is_diff_same_posit": [],
         "is_rotation": [],
         "is_translation": [],
         "is_color_transform": [],
@@ -84,23 +85,35 @@ def solve_individual(task, flags: Dict[str, bool]):
     if height_ratio == 1 and width_ratio == 1:
         print("输入和输出的高度和宽度都保持不变")
         # 处理无缩放的情况
-        functions = [
-            vmirror,
-            hmirror,
-            cmirror,
-            dmirror,
-            rot90,
-            rot180,
-            rot270
-        ]
+        # functions = [
+        #     vmirror,
+        #     hmirror,
+        #     cmirror,
+        #     dmirror,
+        #     rot90,
+        #     rot180,
+        #     rot270
+        # ]
         
-        for fun in functions:
-            result = do_fun_task(fun, task, flags)  # 执行 do_fun_task
+        # for fun in functions:
+        #     result = do_fun_task(fun, task, flags)  # 执行 do_fun_task
             
-            if  result:
-                return result  
+        #     if  result:
+        #         return result  
         
         
+        
+        fun =prepare_diff(task,flags)
+        
+
+            # functions = [
+            #     replace
+            # ]
+
+        result = do_fun_task(fun, task, flags) # 执行 do_fun_task
+        
+        if result :
+            return result  
         
         
         
@@ -112,6 +125,26 @@ def solve_individual(task, flags: Dict[str, bool]):
     elif height_ratio == 3 and width_ratio == 3:
         print("输入和输出的高度和宽度均为 3 倍")
         # 处理高度和宽度均为 3 倍的情况
+        functions = [
+            upscale,
+            hupscale,
+            vupscale,
+            downscale
+        ]
+        
+        factor = 3
+        
+        for fun in functions:
+            result = do_fun_arg_task(fun, task, flags, factor)  # 执行 do_fun_task
+            
+            if  result:
+                return result  
+        
+        
+        
+        
+        
+        
         
     elif height_ratio == 2 and width_ratio == 1:
         print("高度为 2 倍，宽度保持不变")
@@ -120,6 +153,17 @@ def solve_individual(task, flags: Dict[str, bool]):
     elif height_ratio == 1 and width_ratio == 2:
         print("高度保持不变，宽度为 2 倍")
         # 处理高度不变，宽度为 2 倍的情况
+        functions = [
+            hconcat
+        ]
+        for fun in functions:
+            result = do_fun_task(fun, task, flags)  # 执行 do_fun_task
+            
+            if  result:
+                return result  
+        
+        
+        
 
     elif height_ratio == 3 and width_ratio == 1:
         print("高度为 3 倍，宽度保持不变")
@@ -171,12 +215,33 @@ def do_fun_task(fun: Callable, task: Dict, flags: Dict[str, List[bool]]) -> str:
     print(f"all ok : {fun.__name__}")
     testin = fun(test_data[0]['input'])
     assert testin == test_data[0]['output']
-
     return testin
 
 
-
-
+def do_fun_arg_task(fun: Callable, task: Dict, flags: Dict[str, List[bool]], *args: Any) -> str:
+    """
+    尝试单独处理每个输入输出对，根据传入的函数 fun 和额外的参数 args 检查每对输入输出是否满足条件。
+    """
+    
+    train_data = task['train']
+    test_data = task['test']
+    
+    for data_pair in train_data:
+        input_grid = data_pair['input']
+        output_grid = data_pair['output']
+        
+        # 使用传入的函数 fun 和额外的参数 args 来检查是否满足条件
+        transformed = fun(input_grid, *args)  # 将额外参数传递给函数
+        if transformed == output_grid:
+            continue  # 结束本轮循环，直接进行下一个 data_pair
+        else:
+            print(f"failed : {fun.__name__}")
+            # return f'failed {fun.__name__}'
+            return False
+    print(f"all ok : {fun.__name__}")
+    testin = fun(test_data[0]['input'], *args)
+    assert testin == test_data[0]['output']
+    return testin
 
 def solve_combined(input_grids, output_grids, flags: Dict[str, bool]):
     """
@@ -198,51 +263,6 @@ def apply_solution(test_input, solution):
     return solution(test_input)
 
 
-
-def check_scale_condition(original, scaled, factor):
-    """
-    检查缩放条件，判断 scaled 是否是 original 的某种缩放（水平、垂直、整体放大或缩小）。
-    返回相应的缩放结果和缩放类型。
-    """
-    hupscaled = hupscale(original, factor)
-    if scaled == hupscaled:
-        return hupscaled, "horizontal upscale"
-
-    vupscaled = vupscale(original, factor)
-    if scaled == vupscaled:
-        return vupscaled, "vertical upscale"
-
-    upscaled = upscale(original, factor)
-    if scaled == upscaled:
-        return upscaled, "upscale"
-
-    downscaled = downscale(original, factor)
-    if scaled == downscaled:
-        return downscaled, "downscale"
-
-    # 若没有匹配的缩放条件，返回 None
-    return None, "no scale match"
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-def handle_scale(input_grid, output_grid):
-    """处理缩放的逻辑"""
-    return lambda x: x  # 示例处理函数
-
-
 def handle_combined_mirror_scale(input_grids, output_grids):
     """处理组合镜像和缩放的逻辑"""
     return lambda x: x  # 示例处理函数
@@ -250,12 +270,6 @@ def handle_combined_mirror_scale(input_grids, output_grids):
 def handle_combined_rotation(input_grids, output_grids):
     """处理组合旋转的逻辑"""
     return lambda x: x  # 示例处理函数
-
-
-
-
-
-
 
 
 def has_same_obj(I, O):
@@ -279,9 +293,6 @@ def unique_objects(I, O):
     }
     return unique_results
 
-
-
-
 def prepare_diff_insec(I,O):
     
     # 调用 objects 函数两次
@@ -298,34 +309,25 @@ def prepare_diff_insec(I,O):
 
 
 
-def prepare_diff000(I,O):
+def prepare_diff(task,flags: Dict[str, bool]):
+    train_data = task['train']
+    test_data = task['test']
     
-    # 调用 objects 函数两次
-    oi = objects(I, False, True, True)
-    oo = objects(O, False, True, True)
-    
-    # 假设 height_i 和 width_i 是输入的高度和宽度，height_o 和 width_o 是输出的高度和宽度
-    height_i, width_i = height(I), width(I)    # 输入对象的高度和宽度
-    height_o, width_o = height(O), width(O)    # 输出对象的高度和宽度
-    
-    # hi = height(I)
-    # wi = width(I)
-    # ho = height(O)
-    # wo = width(O)
+    for data_pair in train_data:
+        I = data_pair['input']
+        O = data_pair['output']
+        
+        # 调用 objects 函数两次
+        oi = objects(I, False, True, True)
+        oo = objects(O, False, True, True)
+        
+        same_objects = oi.intersection(oo) 
+        # 获取对称差集
+        diff_objects = oi.symmetric_difference(oo)
 
-    print("输入对象的高度:", height_i)
-    print("输出对象的高度:", height_o)
-    print("输入对象的宽度:", width_i)
-    print("输出对象的宽度:", width_o)
-
-
-    same_objects = oi.intersection(oo) 
-    # 获取对称差集
-    diff_objects = oi.symmetric_difference(oo)
-
-    # 检查是否恰好有两个不同部分
-    if len(diff_objects) == 2:
-        # 解包不同部分为两个 frozenset
+        # 检查是否恰好有两个不同部分
+        # if len(diff_objects) == 2:
+            # 解包不同部分为两个 frozenset
         diff1, diff2 = diff_objects
 
         # 将两个 frozenset 转换为有序列表
@@ -357,70 +359,109 @@ def prepare_diff000(I,O):
             print("  第一个 frozenset 特有的坐标:", merged_diffs[value]["diff1"])
             print("  第二个 frozenset 特有的坐标:", merged_diffs[value]["diff2"])
             
+        display_diff_matrices(diff1_unique,diff2_unique)
         
+        if compare_positions(dif1,dif2):
+            flags["is_diff_same_posit"].append(True)
+        flags["is_diff_same_posit"].append(False)
+    all_is_fun_ok = all(flags["is_diff_same_posit"])
+    if all_is_fun_ok:
+        # 如果所有数据对均满足条件，对 test_data 应用该函数并返回结果
+        return replace 
+    return False
+
         
-        display_diff_matrices(diff1_unique,diff1_unique)
+    
+        
+        # print("todo ！ 执行 ！  不同部分不止两个 frozenset 或无差异。")
+    return 0        
         
         
 
-        # 定义特有的坐标
-        # diff1_coords = [(1, 0), (2, 2), (3, 1), (5, 3)]  # 第一个 frozenset 特有的坐标
-        # diff2_coords = [(1, 5), (2, 3), (3, 4), (5, 2)]  # 第二个 frozenset 特有的坐标
+        # # 定义特有的坐标
+        # # diff1_coords = [(1, 0), (2, 2), (3, 1), (5, 3)]  # 第一个 frozenset 特有的坐标
+        # # diff2_coords = [(1, 5), (2, 3), (3, 4), (5, 2)]  # 第二个 frozenset 特有的坐标
 
-        # 计算差异的维度和差值
-        def calc_diffs(coords1, coords2):
-            x_diffs, y_diffs = [], []
-            x_sums, y_sums = [], []
-            for (x1, y1), (x2, y2) in zip(coords1, coords2):
-                x_diffs.append(abs(x1 - x2))
-                y_diffs.append(abs(y1 - y2))
-                x_sums.append(x1 + x2)
-                y_sums.append(y1 + y2)
-            return x_diffs, y_diffs, x_sums, y_sums
+        # # 计算差异的维度和差值
+        # def calc_diffs(coords1, coords2):
+        #     x_diffs, y_diffs = [], []
+        #     x_sums, y_sums = [], []
+        #     for (x1, y1), (x2, y2) in zip(coords1, coords2):
+        #         x_diffs.append(abs(x1 - x2))
+        #         y_diffs.append(abs(y1 - y2))
+        #         x_sums.append(x1 + x2)
+        #         y_sums.append(y1 + y2)
+        #     return x_diffs, y_diffs, x_sums, y_sums
         
-        def calculate_diff_sum(coords):
-            x_diff = max(x for x, y in coords) - min(x for x, y in coords)
-            y_diff = max(y for x, y in coords) - min(y for x, y in coords)
-            x_sum = sum(x for x, y in coords)
-            y_sum = sum(y for x, y in coords)
-            return x_diff, y_diff, x_sum, y_sum
+        # def calculate_diff_sum(coords):
+        #     x_diff = max(x for x, y in coords) - min(x for x, y in coords)
+        #     y_diff = max(y for x, y in coords) - min(y for x, y in coords)
+        #     x_sum = sum(x for x, y in coords)
+        #     y_sum = sum(y for x, y in coords)
+        #     return x_diff, y_diff, x_sum, y_sum
 
+        # # # 计算坐标差异和和
+        # # x_diffs, y_diffs, x_sums, y_sums = calc_diffs(merged_diffs[value]["diff1"], merged_diffs[value]["diff2"])
+        
         # # 计算坐标差异和和
         # x_diffs, y_diffs, x_sums, y_sums = calc_diffs(merged_diffs[value]["diff1"], merged_diffs[value]["diff2"])
-        
-        # 计算坐标差异和和
-        x_diffs, y_diffs, x_sums, y_sums = calc_diffs(merged_diffs[value]["diff1"], merged_diffs[value]["diff2"])
 
-        # 分别打印每个变量的内容
-        print("X 维度的差值列表:", x_diffs)
-        print("Y 维度的差值列表:", y_diffs)
-        print("X 维度的和列表:", x_sums)
-        print("Y 维度的和列表:", y_sums)
+        # # 分别打印每个变量的内容
+        # print("X 维度的差值列表:", x_diffs)
+        # print("Y 维度的差值列表:", y_diffs)
+        # print("X 维度的和列表:", x_sums)
+        # print("Y 维度的和列表:", y_sums)
 
 
-        # 计算与输入和输出的高度和宽度的比较
-        # 计算与输入和输出的高度和宽度的比较（索引从0开始，需减一）
-        x_diff_matches_height = any(diff == (height_i - 1) or diff == (height_o - 1) for diff in x_diffs)
-        y_diff_matches_width = any(diff == (width_i - 1) or diff == (width_o - 1) for diff in y_diffs)
+        # # 计算与输入和输出的高度和宽度的比较
+        # # 计算与输入和输出的高度和宽度的比较（索引从0开始，需减一）
+        # x_diff_matches_height = any(diff == (height_i - 1) or diff == (height_o - 1) for diff in x_diffs)
+        # y_diff_matches_width = any(diff == (width_i - 1) or diff == (width_o - 1) for diff in y_diffs)
 
-        x_sum_matches_height = any(s == (height_i - 1) or s == (height_o - 1) for s in x_sums)
-        y_sum_matches_width = any(s == (width_i - 1) or s == (width_o - 1) for s in y_sums)
+        # x_sum_matches_height = any(s == (height_i - 1) or s == (height_o - 1) for s in x_sums)
+        # y_sum_matches_width = any(s == (width_i - 1) or s == (width_o - 1) for s in y_sums)
 
-        # 输出结果
-        print("X 维度差值是否匹配输入/输出高度:", x_diff_matches_height)
-        print("Y 维度差值是否匹配输入/输出宽度:", y_diff_matches_width)
-        print("X 维度和是否匹配输入/输出高度:", x_sum_matches_height)
-        print("Y 维度和是否匹配输入/输出宽度:", y_sum_matches_width)
+        # # 输出结果
+        # print("X 维度差值是否匹配输入/输出高度:", x_diff_matches_height)
+        # print("Y 维度差值是否匹配输入/输出宽度:", y_diff_matches_width)
+        # print("X 维度和是否匹配输入/输出高度:", x_sum_matches_height)
+        # print("Y 维度和是否匹配输入/输出宽度:", y_sum_matches_width)
 
  
+
+
+
+
+# from typing import List, Tuple
+
+def compare_positions(positions1: List[Tuple[int, int]], positions2: List[Tuple[int, int]]) -> str:
+    """
+    判断两组位置是否完全一致。
+    
+    参数:
+    - positions1: 第一组位置坐标的列表。
+    - positions2: 第二组位置坐标的列表。
+    
+    返回:
+    - 'Identical positions' 如果两组位置完全相同。
+    - 'Different positions' 如果两组位置不同。
+    """
+    if sorted(positions1) == sorted(positions2):
+        # return "Identical positions"
+        return True
     else:
-        
-        print("todo ！ 执行 ！  不同部分不止两个 frozenset 或无差异。")
-    return 0
+        # return "Different positions"
+        return False
+
+# # 示例用法
+# positions1 = [(0, 3), (1, 0), (1, 1), (1, 3), (2, 2), (3, 1), (4, 1), (4, 3), (5, 0), (5, 1), (5, 2)]
+# positions2 = [(0, 3), (1, 0), (1, 1), (1, 3), (2, 2), (3, 1), (4, 1), (4, 3), (5, 0), (5, 1), (5, 2)]
+
+# result = compare_positions(positions1, positions2)
+# print(result)  # 输出: Identical positions
 
 
 from typing import List, Tuple, Optional
-
 def display_diff_matrices(diff1: List[Tuple[int, Tuple[int, int]]], 
                           diff2: List[Tuple[int, Tuple[int, int]]], 
                           diff3: Optional[List[Tuple[int, Tuple[int, int]]]] = None):

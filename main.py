@@ -129,7 +129,8 @@ def test_solvers_correctness(data, solvers_module):
     n = len(data["train"])
     # for key in range(1): # tqdm.tqdm(data['train'].keys(), total=n):
     for i, key in enumerate(solvers, start=1):
-        # key='5bd6f4ac'
+        
+        key='b1948b0a'
         # task = data['train'][key] + data['test'][key]
         print(key)
         task = {}
