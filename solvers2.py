@@ -85,32 +85,32 @@ def solve_individual(task, flags: Dict[str, bool]):
     if height_ratio == 1 and width_ratio == 1:
         print("输入和输出的高度和宽度都保持不变")
         # 处理无缩放的情况
-        # functions = [
-        #     vmirror,
-        #     hmirror,
-        #     cmirror,
-        #     dmirror,
-        #     rot90,
-        #     rot180,
-        #     rot270
-        # ]
+        functions = [
+            vmirror,
+            hmirror,
+            cmirror,
+            dmirror,
+            rot90,
+            rot180,
+            rot270
+        ]
         
-        # for fun in functions:
-        #     result = do_fun_task(fun, task, flags)  # 执行 do_fun_task
+        for fun in functions:
+            result = do_fun_task(fun, task, flags)  # 执行 do_fun_task
             
-        #     if  result:
-        #         return result  
+            if  result:
+                return result  
         
         
         
-        fun =prepare_diff(task,flags)
+        fun,arg1,arg2 =prepare_diff(task,flags)
         
 
             # functions = [
             #     replace
             # ]
 
-        result = do_fun_task(fun, task, flags) # 执行 do_fun_task
+        result = do_fun_arg_task(fun, task, flags,arg1,arg2) # 执行 do_fun_task
         
         if result :
             return result  
@@ -121,6 +121,20 @@ def solve_individual(task, flags: Dict[str, bool]):
     elif height_ratio == 2 and width_ratio == 2:
         print("输入和输出的高度和宽度均为 2 倍")
         # 处理高度和宽度均为 2 倍的情况
+        functions = [
+            upscale,
+            hupscale,
+            vupscale,
+            downscale
+        ]
+        
+        factor = 2
+        
+        for fun in functions:
+            result = do_fun_arg_task(fun, task, flags, factor)  # 执行 do_fun_task
+            
+            if  result:
+                return result  
 
     elif height_ratio == 3 and width_ratio == 3:
         print("输入和输出的高度和宽度均为 3 倍")
@@ -157,7 +171,7 @@ def solve_individual(task, flags: Dict[str, bool]):
             hconcat
         ]
         for fun in functions:
-            result = do_fun_task(fun, task, flags)  # 执行 do_fun_task
+            result = do_fun_arg_task(fun, task, flags, 'input')  # 执行 do_fun_task
             
             if  result:
                 return result  
@@ -212,7 +226,7 @@ def do_fun_task(fun: Callable, task: Dict, flags: Dict[str, List[bool]]) -> str:
             print(f"failed : {fun.__name__}")
             # return f'failed {fun.__name__}'
             return False
-    print(f"all ok : {fun.__name__}")
+    print(f"Do fun all ok : {fun.__name__}")
     testin = fun(test_data[0]['input'])
     assert testin == test_data[0]['output']
     return testin
@@ -230,16 +244,23 @@ def do_fun_arg_task(fun: Callable, task: Dict, flags: Dict[str, List[bool]], *ar
         input_grid = data_pair['input']
         output_grid = data_pair['output']
         
-        # 使用传入的函数 fun 和额外的参数 args 来检查是否满足条件
-        transformed = fun(input_grid, *args)  # 将额外参数传递给函数
+        if 'input' in args :
+            transformed = fun(input_grid, input_grid)
+        else:
+            # 使用传入的函数 fun 和额外的参数 args 来检查是否满足条件
+            transformed = fun(input_grid, *args)  # 将额外参数传递给函数
         if transformed == output_grid:
             continue  # 结束本轮循环，直接进行下一个 data_pair
         else:
             print(f"failed : {fun.__name__}")
             # return f'failed {fun.__name__}'
             return False
-    print(f"all ok : {fun.__name__}")
-    testin = fun(test_data[0]['input'], *args)
+    print(f"Do fun all ok : {fun.__name__}")
+    
+    if 'input' in args :
+        testin = fun(test_data[0]['input'], test_data[0]['input'])
+    else:
+        testin = fun(test_data[0]['input'], *args)
     assert testin == test_data[0]['output']
     return testin
 
@@ -318,56 +339,70 @@ def prepare_diff(task,flags: Dict[str, bool]):
         O = data_pair['output']
         
         # 调用 objects 函数两次
-        oi = objects(I, False, True, True)
-        oo = objects(O, False, True, True)
+        oi = objects(I, False, True, False)
+        oo = objects(O, False, True, False)
         
         same_objects = oi.intersection(oo) 
         # 获取对称差集
-        diff_objects = oi.symmetric_difference(oo)
+        # diff_objects = oi.symmetric_difference(oo)
 
-        # 检查是否恰好有两个不同部分
-        # if len(diff_objects) == 2:
-            # 解包不同部分为两个 frozenset
-        diff1, diff2 = diff_objects
+        # # 检查是否恰好有两个不同部分
+        # # if len(diff_objects) == 2:
+        #     # 解包不同部分为两个 frozenset
+        # diff1, diff2 = diff_objects
+        
+        oi_unique = oi - oo  # 获取在 oi 中但不在 oo 中的元素
+        oo_unique = oo - oi  # 获取在 oo 中但不在 oi 中的元素
+
+        # 将它们分别赋给 diff1 和 diff2
+        diff1, diff2 = next(iter(oi_unique)), next(iter(oo_unique))
+        
+        
 
         # 将两个 frozenset 转换为有序列表
         sorted_diff1 = sorted(diff1, key=lambda x: (x[0], x[1]))  # 按值和坐标排序
         sorted_diff2 = sorted(diff2, key=lambda x: (x[0], x[1]))  # 按值和坐标排序
 
-        # 输出排序后的比较结果
-        # print("第一个 frozenset 排序后的元素:", sorted_diff1)
-        # print("第二个 frozenset 排序后的元素:", sorted_diff2)
-        # 比较差异
+                # 输出排序后的比较结果
+                # print("第一个 frozenset 排序后的元素:", sorted_diff1)
+                # print("第二个 frozenset 排序后的元素:", sorted_diff2)
+                # 比较差异
         diff1_unique = sorted(set(sorted_diff1) - set(sorted_diff2))
         diff2_unique = sorted(set(sorted_diff2) - set(sorted_diff1))
 
-        print("第一个 frozenset 特有的元素（排序后）:", diff1_unique)
-        print("第二个 frozenset 特有的元素（排序后）:", diff2_unique)
+        # print("第一个 frozenset 特有的元素（排序后）:", diff1_unique)
+        # print("第二个 frozenset 特有的元素（排序后）:", diff2_unique)
         
-        # # 假设 diff1_unique 和 diff2_unique 是已经得到的排序后差异列表
-        # 创建字典按第一个值分组
-        merged_diffs = defaultdict(lambda: {"diff1": [], "diff2": []})
+        merged_diffs = {
+            "diff1": defaultdict(list),
+            "diff2": defaultdict(list)
+        }
+
         # 将 diff1_unique 中的数据按第一个值分组
         for value, coord in diff1_unique:
-            merged_diffs[value]["diff1"].append(coord)
+            merged_diffs["diff1"][value].append(coord)
+
         # 将 diff2_unique 中的数据按第一个值分组
         for value, coord in diff2_unique:
-            merged_diffs[value]["diff2"].append(coord)
-        # 输出合并后的差异
-        for value in merged_diffs:
-            print(f"值 {value} 的差异:")
-            print("  第一个 frozenset 特有的坐标:", merged_diffs[value]["diff1"])
-            print("  第二个 frozenset 特有的坐标:", merged_diffs[value]["diff2"])
+            merged_diffs["diff2"][value].append(coord)
+
+        # # 输出合并后的差异
+        # for key in merged_diffs:
+        #     for value, positions in merged_diffs[key].items():
+        #         print(f"{key} - 值 {value} 的特有坐标:", positions)
             
-        display_diff_matrices(diff1_unique,diff2_unique)
+        # display_diff_matrices(diff1_unique,diff2_unique)
         
-        if compare_positions(dif1,dif2):
+        if compare_positions(merged_diffs):
             flags["is_diff_same_posit"].append(True)
-        flags["is_diff_same_posit"].append(False)
+        else:
+            flags["is_diff_same_posit"].append(False)
     all_is_fun_ok = all(flags["is_diff_same_posit"])
     if all_is_fun_ok:
+        keys_diff1 = list(merged_diffs['diff1'].keys())[0]  # 获取 diff1 中的键
+        keys_diff2 = list(merged_diffs['diff2'].keys())[0]  # 获取 diff2 中的键
         # 如果所有数据对均满足条件，对 test_data 应用该函数并返回结果
-        return replace 
+        return replace, keys_diff1,keys_diff2
     return False
 
         
@@ -429,36 +464,28 @@ def prepare_diff(task,flags: Dict[str, bool]):
 
  
 
-
-
-
-# from typing import List, Tuple
-
-def compare_positions(positions1: List[Tuple[int, int]], positions2: List[Tuple[int, int]]) -> str:
+from typing import Dict, List, Tuple
+from collections import defaultdict
+def compare_positions(merged_diffs: Dict[str, defaultdict]) -> str:
     """
-    判断两组位置是否完全一致。
-    
-    参数:
-    - positions1: 第一组位置坐标的列表。
-    - positions2: 第二组位置坐标的列表。
-    
-    返回:
-    - 'Identical positions' 如果两组位置完全相同。
-    - 'Different positions' 如果两组位置不同。
+    比较 'diff1' 和 'diff2' 字典中的坐标列表是否完全一致。
+    忽略字典的键，仅比较坐标部分。
     """
-    if sorted(positions1) == sorted(positions2):
+    # 提取 diff1 和 diff2 中的坐标列表，忽略键
+    coords1 = [coord for coords in merged_diffs['diff1'].values() for coord in coords]
+    coords2 = [coord for coords in merged_diffs['diff2'].values() for coord in coords]
+    
+    # 比较坐标列表是否一致
+    if sorted(coords1) == sorted(coords2):
         # return "Identical positions"
         return True
     else:
         # return "Different positions"
         return False
 
-# # 示例用法
-# positions1 = [(0, 3), (1, 0), (1, 1), (1, 3), (2, 2), (3, 1), (4, 1), (4, 3), (5, 0), (5, 1), (5, 2)]
-# positions2 = [(0, 3), (1, 0), (1, 1), (1, 3), (2, 2), (3, 1), (4, 1), (4, 3), (5, 0), (5, 1), (5, 2)]
 
-# result = compare_positions(positions1, positions2)
-# print(result)  # 输出: Identical positions
+
+
 
 
 from typing import List, Tuple, Optional

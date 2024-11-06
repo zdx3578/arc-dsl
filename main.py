@@ -130,7 +130,7 @@ def test_solvers_correctness(data, solvers_module):
     # for key in range(1): # tqdm.tqdm(data['train'].keys(), total=n):
     for i, key in enumerate(solvers, start=1):
         
-        key='b1948b0a'
+        # key='c8f0f002'
         # task = data['train'][key] + data['test'][key]
         print(key)
         task = {}
@@ -148,7 +148,28 @@ def test_solvers_correctness(data, solvers_module):
                 assert solver(ex['input']) == ex['output']
             
             n_correct += 1
+            print()
+            print()
+            print()
+            print()
+            print()
+            print()
+            print()
+            print()
+            print()
+            print()
+
             print(n_correct)
+            print()
+            print()
+            print()
+            print()
+            print()
+            print()
+            print()
+            print()
+            print()
+                
         except Exception as e:
             logging.error("捕获到异常：%s", e)
             logging.error("详细错误信息：\n%s", traceback.format_exc())
