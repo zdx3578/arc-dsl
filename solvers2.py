@@ -67,7 +67,6 @@ def solve_individual(task, flags: Dict[str, bool]):
     尝试单独处理每个输入输出对，根据标志变量确定操作。
     """
     train_data = task['train']
-
     I = train_data[0]['input']
     O = train_data[0]['output']
 
@@ -77,7 +76,7 @@ def solve_individual(task, flags: Dict[str, bool]):
     height_ratio = height_o / height_i
     width_ratio = width_o / width_i
 
-    bi_map = BidirectionalMap(mapping)
+    # bi_map = BidirectionalMap(mapping)
 
     if height_ratio == 1 and width_ratio == 1:
         print("输入和输出的高度和宽度都保持不变")
@@ -151,12 +150,12 @@ def solve_individual(task, flags: Dict[str, bool]):
             tophalf
         ]
         for fun in proper_functions:
-            result = out_is_proper_fun(fun, task, flags)  # 执行 do_fun_task
-            if  result:
+            isproper = out_is_proper_fun(fun, task, flags)  # 执行 do_fun_task
+            if  isproper:
                 for fun in part_functions:
-                    result2 = IO_is_part_fun(fun, task, flags )
-                    if result2 :
-                        result3 = do_2fun_task(result,result2, task, flags)
+                    part_fun = IO_is_part_fun(fun, task, flags )
+                    if part_fun :
+                        result3 = do_2fun_task(isproper,part_fun, task, flags)
                         return result3
 
 
@@ -178,9 +177,26 @@ def solve_individual(task, flags: Dict[str, bool]):
             if  result:
                 return result
 
-    elif height_ratio == 2 and width_ratio == 1:
-        print("高度为 2 倍，宽度保持不变")
-        # 处理高度为 2 倍，宽度不变的情况
+    elif height_ratio <= 1 and width_ratio <= 1:
+
+        ifsubgrid = is_subgrid(task,flags)
+        if ifsubgrid :
+            fun, (arg1,arg2)  = ifsubgrid
+            result = do_fun_arg_task(fun, task, flags, (arg1,arg2),(height_o, width_o) )  # 执行 do_fun_task
+            if  result:
+                return result
+
+    # elif height_ratio == 0.3333333333333333 and width_ratio == 0.3333333333333333:
+        functions = [
+            replace,
+            downscale
+        ]
+        result = do_fun_arg_task(replace, task, flags, 5, 0 )  # 执行 do_fun_task
+        if  result:
+            result2 = do_fun_arg_task(downscale, task, flags, 3)
+            if result2:
+                return result2
+
 
     elif height_ratio == 3 and width_ratio == 1:
         print("高度为 3 倍，宽度保持不变")
@@ -197,21 +213,6 @@ def solve_individual(task, flags: Dict[str, bool]):
     elif height_ratio == 3 and width_ratio == 2:
         print("高度为 3 倍，宽度为 2 倍")
         # 处理高度为 3 倍，宽度为 2 倍的情况
-
-    elif height_ratio <= 1 and width_ratio <= 1:
-        # functions = [
-        #     is_subgrid
-        # ]
-
-
-        functions, (arg1,arg2)  =is_subgrid(task,flags)
-
-        for fun in functions:
-            result = do_fun_arg_task(fun, task, flags, (arg1,arg2),(height_o, width_o) )  # 执行 do_fun_task
-
-            if  result:
-                return result
-
 
     else:
         print("高度和宽度的比率不在预期范围内")
@@ -372,6 +373,8 @@ def do_fun_task(fun: Callable, task: Dict, flags: Dict[str, List[bool]]) -> str:
     testin = fun(test_data[0]['input'])
     assert testin == test_data[0]['output']
     return testin
+
+
 
 
 def do_fun_arg_task(fun: Callable, task: Dict, flags: Dict[str, List[bool]], *args: Any) -> str:
@@ -690,7 +693,7 @@ def is_subgrid(task,flags):
                     if not match:
                         break
                 if match:
-                    return [crop], (i, j) # 找到匹配位置，返回 True
+                    return crop, (i, j) # 找到匹配位置，返回 True
 
     return False  # 未找到匹配位置，返回 False
 
