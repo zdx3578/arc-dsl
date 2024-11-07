@@ -110,13 +110,13 @@ def test_solvers_formatting(solvers_module, dsl_module):
         except:
             pass
     print(f'{n_correct} out of {n} solvers formatted correctly.')
-    
+
 
 
 
 def test_solvers_correctness(data, solvers_module):
     """ tests the implemented solvers for correctness """
-    
+
     with open('solvers.py', 'r', encoding='utf-8') as file:
         code = file.read()
     pattern = r"def solve_([a-fA-F0-9]+)\(I\):"
@@ -129,8 +129,8 @@ def test_solvers_correctness(data, solvers_module):
     n = len(data["train"])
     # for key in range(1): # tqdm.tqdm(data['train'].keys(), total=n):
     for i, key in enumerate(solvers, start=1):
-        
-        # key='c8f0f002'
+
+        # key='4c4377d9'
         # task = data['train'][key] + data['test'][key]
         print(key)
         task = {}
@@ -138,26 +138,26 @@ def test_solvers_correctness(data, solvers_module):
         task['test'] = data['test'][key]
         try:
             solver = getattr(solvers_module, f'solve_{key}')
-            
-            
+
+
             # preparetask(task)
             solve_arc_task(task)
-            
+
             for ex in task['train']:
                 # prepare_diff(ex['input'],ex['output'])
                 assert solver(ex['input']) == ex['output']
-            
+
             n_correct += 1
             print()
             print()
-            print()
-            print()
-            print()
-            print()
-            print()
-            print()
-            print()
-            print()
+            # print()
+            # print()
+            # print()
+            # print()
+            # print()
+            # print()
+            # print()
+            # print()
 
             print(n_correct)
             print()
@@ -165,11 +165,11 @@ def test_solvers_correctness(data, solvers_module):
             print()
             print()
             print()
-            print()
-            print()
-            print()
-            print()
-                
+            # print()
+            # print()
+            # print()
+            # print()
+
         except Exception as e:
             logging.error("捕获到异常：%s", e)
             logging.error("详细错误信息：\n%s", traceback.format_exc())

@@ -1,20 +1,11 @@
 from dsl import *
 from collections import defaultdict
-
-
-
-
-
-
-
-
-
 from typing import Dict, Any, List, Tuple
 
 def initialize_flags() -> Dict[str, bool]:
     """
     初始化一组标志变量。
-    
+
     返回:
     - Dict[str, bool]: 标志变量的字典，默认为 False。
     """
@@ -23,32 +14,36 @@ def initialize_flags() -> Dict[str, bool]:
         "is_fun_ok": [],
         "is_scale": [],
         "is_diff_same_posit": [],
+        "is_position_swap": [],
         "is_rotation": [],
         "is_translation": [],
         "is_color_transform": [],
         # 可以添加更多标志变量
     }
 
+
+mapping = {bottomhalf: vconcat, lefthalf: hconcat, tophalf: vconcat, righthalf: hconcat}
+
 def solve_arc_task(task):
     """
     解决ARC任务的主框架，使用标志变量管理不同的特征。
-    
+
     参数:
     - task: 包含多个输入输出对的ARC任务数据，格式为
       {'train': [(input1, output1), (input2, output2), ...], 'test': [test_input]}
-    
+
     返回:
     - List: 解决任务的方案或结果。
     """
     # 初始化标志变量
     flags = initialize_flags()
-    
+
     # train_data = task['train']
     # test_data = task['test']
 
     # 尝试逐个处理每个输入输出对
     solutions = []
-    
+
 
     solution = solve_individual(task, flags)
     if solution:
@@ -72,16 +67,18 @@ def solve_individual(task, flags: Dict[str, bool]):
     尝试单独处理每个输入输出对，根据标志变量确定操作。
     """
     train_data = task['train']
-    
+
     I = train_data[0]['input']
     O = train_data[0]['output']
-    
+
     height_i, width_i = height(I), width(I)    # 输入对象的高度和宽度
     height_o, width_o = height(O), width(O)    # 输出对象的高度和宽度
-    
+
     height_ratio = height_o / height_i
     width_ratio = width_o / width_i
-    
+
+    bi_map = BidirectionalMap(mapping)
+
     if height_ratio == 1 and width_ratio == 1:
         print("输入和输出的高度和宽度都保持不变")
         # 处理无缩放的情况
@@ -94,30 +91,24 @@ def solve_individual(task, flags: Dict[str, bool]):
             rot180,
             rot270
         ]
-        
+
         for fun in functions:
             result = do_fun_task(fun, task, flags)  # 执行 do_fun_task
-            
-            if  result:
-                return result  
-        
-        
-        
-        fun,arg1,arg2 =prepare_diff(task,flags)
-        
 
+            if  result:
+                return result
+
+
+
+        fun,arg1,arg2 =prepare_diff(task,flags)
             # functions = [
             #     replace
             # ]
-
         result = do_fun_arg_task(fun, task, flags,arg1,arg2) # 执行 do_fun_task
-        
+
         if result :
-            return result  
-        
-        
-        
-        
+            return result
+
     elif height_ratio == 2 and width_ratio == 2:
         print("输入和输出的高度和宽度均为 2 倍")
         # 处理高度和宽度均为 2 倍的情况
@@ -127,14 +118,47 @@ def solve_individual(task, flags: Dict[str, bool]):
             vupscale,
             downscale
         ]
-        
+
         factor = 2
-        
+
         for fun in functions:
             result = do_fun_arg_task(fun, task, flags, factor)  # 执行 do_fun_task
-            
+
             if  result:
-                return result  
+                return result
+
+    elif height_ratio == 2 or width_ratio == 2:
+        functions = [
+            hconcat,
+            vconcat
+
+        ]
+        for fun in functions:
+            result = do_fun_arg_task(fun, task, flags, 'input')  # 执行 do_fun_task
+            if  result:
+                return result
+
+        proper_functions = [
+            vmirror,
+            hmirror,
+            cmirror,
+            dmirror
+        ]
+        part_functions = [
+            righthalf,
+            lefthalf,
+            bottomhalf,
+            tophalf
+        ]
+        for fun in proper_functions:
+            result = out_is_proper_fun(fun, task, flags)  # 执行 do_fun_task
+            if  result:
+                for fun in part_functions:
+                    result2 = IO_is_part_fun(fun, task, flags )
+                    if result2 :
+                        result3 = do_2fun_task(result,result2, task, flags)
+                        return result3
+
 
     elif height_ratio == 3 and width_ratio == 3:
         print("输入和输出的高度和宽度均为 3 倍")
@@ -145,39 +169,18 @@ def solve_individual(task, flags: Dict[str, bool]):
             vupscale,
             downscale
         ]
-        
+
         factor = 3
-        
+
         for fun in functions:
             result = do_fun_arg_task(fun, task, flags, factor)  # 执行 do_fun_task
-            
+
             if  result:
-                return result  
-        
-        
-        
-        
-        
-        
-        
+                return result
+
     elif height_ratio == 2 and width_ratio == 1:
         print("高度为 2 倍，宽度保持不变")
         # 处理高度为 2 倍，宽度不变的情况
-
-    elif height_ratio == 1 and width_ratio == 2:
-        print("高度保持不变，宽度为 2 倍")
-        # 处理高度不变，宽度为 2 倍的情况
-        functions = [
-            hconcat
-        ]
-        for fun in functions:
-            result = do_fun_arg_task(fun, task, flags, 'input')  # 执行 do_fun_task
-            
-            if  result:
-                return result  
-        
-        
-        
 
     elif height_ratio == 3 and width_ratio == 1:
         print("高度为 3 倍，宽度保持不变")
@@ -195,28 +198,167 @@ def solve_individual(task, flags: Dict[str, bool]):
         print("高度为 3 倍，宽度为 2 倍")
         # 处理高度为 3 倍，宽度为 2 倍的情况
 
+    elif height_ratio <= 1 and width_ratio <= 1:
+        # functions = [
+        #     is_subgrid
+        # ]
+
+
+        functions, (arg1,arg2)  =is_subgrid(task,flags)
+
+        for fun in functions:
+            result = do_fun_arg_task(fun, task, flags, (arg1,arg2),(height_o, width_o) )  # 执行 do_fun_task
+
+            if  result:
+                return result
+
+
     else:
         print("高度和宽度的比率不在预期范围内")
         # 处理其他情况
-    
-    do_fun_task(vmirror,task,flags)
-    
-    
+
+    # do_fun_task(vmirror,task,flags)
+
+
     return None
 
+
+class BidirectionalMap:
+    def __init__(self, mapping):
+        self.forward = mapping  # 正向映射
+        # 构建反向映射，将每个函数映射到对应的键（可能有多个键映射到相同函数）
+        self.reverse = {}
+        for k, v in mapping.items():
+            if v in self.reverse:
+                self.reverse[v].append(k)
+            else:
+                self.reverse[v] = [k]
+
+    def get(self, key):
+        print('! convert a function ')
+        return self.forward.get(key) or self.reverse.get(key)
+
+def IO_is_part_fun(fun: Callable, task: Dict, flags: Dict[str, List[bool]]) -> str:
+    """
+    尝试单独处理每个输入输出对，根据传入的函数 fun 检查每对输入输出是否满足条件。
+    """
+
+    train_data = task['train']
+    test_data = task['test']
+
+    for data_pair in train_data:
+        input_grid = data_pair['input']
+        output_grid = data_pair['output']
+
+        # 使用传入的函数 fun 来检查是否满足条件
+        transformed = fun(output_grid)
+        if transformed == input_grid:
+            # flags["is_fun_ok"].append(True)
+            continue  # 结束本轮循环，直接进行下一个 data_pair
+        else:
+            print(f"failed : {fun.__name__}")
+            # return f'failed {fun.__name__}'
+            return False
+    print(f"Do fun all ok : {fun.__name__}")
+    return fun
+
+
+def out_is_proper_fun(fun: Callable, task: Dict, flags: Dict[str, List[bool]]) -> str:
+    """
+    尝试单独处理每个输入输出对，根据传入的函数 fun 检查每对输入输出是否满足条件。
+    """
+
+    train_data = task['train']
+    # test_data = task['test']
+
+    for data_pair in train_data:
+        # input_grid = data_pair['input']
+        output_grid = data_pair['output']
+
+        # 使用传入的函数 fun 来检查是否满足条件
+        transformed = fun(output_grid)
+        if transformed == output_grid:
+            # flags["is_fun_ok"].append(True)
+            continue  # 结束本轮循环，直接进行下一个 data_pair
+        else:
+            print(f"failed : {fun.__name__}")
+            # return f'failed {fun.__name__}'
+            return False
+    print(f"Do fun all ok : {fun.__name__}")
+    return fun
+    # testin = fun(test_data[0]['input'])
+    # assert testin == test_data[0]['output']
+    # return testin
+
+def do_2fun_task(fun: Callable,fun22: Callable, task: Dict, flags: Dict[str, List[bool]]) -> str:
+    """
+    尝试单独处理每个输入输出对，根据传入的函数 fun 检查每对输入输出是否满足条件。
+    """
+
+    train_data = task['train']
+    test_data = task['test']
+    # bi_map = BidirectionalMap(mapping)
+
+    # fun2 = bi_map.get(fun22)
+
+    for data_pair in train_data:
+        input_grid = data_pair['input']
+        output_grid = data_pair['output']
+
+        # 使用传入的函数 fun 来检查是否满足条件
+        I2 = fun(input_grid)
+        transformed = fun22_action(fun22, input_grid, I2)
+        # transformed = fun2(transformed,input_grid)
+        if transformed == output_grid:
+            # flags["is_fun_ok"].append(True)
+            continue  # 结束本轮循环，直接进行下一个 data_pair
+        else:
+            print(f"failed : {fun.__name__},{fun22.__name__}")
+            # return f'failed {fun.__name__}'
+            return False
+    print(f"2 Do fun all ok : {fun.__name__},{fun22.__name__}")
+    I = test_data[0]['input']
+    I2 = fun(test_data[0]['input'])
+    testin =fun22_action(fun22, I, I2)
+    # testin = fun2(testin,test_data[0]['input'])
+    assert testin == test_data[0]['output']
+    print(f"2 Do fun all - test - ok ")
+    return testin
+
+def fun22_action(fun22: Callable, I, I2):
+    # 获取函数名
+    func_name = fun22.__name__
+
+    bi_map = BidirectionalMap(mapping)
+    fun2 = bi_map.get(fun22)
+    # 根据函数名包含的关键字返回相应的值
+    if "top" in func_name:
+        return fun2(I,I2)
+        # 也可以返回对应的处理结果或执行相应的功能
+    elif "bottom" in func_name:
+        return  fun2(I2,I)
+        # 执行 down 的代码
+    elif "left" in func_name:
+        return fun2(I,I2)
+        # 执行 left 的代码
+    elif "right" in func_name:
+        return fun2(I,I2)
+        # 执行 right 的代码
+    else:
+        return "No action matches."
 
 def do_fun_task(fun: Callable, task: Dict, flags: Dict[str, List[bool]]) -> str:
     """
     尝试单独处理每个输入输出对，根据传入的函数 fun 检查每对输入输出是否满足条件。
     """
-    
+
     train_data = task['train']
     test_data = task['test']
-    
+
     for data_pair in train_data:
         input_grid = data_pair['input']
         output_grid = data_pair['output']
-        
+
         # 使用传入的函数 fun 来检查是否满足条件
         transformed = fun(input_grid)
         if transformed == output_grid:
@@ -236,14 +378,14 @@ def do_fun_arg_task(fun: Callable, task: Dict, flags: Dict[str, List[bool]], *ar
     """
     尝试单独处理每个输入输出对，根据传入的函数 fun 和额外的参数 args 检查每对输入输出是否满足条件。
     """
-    
+
     train_data = task['train']
     test_data = task['test']
-    
+
     for data_pair in train_data:
         input_grid = data_pair['input']
         output_grid = data_pair['output']
-        
+
         if 'input' in args :
             transformed = fun(input_grid, input_grid)
         else:
@@ -256,7 +398,7 @@ def do_fun_arg_task(fun: Callable, task: Dict, flags: Dict[str, List[bool]], *ar
             # return f'failed {fun.__name__}'
             return False
     print(f"Do fun all ok : {fun.__name__}")
-    
+
     if 'input' in args :
         testin = fun(test_data[0]['input'], test_data[0]['input'])
     else:
@@ -297,7 +439,7 @@ def has_same_obj(I, O):
     return
 
 def composeObject(I):
-    # remove bg 
+    # remove bg
     return
 
 def unique_objects(I, O):
@@ -315,34 +457,34 @@ def unique_objects(I, O):
     return unique_results
 
 def prepare_diff_insec(I,O):
-    
+
     # 调用 objects 函数两次
     oi = objects(I, False, True, True)
     oo = objects(O, False, True, True)
-    
 
 
-    same_objects = oi.intersection(oo) 
+
+    same_objects = oi.intersection(oo)
     # 获取对称差集
     diff_objects = oi.symmetric_difference(oo)
-    
-    
+
+
 
 
 
 def prepare_diff(task,flags: Dict[str, bool]):
     train_data = task['train']
     test_data = task['test']
-    
+
     for data_pair in train_data:
         I = data_pair['input']
         O = data_pair['output']
-        
+
         # 调用 objects 函数两次
         oi = objects(I, False, True, False)
         oo = objects(O, False, True, False)
-        
-        same_objects = oi.intersection(oo) 
+
+        same_objects = oi.intersection(oo)
         # 获取对称差集
         # diff_objects = oi.symmetric_difference(oo)
 
@@ -350,14 +492,14 @@ def prepare_diff(task,flags: Dict[str, bool]):
         # # if len(diff_objects) == 2:
         #     # 解包不同部分为两个 frozenset
         # diff1, diff2 = diff_objects
-        
+
         oi_unique = oi - oo  # 获取在 oi 中但不在 oo 中的元素
         oo_unique = oo - oi  # 获取在 oo 中但不在 oi 中的元素
 
         # 将它们分别赋给 diff1 和 diff2
         diff1, diff2 = next(iter(oi_unique)), next(iter(oo_unique))
-        
-        
+
+
 
         # 将两个 frozenset 转换为有序列表
         sorted_diff1 = sorted(diff1, key=lambda x: (x[0], x[1]))  # 按值和坐标排序
@@ -372,7 +514,7 @@ def prepare_diff(task,flags: Dict[str, bool]):
 
         # print("第一个 frozenset 特有的元素（排序后）:", diff1_unique)
         # print("第二个 frozenset 特有的元素（排序后）:", diff2_unique)
-        
+
         merged_diffs = {
             "diff1": defaultdict(list),
             "diff2": defaultdict(list)
@@ -390,28 +532,180 @@ def prepare_diff(task,flags: Dict[str, bool]):
         # for key in merged_diffs:
         #     for value, positions in merged_diffs[key].items():
         #         print(f"{key} - 值 {value} 的特有坐标:", positions)
-            
+
         # display_diff_matrices(diff1_unique,diff2_unique)
-        
+
         if compare_positions(merged_diffs):
             flags["is_diff_same_posit"].append(True)
         else:
             flags["is_diff_same_posit"].append(False)
+
+        if is_position_swapped(merged_diffs["diff1"],merged_diffs["diff2"]):
+            flags["is_position_swap"].append(True)
+        else:
+            flags["is_position_swap"].append(False)
+
+
     all_is_fun_ok = all(flags["is_diff_same_posit"])
-    if all_is_fun_ok:
+    all_is_position_swap_ok = all(flags["is_position_swap"])
+
+    if len(list(merged_diffs['diff1'].keys())) >= 2:
+        if all_is_position_swap_ok:
+            keys_diff1 = list(merged_diffs['diff1'].keys())[0]  # 获取 diff1 中的键
+            keys_diff2 = list(merged_diffs['diff1'].keys())[1]  # 获取  中的键
+            print('switch', keys_diff1,keys_diff2)
+            return switch, keys_diff1,keys_diff2
+
+    elif all_is_fun_ok:
         keys_diff1 = list(merged_diffs['diff1'].keys())[0]  # 获取 diff1 中的键
         keys_diff2 = list(merged_diffs['diff2'].keys())[0]  # 获取 diff2 中的键
-        # 如果所有数据对均满足条件，对 test_data 应用该函数并返回结果
+        print('replace', keys_diff1,keys_diff2)
         return replace, keys_diff1,keys_diff2
     return False
 
-        
-    
-        
+
+
+
         # print("todo ！ 执行 ！  不同部分不止两个 frozenset 或无差异。")
-    return 0        
-        
-        
+    return 0
+
+
+
+
+
+
+
+from typing import Dict, List, Tuple
+from collections import defaultdict
+def compare_positions(merged_diffs: Dict[str, defaultdict]) -> str:
+    """
+    比较 'diff1' 和 'diff2' 字典中的坐标列表是否完全一致。
+    忽略字典的键，仅比较坐标部分。
+    """
+    # 提取 diff1 和 diff2 中的坐标列表，忽略键
+    coords1 = [coord for coords in merged_diffs['diff1'].values() for coord in coords]
+    coords2 = [coord for coords in merged_diffs['diff2'].values() for coord in coords]
+
+    # 比较坐标列表是否一致
+    if sorted(coords1) == sorted(coords2):
+        # return "Identical positions"
+        return True
+    else:
+        # return "Different positions"
+        return False
+
+
+
+def is_position_swapped(diff1: defaultdict, diff2: defaultdict) -> bool:
+    for value1, positions1 in diff1.items():
+        found_swap = False
+        for value2, positions2 in diff2.items():
+            # 跳过相同 value 的情况，只检查不同 value 的互换
+            if value1 == value2:
+                continue
+            # 检查 positions 是否一致
+            if sorted(positions1) == sorted(positions2):
+                found_swap = True
+                break
+        # 如果当前 value1 没有找到对应的交换关系，返回 False
+        if not found_swap:
+            return False
+    return True
+
+
+from typing import List, Tuple, Optional
+def display_diff_matrices(diff1: List[Tuple[int, Tuple[int, int]]],
+                          diff2: List[Tuple[int, Tuple[int, int]]],
+                          diff3: Optional[List[Tuple[int, Tuple[int, int]]]] = None):
+    """
+    展示不同元素位置的二维矩阵。
+
+    参数:
+    - diff1, diff2: 必填，每个包含不同元素及其位置的集合。
+    - diff3: 可选，额外的不同元素及其位置集合。
+    """
+    combined_diff = {}
+
+    # 合并所有不同元素的位置
+    for value, pos in diff1 + diff2 + (diff3 if diff3 else []):
+        if value not in combined_diff:
+            combined_diff[value] = []
+        combined_diff[value].append(pos)
+
+    # 展示每个数值在二维矩阵中的位置
+    for key, positions in sorted(combined_diff.items()):
+        print(f"数值 {key} 的不同元素位置：")
+
+        # 确定矩阵的大小
+        max_row = max(pos[0] for pos in positions) + 1
+        max_col = max(pos[1] for pos in positions) + 1
+        matrix = [[' ' for _ in range(max_col)] for _ in range(max_row)]
+
+        # 填充矩阵
+        for row, col in positions:
+            matrix[row][col] = str(key)
+
+        # 打印矩阵
+        for row in matrix:
+            print(" ".join(row))
+        print("\n" + "-"*20 + "\n")
+
+
+
+
+def is_subgrid(task,flags):
+    """判断较小的网格是否是较大网格的一个部分"""
+    train_data = task['train']
+    test_data = task['test']
+
+    for data_pair in train_data:
+        grid1 = data_pair['input']
+        grid2 = data_pair['output']
+
+
+        # 获取两个矩阵的大小
+        rows1, cols1 = len(grid1), len(grid1[0])
+        rows2, cols2 = len(grid2), len(grid2[0])
+
+        # 确定较大的矩阵和较小的矩阵
+        if rows1 >= rows2 and cols1 >= cols2:
+            big_grid, small_grid = grid1, grid2
+            big_rows, big_cols, small_rows, small_cols = rows1, cols1, rows2, cols2
+        elif rows2 >= rows1 and cols2 >= cols1:
+            big_grid, small_grid = grid2, grid1
+            big_rows, big_cols, small_rows, small_cols = rows2, cols2, rows1, cols1
+        else:
+            return False  # 两个矩阵形状不兼容，无法嵌套
+
+        # 遍历大矩阵，检查是否存在小矩阵匹配的位置
+        for i in range(big_rows - small_rows + 1):
+            for j in range(big_cols - small_cols + 1):
+                match = True
+                # 检查大矩阵的当前位置是否与小矩阵完全匹配
+                for x in range(small_rows):
+                    for y in range(small_cols):
+                        if big_grid[i + x][j + y] != small_grid[x][y]:
+                            match = False
+                            break
+                    if not match:
+                        break
+                if match:
+                    return [crop], (i, j) # 找到匹配位置，返回 True
+
+    return False  # 未找到匹配位置，返回 False
+
+
+
+# print(is_subgrid(big_grid, small_grid))  # 输出 True 或 False
+
+
+
+
+
+
+
+
+
 
         # # 定义特有的坐标
         # # diff1_coords = [(1, 0), (2, 2), (3, 1), (5, 3)]  # 第一个 frozenset 特有的坐标
@@ -427,7 +721,7 @@ def prepare_diff(task,flags: Dict[str, bool]):
         #         x_sums.append(x1 + x2)
         #         y_sums.append(y1 + y2)
         #     return x_diffs, y_diffs, x_sums, y_sums
-        
+
         # def calculate_diff_sum(coords):
         #     x_diff = max(x for x, y in coords) - min(x for x, y in coords)
         #     y_diff = max(y for x, y in coords) - min(y for x, y in coords)
@@ -437,7 +731,7 @@ def prepare_diff(task,flags: Dict[str, bool]):
 
         # # # 计算坐标差异和和
         # # x_diffs, y_diffs, x_sums, y_sums = calc_diffs(merged_diffs[value]["diff1"], merged_diffs[value]["diff2"])
-        
+
         # # 计算坐标差异和和
         # x_diffs, y_diffs, x_sums, y_sums = calc_diffs(merged_diffs[value]["diff1"], merged_diffs[value]["diff2"])
 
@@ -461,107 +755,3 @@ def prepare_diff(task,flags: Dict[str, bool]):
         # print("Y 维度差值是否匹配输入/输出宽度:", y_diff_matches_width)
         # print("X 维度和是否匹配输入/输出高度:", x_sum_matches_height)
         # print("Y 维度和是否匹配输入/输出宽度:", y_sum_matches_width)
-
- 
-
-from typing import Dict, List, Tuple
-from collections import defaultdict
-def compare_positions(merged_diffs: Dict[str, defaultdict]) -> str:
-    """
-    比较 'diff1' 和 'diff2' 字典中的坐标列表是否完全一致。
-    忽略字典的键，仅比较坐标部分。
-    """
-    # 提取 diff1 和 diff2 中的坐标列表，忽略键
-    coords1 = [coord for coords in merged_diffs['diff1'].values() for coord in coords]
-    coords2 = [coord for coords in merged_diffs['diff2'].values() for coord in coords]
-    
-    # 比较坐标列表是否一致
-    if sorted(coords1) == sorted(coords2):
-        # return "Identical positions"
-        return True
-    else:
-        # return "Different positions"
-        return False
-
-
-
-
-
-
-from typing import List, Tuple, Optional
-def display_diff_matrices(diff1: List[Tuple[int, Tuple[int, int]]], 
-                          diff2: List[Tuple[int, Tuple[int, int]]], 
-                          diff3: Optional[List[Tuple[int, Tuple[int, int]]]] = None):
-    """
-    展示不同元素位置的二维矩阵。
-    
-    参数:
-    - diff1, diff2: 必填，每个包含不同元素及其位置的集合。
-    - diff3: 可选，额外的不同元素及其位置集合。
-    """
-    combined_diff = {}
-    
-    # 合并所有不同元素的位置
-    for value, pos in diff1 + diff2 + (diff3 if diff3 else []):
-        if value not in combined_diff:
-            combined_diff[value] = []
-        combined_diff[value].append(pos)
-    
-    # 展示每个数值在二维矩阵中的位置
-    for key, positions in sorted(combined_diff.items()):
-        print(f"数值 {key} 的不同元素位置：")
-        
-        # 确定矩阵的大小
-        max_row = max(pos[0] for pos in positions) + 1
-        max_col = max(pos[1] for pos in positions) + 1
-        matrix = [[' ' for _ in range(max_col)] for _ in range(max_row)]
-        
-        # 填充矩阵
-        for row, col in positions:
-            matrix[row][col] = str(key)
-        
-        # 打印矩阵
-        for row in matrix:
-            print(" ".join(row))
-        print("\n" + "-"*20 + "\n")
-
-
-
-
-def is_subgrid(grid1, grid2):
-    """判断较小的网格是否是较大网格的一个部分"""
-    
-    # 获取两个矩阵的大小
-    rows1, cols1 = len(grid1), len(grid1[0])
-    rows2, cols2 = len(grid2), len(grid2[0])
-
-    # 确定较大的矩阵和较小的矩阵
-    if rows1 >= rows2 and cols1 >= cols2:
-        big_grid, small_grid = grid1, grid2
-        big_rows, big_cols, small_rows, small_cols = rows1, cols1, rows2, cols2
-    elif rows2 >= rows1 and cols2 >= cols1:
-        big_grid, small_grid = grid2, grid1
-        big_rows, big_cols, small_rows, small_cols = rows2, cols2, rows1, cols1
-    else:
-        return False  # 两个矩阵形状不兼容，无法嵌套
-
-    # 遍历大矩阵，检查是否存在小矩阵匹配的位置
-    for i in range(big_rows - small_rows + 1):
-        for j in range(big_cols - small_cols + 1):
-            match = True
-            # 检查大矩阵的当前位置是否与小矩阵完全匹配
-            for x in range(small_rows):
-                for y in range(small_cols):
-                    if big_grid[i + x][j + y] != small_grid[x][y]:
-                        match = False
-                        break
-                if not match:
-                    break
-            if match:
-                return True  # 找到匹配位置，返回 True
-
-    return False  # 未找到匹配位置，返回 False
-
-
-
-# print(is_subgrid(big_grid, small_grid))  # 输出 True 或 False
