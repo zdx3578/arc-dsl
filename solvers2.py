@@ -3,6 +3,7 @@ from collections import defaultdict
 from typing import Dict, Any, List, Tuple, Callable, Optional
 from collections import defaultdict
 from config import *
+from dslIsDo import *
 
 
 def solve_arc_task(task):
@@ -45,7 +46,7 @@ def solve_arc_task(task):
     return results
 
 
-def solve_individual(task, flags: Dict[str, bool]):
+def solve_individual2(task, flags: Dict[str, bool]):
     """
     尝试单独处理每个输入输出对，根据标志变量确定操作。
     """
@@ -61,14 +62,44 @@ def solve_individual(task, flags: Dict[str, bool]):
 
     flags_data = funexe_flags()
     flags_data["use_fun1"] = [True]
-    flags_data["use_fun2"] = [True]
+    flags_data["use_fun2"] = [False]
     flags_data["use_fun3"] = [False]
     flags_data["use_fun4"] = [False]  # 设置 use_fun2 为 False，不执行 fun2
-    flags_data["order"] = [1, 2]
+    flags_data["order"] = [1]
 
-    for fun in proper_functions:
-        fun = do_check_inputOutput_proper_1functions
-        args_for_fun1 = []
+    # for fun in proper_functions:
+    fun = do_check_inputOutput_proper_1functions(
+        proper_functions, task, flags_data)
+    proper_fun = fun
+    # args = []
+    # if fun list order  = [1,2,3] and usefun2 ture
+    args_for_fun1 = []
+    if fun:
+        result = do_check_train_get_test(
+            do_4fun_task,
+            task,
+            flags_data,
+            fun, args_for_fun1)
+        if result:
+            return result
+
+    fun, arg = do_check_inputOutput_proper_1_arg_functions(task, flags_data)
+    # args = []
+    # if fun list order  = [1,2,3] and usefun2 ture
+    args_for_fun1 = [arg]
+    if fun:
+        result = do_check_train_get_test(
+            do_4fun_task,
+            task,
+            flags_data,
+            fun, args_for_fun1)
+        if result:
+            return result
+
+    if (height_o == 2 * height_i and width_o == width_i) or (width_o == 2 * width_i and height_o == height_i):
+        fun, arg = do_check_inputOutput_proper_concat_functions(
+            task, flags_data)
+        args_for_fun1 = [arg]
         if fun:
             result = do_check_train_get_test(
                 do_4fun_task,
@@ -78,8 +109,92 @@ def solve_individual(task, flags: Dict[str, bool]):
             if result:
                 return result
 
-    for fun in proper_functions:
-        result = do_check_inputComplexOutput_proper_functions
+        # proper_fun = do_check_inputOutput_proper_1functions(proper_functions, task, flags_data)
+        # proper_fun = fun
+        # partfun = do_check_inputOutput_proper_1functions(
+        #     part_functions, task, flags_data)
+
+        isproper = out_is_proper_fun(fun, task, flags)
+        part_fun = outintput_is_part_fun(fun, task, flags)
+
+        fun, arg = do_check_inputOutput_proper_mirror_concat_functions(
+            task, flags_data)
+
+    # for fun in proper_functions:
+    #     result = do_check_inputComplexOutput_proper_functions
+
+    print("----------------------------------------------------------------------------")
+    # return
+
+
+def solve_individual(task, flags: Dict[str, bool]):
+    """
+    尝试单独处理每个输入输出对，根据标志变量确定操作。
+    """
+    train_data = task['train']
+    I = train_data[0]['input']
+    O = train_data[0]['output']
+
+    height_i, width_i = height(I), width(I)    # 输入对象的高度和宽度
+    height_o, width_o = height(O), width(O)    # 输出对象的高度和宽度
+
+    height_ratio = height_o / height_i
+    width_ratio = width_o / width_i
+
+    # flags_data = funexe_flags()
+    # flags_data["use_fun1"] = [True]
+    # flags_data["use_fun2"] = [False]
+    # flags_data["use_fun3"] = [False]
+    # flags_data["use_fun4"] = [False]  # 设置 use_fun2 为 False，不执行 fun2
+    # flags_data["order"] = [1]
+
+    # # for fun in proper_functions:
+    # fun = do_check_inputOutput_proper_1functions(task, flags_data)
+    # # args = []
+    # # if fun list order  = [1,2,3] and usefun2 ture
+    # args_for_fun1 = []
+    # if fun:
+    #     result = do_check_train_get_test(
+    #         do_4fun_task,
+    #         task,
+    #         flags_data,
+    #         fun, args_for_fun1)
+    #     if result:
+    #         return result
+
+    # fun,arg = do_check_inputOutput_proper_1_arg_functions(task, flags_data)
+    # # args = []
+    # # if fun list order  = [1,2,3] and usefun2 ture
+    # args_for_fun1 = [arg]
+    # if fun:
+    #     result = do_check_train_get_test(
+    #         do_4fun_task,
+    #         task,
+    #         flags_data,
+    #         fun, args_for_fun1)
+    #     if result:
+    #         return result
+
+    # if (height_o == 2 * height_i and width_o == width_i) or (width_o == 2 * width_i and height_o == height_i):
+    #     fun, arg = do_check_inputOutput_proper_concat_functions(task, flags_data)
+    #     args_for_fun1 = [arg]
+    #     if fun:
+    #         result = do_check_train_get_test(
+    #             do_4fun_task,
+    #             task,
+    #             flags_data,
+    #             fun, args_for_fun1)
+    #         if result:
+    #             return result
+
+    #     # fun, arg = do_check_inputOutput_proper_mirror_concat_functions(
+    #     #     task, flags_data)
+
+    # # for fun in proper_functions:
+    # #     result = do_check_inputComplexOutput_proper_functions
+
+    # print("----------------------------------------------------------------------------")
+    # # return
 
     if height_ratio == 1 and width_ratio == 1:
         print("输入和输出的高度和宽度都保持不变")
@@ -239,83 +354,161 @@ def solve_individual(task, flags: Dict[str, bool]):
     return None
 
 
-def do_check_inputOutput_proper_1functions(task: Dict, flags: Dict[str, List[bool]]):
+def do_check_inputOutput_proper_concat_functions(task: Dict, flags: Dict[str, List[bool]]):
     train_data = task['train']
     test_data = task['test']
-    for data_pair in train_data:
-        input_grid = data_pair['input']
-        output_grid = data_pair['output']
-        for fun in proper_functions:
+
+    I = train_data[0]['input']
+    O = train_data[0]['output']
+
+    height_i, width_i = height(I), width(I)    # 输入对象的高度和宽度
+    height_o, width_o = height(O), width(O)    # 输出对象的高度和宽度
+
+    if (height_o == 2 * height_i and width_o == width_i) or (width_o == 2 * width_i and height_o == height_i):
+        for fun in proper_concat_functions:
+            success = True
+            for data_pair in train_data:
+                input_grid = data_pair['input']
+                output_grid = data_pair['output']
+
+                # fun(output_grid)
+                transformed = fun(output_grid, output_grid)
+                if transformed == output_grid:
+                    # out-out-proper
+                    continue
+
+                if transformed == input_grid:
+                    # out-input-proper_flags
+                    continue
+
+                # fun(input_grid)
+                transformed = fun(input_grid, input_grid)
+                if transformed == output_grid:
+                    # out-out-proper
+                    continue
+
+                if transformed == input_grid:
+                    # out-input-proper_flags
+                    continue
+
+                # else:
+                print(f"failed : {fun.__name__}")
+                success = False
+                break
+            if success:
+                print(f"ok____ : {fun.__name__}")
+                return fun, 'sameinput'
+            else:
+                print(f"failed : {fun.__name__}")
+        return False
+
+
+def do_check_inputOutput_proper_1functions(proper_functions, task: Dict, flags: Dict[str, List[bool]]):
+    train_data = task['train']
+    test_data = task['test']
+    for fun in proper_functions:
+        success = True
+        for data_pair in train_data:
+            input_grid = data_pair['input']
+            output_grid = data_pair['output']
+
             # fun(output_grid)
             transformed = fun(output_grid)
             if transformed == output_grid:
-                out-out-proper
+                # flags["out_out"].append(True)
                 continue
 
             if transformed == input_grid:
-                out-input-proper_flags
+                # flags["out_in"].append(True)
                 continue
 
             # fun(input_grid)
             transformed = fun(input_grid)
             if transformed == output_grid:
-                out-out-proper
+                # flags["out_out"].append(True)
                 continue
 
             if transformed == input_grid:
-                out-input-proper_flags
+                # flags["out_out"].append(True)
                 continue
 
-            else:
-                print(f"failed : {fun.__name__}")
-                # return f'failed {fun.__name__}'
-                return False
-        print(f"Do fun all ok : {fun.__name__}")
-        return fun
+            # else:
+            print(f"failed : {fun.__name__}")
+            success = False
+            break
+        if success:
+            print(f"ok____ : {fun.__name__}")
+            return fun
+        else:
+            print(f"failed : {fun.__name__}")
+    return False
+
+
+def do_check_inputOutput_proper_1_arg_functions(task: Dict, flags: Dict[str, List[bool]]):
+    train_data = task['train']
+    test_data = task['test']
+
+    I = train_data[0]['input']
+    O = train_data[0]['output']
+
+    height_i, width_i = height(I), width(I)    # 输入对象的高度和宽度
+    height_o, width_o = height(O), width(O)    # 输出对象的高度和宽度
+
+    if height_o > height_i and width_o > width_i:
+        height_ratio = int(height_o / height_i)
+    else:
+        height_ratio = int(height_i / height_o)
+
+    # if height_o == 2 * height_i and width_o == width_i:
+    #     return "Vertical stack (上下堆叠)"
+    # elif width_o == 2 * width_i and height_o == height_i:
+    #     return "Horizontal stack (左右堆叠)"
+
+    for fun in proper_1arg_functions:
+        success = True
+        for data_pair in train_data:
+            input_grid = data_pair['input']
+            output_grid = data_pair['output']
+
+            # fun(output_grid)
+            transformed = fun(output_grid, height_ratio)
+            if transformed == output_grid:
+                # out-out-proper
+                continue
+
+            if transformed == input_grid:
+                # out-input-proper_flags
+                continue
+
+            # fun(input_grid)
+            transformed = fun(input_grid, height_ratio)
+            if transformed == output_grid:
+                # out-out-proper
+                continue
+
+            if transformed == input_grid:
+                # out-input-proper_flags
+                continue
+
+            # else:
+            print(f"failed : {fun.__name__}")
+            success = False
+            break
+        if success:
+            print(f"ok____ : {fun.__name__}")
+            return fun, height_ratio
+        else:
+            print(f"failed : {fun.__name__}")
+    return False
 
 
 def do_check_inputComplexOutput_proper_functions(task: Dict, flags: Dict[str, List[bool]]):
     train_data = task['train']
-    for fun in proper_functions:
+    for fun in properComplex_functions:
         result = fun(train_data)
         if result:
-
-
-def is_output_most_input_color(task: Dict[str, Any]) -> bool:
-    """
-    判断 output 是否完全由 input 中出现最多的颜色组成。
-
-    参数:
-    - task (Dict[str, Any]): 包含 'input' 和 'output' 的任务字典，分别为二维列表。
-
-    返回:
-    - bool: 如果 output 由 input 中的最多颜色组成，返回 True；否则返回 False。
-    """
-    input_grid = task['input']
-    output_grid = task['output']
-
-    # 统计每种颜色的出现次数
-    color_counts = {}
-    for row in input_grid:
-        for color in row:
-            if color in color_counts:
-                color_counts[color] += 1
-            else:
-                color_counts[color] = 1
-
-    # 找到出现次数最多的颜色
-    most_common_color = max(color_counts, key=color_counts.get)
-
-    # 检查 output 中是否完全由该颜色组成
-    for row in output_grid:
-        if any(cell != most_common_color for cell in row):
-            return False
-
-    return True
-
-
-def do_output_most_input_color(color, h, w):
-    return canvas(color, (h, w))
+            # todo
+            return fun
 
 
 def check_train_fun(
@@ -347,7 +540,7 @@ def check_train_fun(
             print(f"failed : {do_4fun_task.__name__}")
             # return f'failed {fun.__name__}'
             return False
-    print(f"Do fun all ok : {do_4fun_task.__name__}")
+    print(f"ok____ : {do_4fun_task.__name__}")
 
 
 # 扩展后的多函数任务处理函数
@@ -368,16 +561,21 @@ def do_4fun_task(
     for idx in order:
         fun, args = functions[idx - 1]  # idx-1是因为order是从1开始的
         if flags.get(f"use_fun{idx}", [True])[0]:  # 检查是否需要调用当前函数
-            input_grid = fun(input_grid, *args) if args else fun(input_grid)
-    return input_grid
+            if args == 'sameinput':
+                input_grid = fun(input_grid, input_grid)
+            else:
+                input_grid = fun(
+                    input_grid, *args) if args else fun(input_grid)
+    out = input_grid
+    return out
 
 
 def do_check_train_get_test(
     do_4fun_task: Callable,
     task: List[Dict],
     flags: Dict[str, List[bool]],
-    fun1: Callable[[Any], Any], args1: List[Any],
-    fun2: Callable[[Any], Any], args2: Optional[List[Any]] = None,
+    fun1: Callable[[Any], Any], args1:  Optional[List[Any]] = None,
+    fun2: Optional[Callable[[Any], Any]] = None,  args2: Optional[List[Any]] = None,
     fun3: Optional[Callable[[Any], Any]] = None, args3: Optional[List[Any]] = None,
     fun4: Optional[Callable[[Any], Any]] = None, args4: Optional[List[Any]] = None
 ) -> Dict[str, Any]:
@@ -413,13 +611,13 @@ def do_check_train_get_test(
             print(f"failed : {do_4fun_task.__name__}")
             # return f'failed {fun.__name__}'
             return False
-    print(f"Do fun all ok : {do_4fun_task.__name__}")
+    print(f"ok____ : {do_4fun_task.__name__}")
     input_grid = test_data[0]['input']
     testin = do_4fun_task(input_grid, flags, fun1, args1,
                           fun2, args2, fun3, args3, fun4, args4)
 
     assert testin == test_data[0]['output']
-    print(f"2 Do fun all - test - ok ")
+    print(f"ok____ - test - ok ")
     return testin
 
 
@@ -490,43 +688,6 @@ def out_is_proper_fun(fun: Callable, task: Dict, flags: Dict[str, List[bool]]) -
     # testin = fun(test_data[0]['input'])
     # assert testin == test_data[0]['output']
     # return testin
-
-
-def do_2fun_task00(fun: Callable, fun22: Callable, task: Dict, flags: Dict[str, List[bool]]) -> str:
-    """
-    尝试单独处理每个输入输出对，根据传入的函数 fun 检查每对输入输出是否满足条件。
-    """
-
-    train_data = task['train']
-    test_data = task['test']
-    # bi_map = BidirectionalMap(mapping)
-
-    # fun2 = bi_map.get(fun22)
-
-    for data_pair in train_data:
-        input_grid = data_pair['input']
-        output_grid = data_pair['output']
-
-        # 使用传入的函数 fun 来检查是否满足条件
-        I2 = fun(input_grid)
-        transformed = fun_swicharg_action(fun22, input_grid, I2)
-        # transformed = fun2(transformed,input_grid)
-        if transformed == output_grid:
-            # flags["is_fun_ok"].append(True)
-            continue  # 结束本轮循环，直接进行下一个 data_pair
-        else:
-            print(f"failed : {fun.__name__},{fun22.__name__}")
-            # return f'failed {fun.__name__}'
-            return False
-    print(f"2 Do fun all ok : {fun.__name__},{fun22.__name__}")
-    I = test_data[0]['input']
-    I2 = fun(test_data[0]['input'])
-    testin = fun_swicharg_action(fun22, I, I2)
-    # testin = fun2(testin,test_data[0]['input'])
-    assert testin == test_data[0]['output']
-    print(f"2 Do fun all - test - ok ")
-    return testin
-
 
 def do_2funswicharg_task(fun: Callable, fun22: Callable, task: Dict, flags: Dict[str, List[bool]]) -> str:
     """
