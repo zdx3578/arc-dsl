@@ -116,19 +116,7 @@ def solve_individual(task, flags: Dict[str, bool]):
             if  result:
                 return result
 
-        proper_functions = [
-            vmirror,
-            hmirror,
-            cmirror,
-            dmirror,
-            is_output_most_input_color,
-        ]
-        part_functions = [
-            righthalf,
-            lefthalf,
-            bottomhalf,
-            tophalf
-        ]
+
         exe_fun = [
             canvas
         ]
@@ -291,6 +279,116 @@ def initialize_flags() -> Dict[str, List[bool]]:
         "order": [1, 2, 4]
     }
 
+def proper_flags() -> Dict[str, List[bool]]:
+
+    return {
+        # # template
+        # "in_is_?": [],
+        # "out_is_??": [],
+        # "out_of_in_is_??": [],
+        # "in_of_out_is_?": [],
+        # #
+        # "all_in_is_?": [],
+        # "all_out_is_??": [],
+        # "all_out_of_in_is_??": [],
+        # "all_in_of_out_is_?": [],
+
+        "in_is_?": [],
+        "out_is_??": [],
+        "out_of_in_is_??": [],
+        "in_of_out_is_?": [],
+        #
+        "all_in_is_?": [],
+        "all_out_is_??": [],
+        "all_out_of_in_is_??": [],
+        "all_in_of_out_is_?": [],
+    }
+
+def funexe_flags() -> Dict[str, List[bool]]:
+    """
+    初始化一组标志变量。
+
+    返回:
+    - Dict[str, List[bool]]: 标志变量的字典，默认为 False。
+    """
+    return {
+        # 控制每个函数是否执行
+        "use_fun1": [True],
+        "use_fun2": [False],
+        "use_fun3": [False],  # 默认不执行
+        "use_fun4": [False],
+        # 执行顺序 (可以根据条件动态修改)
+        "order": [1, 2, 4]
+    }
+
+part_functions = [
+            righthalf,
+            lefthalf,
+            bottomhalf,
+            tophalf
+        ]
+
+proper_functions = [
+    #out is what input
+    vmirror,
+    hmirror,
+    cmirror,
+    dmirror,
+    is_output_most_input_color # type: ignore
+    #out is what output
+
+    #in is what output
+]
+
+def do_check_inputOutput_proper_functions(task: Dict, flags: Dict[str, List[bool]]):
+    train_data = task['train']
+    test_data = task['test']
+    for data_pair in train_data:
+        input_grid = data_pair['input']
+        output_grid = data_pair['output']
+        for fun in proper_functions:
+            transformed = fun(output_grid)
+            if transformed == output_grid:
+                out-out-proper
+
+            if transformed == input_grid:
+                out-input-proper_flags
+
+            if transformed == output_grid:   ？？？？
+                # flags["is_fun_ok"].append(True)
+                continue  # 结束本轮循环，直接进行下一个 data_pair
+            else:
+                print(f"failed : {fun.__name__}")
+                # return f'failed {fun.__name__}'
+                return False
+        print(f"Do fun all ok : {fun.__name__}")
+        return fun
+
+
+
+
+
+
+
+
+
+        isproper = out_is_proper_fun(fun, task, flags)  # type: ignore # 执行 do_fun_task
+        if  isproper:
+            return
+    return True
+
+def do_check_inputComplexOutput_proper_functions(task: Dict, flags: Dict[str, List[bool]]):
+    train_data = task['train']
+    for fun in proper_functions:
+        result = fun(train_data)
+        if result:
+
+
+
+
+
+
+
 def is_output_most_input_color(task: Dict[str, Any]) -> bool:
     """
     判断 output 是否完全由 input 中出现最多的颜色组成。
@@ -323,8 +421,8 @@ def is_output_most_input_color(task: Dict[str, Any]) -> bool:
 
     return True
 
-def do_output_most_input_color(color,(h,w)):
-    canvas(color,(h,w))
+def do_output_most_input_color(color,h,w):
+    return canvas(color,(h,w))
 
 
 def check_train_fun(
@@ -432,7 +530,29 @@ def check_train_get_test(
 
 
 
+is_do_mapping = {
+    #out is what input
+    vmirror: vmirror,
+    hmirror: hmirror,
+    cmirror: cmirror,
+    dmirror: dmirror,
+    rot90: rot90,
+    rot180: rot180,
+    rot270: rot270,
 
+    upscale:upscale,
+    hupscale:hupscale,
+    vupscale:vupscale,
+    downscale:downscale,
+
+    hconcat:hconcat,
+    vconcat:vconcat,
+    # replace:replace,
+
+    bottomhalf: vconcat, lefthalf: hconcat, tophalf: vconcat, righthalf: hconcat,
+    is_output_most_input_color : do_output_most_input_color,
+    # in is what output
+}
 
 mapping = {bottomhalf: vconcat, lefthalf: hconcat, tophalf: vconcat, righthalf: hconcat}
 
