@@ -123,8 +123,6 @@ def test_solvers_correctness(data, solvers_module):
     import re
     # 获取所有匹配的函数名
     solvers = re.findall(pattern, code)
-
-
     n_correct = 0
     n = len(data["train"])
     # for key in range(1): # tqdm.tqdm(data['train'].keys(), total=n):
@@ -135,8 +133,10 @@ def test_solvers_correctness(data, solvers_module):
     print()
     for i, key in enumerate(solvers, start=1):
 
-        # key='5614dbcf'
-        # task = data['train'][key] + data['test'][key]
+
+
+        key='5582e5ca'
+
 
         print(i,key)
         task = {}
