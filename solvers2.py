@@ -2,6 +2,8 @@ from dsl import *
 from collections import defaultdict
 from typing import Dict, Any, List, Tuple, Callable, Optional
 from collections import defaultdict
+from config import *
+
 
 def solve_arc_task(task):
     """
@@ -23,7 +25,6 @@ def solve_arc_task(task):
     # 尝试逐个处理每个输入输出对
     solutions = []
 
-
     solution = solve_individual(task, flags)
     if solution:
         return solution
@@ -33,13 +34,16 @@ def solve_arc_task(task):
 
     # 如果单独处理失败或无法找到方案，尝试整体处理
     if len(solutions) != len(train_data):
-        combined_solution = solve_combined([pair[0] for pair in train_data], [pair[1] for pair in train_data], flags)
+        combined_solution = solve_combined([pair[0] for pair in train_data], [
+                                           pair[1] for pair in train_data], flags)
         if combined_solution:
             solutions = combined_solution
 
     # 用解决方案应用于测试数据
-    results = [apply_solution(test_input, solutions) for test_input in test_data]
+    results = [apply_solution(test_input, solutions)
+               for test_input in test_data]
     return results
+
 
 def solve_individual(task, flags: Dict[str, bool]):
     """
@@ -55,7 +59,27 @@ def solve_individual(task, flags: Dict[str, bool]):
     height_ratio = height_o / height_i
     width_ratio = width_o / width_i
 
-    # bi_map = BidirectionalMap(mapping)
+    flags_data = funexe_flags()
+    flags_data["use_fun1"] = [True]
+    flags_data["use_fun2"] = [True]
+    flags_data["use_fun3"] = [False]
+    flags_data["use_fun4"] = [False]  # 设置 use_fun2 为 False，不执行 fun2
+    flags_data["order"] = [1, 2]
+
+    for fun in proper_functions:
+        fun = do_check_inputOutput_proper_1functions
+        args_for_fun1 = []
+        if fun:
+            result = do_check_train_get_test(
+                do_4fun_task,
+                task,
+                flags_data,
+                fun, args_for_fun1)
+            if result:
+                return result
+
+    for fun in proper_functions:
+        result = do_check_inputComplexOutput_proper_functions
 
     if height_ratio == 1 and width_ratio == 1:
         print("输入和输出的高度和宽度都保持不变")
@@ -73,18 +97,17 @@ def solve_individual(task, flags: Dict[str, bool]):
         for fun in functions:
             result = do_fun_task(fun, task, flags)  # 执行 do_fun_task
 
-            if  result:
+            if result:
                 return result
 
+        fun, arg1, arg2 = prepare_diff(task, flags)
+        # functions = [
+        #     replace
+        # ]
+        result = do_fun_arg_task(
+            fun, task, flags, arg1, arg2)  # 执行 do_fun_task
 
-
-        fun,arg1,arg2 =prepare_diff(task,flags)
-            # functions = [
-            #     replace
-            # ]
-        result = do_fun_arg_task(fun, task, flags,arg1,arg2) # 执行 do_fun_task
-
-        if result :
+        if result:
             return result
 
     elif height_ratio == 2 and width_ratio == 2:
@@ -100,9 +123,10 @@ def solve_individual(task, flags: Dict[str, bool]):
         factor = 2
 
         for fun in functions:
-            result = do_fun_arg_task(fun, task, flags, factor)  # 执行 do_fun_task
+            result = do_fun_arg_task(
+                fun, task, flags, factor)  # 执行 do_fun_task
 
-            if  result:
+            if result:
                 return result
 
     elif height_ratio == 2 or width_ratio == 2:
@@ -112,26 +136,27 @@ def solve_individual(task, flags: Dict[str, bool]):
 
         ]
         for fun in functions:
-            result = do_fun_arg_task(fun, task, flags, 'input')  # 执行 do_fun_task
-            if  result:
+            result = do_fun_arg_task(
+                fun, task, flags, 'input')  # 执行 do_fun_task
+            if result:
                 return result
-
 
         exe_fun = [
             canvas
         ]
         for fun in proper_functions:
-            isproper = out_is_proper_fun(fun, task, flags)  # type: ignore # 执行 do_fun_task
-            if  isproper:
+            # type: ignore # 执行 do_fun_task
+            isproper = out_is_proper_fun(fun, task, flags)
+            if isproper:
                 for fun in part_functions:
-                    part_fun = outintput_is_part_fun(fun, task, flags ) # type: ignore
-                    if part_fun :
-                        result3 = do_2funswicharg_task(isproper,part_fun, task, flags)
+                    part_fun = outintput_is_part_fun(
+                        fun, task, flags)  # type: ignore
+                    if part_fun:
+                        result3 = do_2funswicharg_task(
+                            isproper, part_fun, task, flags)
                         return result3
                 for fun in exe_fun:
                     exe_fun = check_train_fun
-
-
 
     elif height_ratio == 3 and width_ratio == 3:
         print("输入和输出的高度和宽度均为 3 倍")
@@ -146,18 +171,21 @@ def solve_individual(task, flags: Dict[str, bool]):
         factor = 3
 
         for fun in functions:
-            result = do_fun_arg_task(fun, task, flags, factor)  # 执行 do_fun_task
+            result = do_fun_arg_task(
+                fun, task, flags, factor)  # 执行 do_fun_task
 
-            if  result:
+            if result:
                 return result
 
     elif height_ratio <= 1 and width_ratio <= 1:
 
-        ifsubgrid = is_subgrid(task,flags)
-        if ifsubgrid :
-            fun, (arg1,arg2)  = ifsubgrid
-            result = do_fun_arg_task(fun, task, flags, (arg1,arg2),(height_o, width_o) )  # 执行 do_fun_task
-            if  result:
+        ifsubgrid = is_subgrid(task, flags)
+        if ifsubgrid:
+            fun, (arg1, arg2) = ifsubgrid
+            result = do_fun_arg_task(
+                # 执行 do_fun_task
+                fun, task, flags, (arg1, arg2), (height_o, width_o))
+            if result:
                 return result
 
     # elif height_ratio == 0.3333333333333333 and width_ratio == 0.3333333333333333:
@@ -170,23 +198,21 @@ def solve_individual(task, flags: Dict[str, bool]):
         flags_data["use_fun1"] = [True]
         flags_data["use_fun2"] = [True]
         flags_data["use_fun3"] = [False]
-        flags_data["use_fun4"] = [False] # 设置 use_fun2 为 False，不执行 fun2
+        flags_data["use_fun4"] = [False]  # 设置 use_fun2 为 False，不执行 fun2
         flags_data["order"] = [1, 2]
 
-        args_for_fun1 = [5,0]
+        args_for_fun1 = [5, 0]
         args_for_fun2 = [3]
 
         # 调用函数
-        result = check_train_get_test(
+        result = do_check_train_get_test(
             do_4fun_task,
             task,
             flags_data,
             replace, args_for_fun1,
-            downscale, args_for_fun2 )
-        if  result:
-                return result
-
-
+            downscale, args_for_fun2)
+        if result:
+            return result
 
     elif height_ratio == 3 and width_ratio == 1:
         print("高度为 3 倍，宽度保持不变")
@@ -213,150 +239,33 @@ def solve_individual(task, flags: Dict[str, bool]):
     return None
 
 
-# 初始化标志变量的函数
-def initialize_flags() -> Dict[str, List[bool]]:
-    """
-    初始化一组标志变量。
-
-    返回:
-    - Dict[str, List[bool]]: 标志变量的字典，默认为 False。
-    """
-    return {
-        "is_mirror": [],
-        "is_fun_ok": [],
-        "is_scale": [],
-        "is_diff_same_posit": [],
-        "is_position_swap": [],
-        "is_rotation": [],
-        "is_translation": [],
-        "is_color_transform": [],
-        "is_output_one_color": [],
-        "is_output_most_input_color": [],
-        # # template
-        # "in_is_?": [],
-        # "out_is_??": [],
-        # "out_of_in_is_??": [],
-        # "in_of_out_is_?": [],
-        # #
-        # "all_in_is_?": [],
-        # "all_out_is_??": [],
-        # "all_out_of_in_is_??": [],
-        # "all_in_of_out_is_?": [],
-
-        #
-        "in_is_?": [],
-        "out_is_??": [],
-        "out_of_in_is_??": [],
-        "in_of_out_is_?": [],
-        #
-        "all_in_is_?": [],
-        "all_out_is_??": [],
-        "all_out_of_in_is_??": [],
-        "all_in_of_out_is_?": [],
-
-        #
-        "is_???": [],
-        "is_????": [],
-        "is_?3?": [],
-        "is_4??": [],
-        "is_?5?": [],
-        "is_??6": [],
-        "all_is_2": [],
-        "all_is_?2": [],
-        "all_is_3?": [],
-        "all_is_?4": [],
-        "all_is_5?": [],
-        "all_is_?6": [],
-        "all_is_?7": [],
-        "all_is_8?": [],
-        "all_is_?9": [],
-        # 控制每个函数是否执行
-        "use_fun1": [True],
-        "use_fun2": [False],
-        "use_fun3": [False],  # 默认不执行
-        "use_fun4": [False],
-        # 执行顺序 (可以根据条件动态修改)
-        "order": [1, 2, 4]
-    }
-
-def proper_flags() -> Dict[str, List[bool]]:
-
-    return {
-        # # template
-        # "in_is_?": [],
-        # "out_is_??": [],
-        # "out_of_in_is_??": [],
-        # "in_of_out_is_?": [],
-        # #
-        # "all_in_is_?": [],
-        # "all_out_is_??": [],
-        # "all_out_of_in_is_??": [],
-        # "all_in_of_out_is_?": [],
-
-        "in_is_?": [],
-        "out_is_??": [],
-        "out_of_in_is_??": [],
-        "in_of_out_is_?": [],
-        #
-        "all_in_is_?": [],
-        "all_out_is_??": [],
-        "all_out_of_in_is_??": [],
-        "all_in_of_out_is_?": [],
-    }
-
-def funexe_flags() -> Dict[str, List[bool]]:
-    """
-    初始化一组标志变量。
-
-    返回:
-    - Dict[str, List[bool]]: 标志变量的字典，默认为 False。
-    """
-    return {
-        # 控制每个函数是否执行
-        "use_fun1": [True],
-        "use_fun2": [False],
-        "use_fun3": [False],  # 默认不执行
-        "use_fun4": [False],
-        # 执行顺序 (可以根据条件动态修改)
-        "order": [1, 2, 4]
-    }
-
-part_functions = [
-            righthalf,
-            lefthalf,
-            bottomhalf,
-            tophalf
-        ]
-
-proper_functions = [
-    #out is what input
-    vmirror,
-    hmirror,
-    cmirror,
-    dmirror,
-    is_output_most_input_color # type: ignore
-    #out is what output
-
-    #in is what output
-]
-
-def do_check_inputOutput_proper_functions(task: Dict, flags: Dict[str, List[bool]]):
+def do_check_inputOutput_proper_1functions(task: Dict, flags: Dict[str, List[bool]]):
     train_data = task['train']
     test_data = task['test']
     for data_pair in train_data:
         input_grid = data_pair['input']
         output_grid = data_pair['output']
         for fun in proper_functions:
+            # fun(output_grid)
             transformed = fun(output_grid)
             if transformed == output_grid:
                 out-out-proper
+                continue
 
             if transformed == input_grid:
                 out-input-proper_flags
+                continue
 
-            if transformed == output_grid:   ？？？？
-                # flags["is_fun_ok"].append(True)
-                continue  # 结束本轮循环，直接进行下一个 data_pair
+            # fun(input_grid)
+            transformed = fun(input_grid)
+            if transformed == output_grid:
+                out-out-proper
+                continue
+
+            if transformed == input_grid:
+                out-input-proper_flags
+                continue
+
             else:
                 print(f"failed : {fun.__name__}")
                 # return f'failed {fun.__name__}'
@@ -365,28 +274,11 @@ def do_check_inputOutput_proper_functions(task: Dict, flags: Dict[str, List[bool
         return fun
 
 
-
-
-
-
-
-
-
-        isproper = out_is_proper_fun(fun, task, flags)  # type: ignore # 执行 do_fun_task
-        if  isproper:
-            return
-    return True
-
 def do_check_inputComplexOutput_proper_functions(task: Dict, flags: Dict[str, List[bool]]):
     train_data = task['train']
     for fun in proper_functions:
         result = fun(train_data)
         if result:
-
-
-
-
-
 
 
 def is_output_most_input_color(task: Dict[str, Any]) -> bool:
@@ -421,8 +313,9 @@ def is_output_most_input_color(task: Dict[str, Any]) -> bool:
 
     return True
 
-def do_output_most_input_color(color,h,w):
-    return canvas(color,(h,w))
+
+def do_output_most_input_color(color, h, w):
+    return canvas(color, (h, w))
 
 
 def check_train_fun(
@@ -445,7 +338,8 @@ def check_train_fun(
         output_grid = data_pair['output']
 
         # 使用传入的函数 fun 来检查是否满足条件
-        transformed = do_4fun_task(input_grid, flags, fun1, args1, fun2, args2, fun3, args3, fun4, args4)
+        transformed = do_4fun_task(
+            input_grid, flags, fun1, args1, fun2, args2, fun3, args3, fun4, args4)
         if transformed == output_grid:
             # flags["is_fun_ok"].append(True)
             continue  # 结束本轮循环，直接进行下一个 data_pair
@@ -458,28 +352,27 @@ def check_train_fun(
 
 # 扩展后的多函数任务处理函数
 def do_4fun_task(
-    input_grid: list,
-    flags: Dict[str, List[Any]],
-    fun1: Callable[[Any], Any], args1: List[Any],
-    fun2: Callable[[Any], Any], args2: List[Any],
-    fun3: Optional[Callable[[Any], Any]] = None, args3: Optional[List[Any]] = None,
-    fun4: Optional[Callable[[Any], Any]] = None, args4: Optional[List[Any]] = None) -> Any:
+        input_grid: list,
+        flags: Dict[str, List[Any]],
+        fun1: Callable[[Any], Any], args1: List[Any],
+        fun2: Callable[[Any], Any], args2: List[Any],
+        fun3: Optional[Callable[[Any], Any]] = None, args3: Optional[List[Any]] = None,
+        fun4: Optional[Callable[[Any], Any]] = None, args4: Optional[List[Any]] = None) -> Any:
     # 将函数和参数绑定到列表中，方便按顺序调用
     functions = [(fun1, args1), (fun2, args2), (fun3, args3), (fun4, args4)]
 
     # 获取顺序
     order = flags.get("order", [1, 2, 3, 4])
 
-
-        # 根据顺序调用函数
+    # 根据顺序调用函数
     for idx in order:
         fun, args = functions[idx - 1]  # idx-1是因为order是从1开始的
         if flags.get(f"use_fun{idx}", [True])[0]:  # 检查是否需要调用当前函数
-            input_grid = fun(input_grid,*args) if args else fun(input_grid)
+            input_grid = fun(input_grid, *args) if args else fun(input_grid)
     return input_grid
 
 
-def check_train_get_test(
+def do_check_train_get_test(
     do_4fun_task: Callable,
     task: List[Dict],
     flags: Dict[str, List[bool]],
@@ -503,7 +396,6 @@ def check_train_get_test(
     """
     all_results = {}  # 存储每批任务的执行结果
 
-
     train_data = task['train']
     test_data = task['test']
 
@@ -512,7 +404,8 @@ def check_train_get_test(
         output_grid = data_pair['output']
 
         # 使用传入的函数 fun 来检查是否满足条件
-        transformed = do_4fun_task(input_grid, flags, fun1, args1, fun2, args2, fun3, args3, fun4, args4)
+        transformed = do_4fun_task(
+            input_grid, flags, fun1, args1, fun2, args2, fun3, args3, fun4, args4)
         if transformed == output_grid:
             # flags["is_fun_ok"].append(True)
             continue  # 结束本轮循环，直接进行下一个 data_pair
@@ -522,42 +415,16 @@ def check_train_get_test(
             return False
     print(f"Do fun all ok : {do_4fun_task.__name__}")
     input_grid = test_data[0]['input']
-    testin = do_4fun_task(input_grid, flags, fun1, args1, fun2, args2, fun3, args3, fun4, args4)
+    testin = do_4fun_task(input_grid, flags, fun1, args1,
+                          fun2, args2, fun3, args3, fun4, args4)
 
     assert testin == test_data[0]['output']
     print(f"2 Do fun all - test - ok ")
     return testin
 
 
-
-is_do_mapping = {
-    #out is what input
-    vmirror: vmirror,
-    hmirror: hmirror,
-    cmirror: cmirror,
-    dmirror: dmirror,
-    rot90: rot90,
-    rot180: rot180,
-    rot270: rot270,
-
-    upscale:upscale,
-    hupscale:hupscale,
-    vupscale:vupscale,
-    downscale:downscale,
-
-    hconcat:hconcat,
-    vconcat:vconcat,
-    # replace:replace,
-
-    bottomhalf: vconcat, lefthalf: hconcat, tophalf: vconcat, righthalf: hconcat,
-    is_output_most_input_color : do_output_most_input_color,
-    # in is what output
-}
-
-mapping = {bottomhalf: vconcat, lefthalf: hconcat, tophalf: vconcat, righthalf: hconcat}
-
 class BidirectionalMap:
-    def __init__(self, mapping):
+    def __init__(self, is_do_mapping):
         self.forward = mapping  # 正向映射
         # 构建反向映射，将每个函数映射到对应的键（可能有多个键映射到相同函数）
         self.reverse = {}
@@ -570,6 +437,7 @@ class BidirectionalMap:
     def get(self, key):
         print('! convert a function ')
         return self.forward.get(key) or self.reverse.get(key)
+
 
 def outintput_is_part_fun(fun: Callable, task: Dict, flags: Dict[str, List[bool]]) -> str:
     """
@@ -623,7 +491,8 @@ def out_is_proper_fun(fun: Callable, task: Dict, flags: Dict[str, List[bool]]) -
     # assert testin == test_data[0]['output']
     # return testin
 
-def do_2fun_task00(fun: Callable,fun22: Callable, task: Dict, flags: Dict[str, List[bool]]) -> str:
+
+def do_2fun_task00(fun: Callable, fun22: Callable, task: Dict, flags: Dict[str, List[bool]]) -> str:
     """
     尝试单独处理每个输入输出对，根据传入的函数 fun 检查每对输入输出是否满足条件。
     """
@@ -652,13 +521,14 @@ def do_2fun_task00(fun: Callable,fun22: Callable, task: Dict, flags: Dict[str, L
     print(f"2 Do fun all ok : {fun.__name__},{fun22.__name__}")
     I = test_data[0]['input']
     I2 = fun(test_data[0]['input'])
-    testin =fun_swicharg_action(fun22, I, I2)
+    testin = fun_swicharg_action(fun22, I, I2)
     # testin = fun2(testin,test_data[0]['input'])
     assert testin == test_data[0]['output']
     print(f"2 Do fun all - test - ok ")
     return testin
 
-def do_2funswicharg_task(fun: Callable,fun22: Callable, task: Dict, flags: Dict[str, List[bool]]) -> str:
+
+def do_2funswicharg_task(fun: Callable, fun22: Callable, task: Dict, flags: Dict[str, List[bool]]) -> str:
     """
     尝试单独处理每个输入输出对，根据传入的函数 fun 检查每对输入输出是否满足条件。
     """
@@ -687,11 +557,12 @@ def do_2funswicharg_task(fun: Callable,fun22: Callable, task: Dict, flags: Dict[
     print(f"2 Do fun all ok : {fun.__name__},{fun22.__name__}")
     I = test_data[0]['input']
     I2 = fun(test_data[0]['input'])
-    testin =fun_swicharg_action(fun22, I, I2)
+    testin = fun_swicharg_action(fun22, I, I2)
     # testin = fun2(testin,test_data[0]['input'])
     assert testin == test_data[0]['output']
     print(f"2 Do fun all - test - ok ")
     return testin
+
 
 def fun_swicharg_action(fun22: Callable, I, I2):
     # 获取函数名
@@ -701,19 +572,20 @@ def fun_swicharg_action(fun22: Callable, I, I2):
     fun2 = bi_map.get(fun22)
     # 根据函数名包含的关键字返回相应的值
     if "top" in func_name:
-        return fun2(I,I2)
+        return fun2(I, I2)
         # 也可以返回对应的处理结果或执行相应的功能
     elif "bottom" in func_name:
-        return  fun2(I2,I)
+        return fun2(I2, I)
         # 执行 down 的代码
     elif "left" in func_name:
-        return fun2(I,I2)
+        return fun2(I, I2)
         # 执行 left 的代码
     elif "right" in func_name:
-        return fun2(I,I2)
+        return fun2(I, I2)
         # 执行 right 的代码
     else:
         return "No action matches."
+
 
 def do_fun_task(fun: Callable, task: Dict, flags: Dict[str, List[bool]]) -> str:
     """
@@ -755,7 +627,7 @@ def do_fun_arg_task(fun: Callable, task: Dict, flags: Dict[str, List[bool]], *ar
         input_grid = data_pair['input']
         output_grid = data_pair['output']
 
-        if 'input' in args :
+        if 'input' in args:
             transformed = fun(input_grid, input_grid)
         else:
             # 使用传入的函数 fun 和额外的参数 args 来检查是否满足条件
@@ -768,13 +640,14 @@ def do_fun_arg_task(fun: Callable, task: Dict, flags: Dict[str, List[bool]], *ar
             return False
     print(f"Do fun all ok : {fun.__name__}")
 
-    if 'input' in args :
+    if 'input' in args:
         testin = fun(test_data[0]['input'], test_data[0]['input'])
     else:
         testin = fun(test_data[0]['input'], *args)
     assert testin == test_data[0]['output']
     print(f"2 Do fun all - test - ok ")
     return testin
+
 
 def solve_combined(input_grids, output_grids, flags: Dict[str, bool]):
     """
@@ -789,6 +662,7 @@ def solve_combined(input_grids, output_grids, flags: Dict[str, bool]):
 
     return None
 
+
 def apply_solution(test_input, solution):
     """
     将解决方案应用于测试输入。
@@ -800,6 +674,7 @@ def handle_combined_mirror_scale(input_grids, output_grids):
     """处理组合镜像和缩放的逻辑"""
     return lambda x: x  # 示例处理函数
 
+
 def handle_combined_rotation(input_grids, output_grids):
     """处理组合旋转的逻辑"""
     return lambda x: x  # 示例处理函数
@@ -808,9 +683,11 @@ def handle_combined_rotation(input_grids, output_grids):
 def has_same_obj(I, O):
     return
 
+
 def composeObject(I):
     # remove bg
     return
+
 
 def unique_objects(I, O):
     # 使用 set 存储唯一的结果
@@ -826,26 +703,24 @@ def unique_objects(I, O):
     }
     return unique_results
 
-def prepare_diff_insec(I,O):
+
+def prepare_diff_insec(I, O):
 
     # 调用 objects 函数两次
     oi = objects(I, False, True, True)
     oo = objects(O, False, True, True)
-
-
 
     same_objects = oi.intersection(oo)
     # 获取对称差集
     diff_objects = oi.symmetric_difference(oo)
 
 
-
-def prepare_color_count(task,flags: Dict[str, bool]):
+def prepare_color_count(task, flags: Dict[str, bool]):
 
     return
 
 
-def prepare_diff(task,flags: Dict[str, bool]):
+def prepare_diff(task, flags: Dict[str, bool]):
     train_data = task['train']
     test_data = task['test']
 
@@ -874,16 +749,14 @@ def prepare_diff(task,flags: Dict[str, bool]):
         # 将它们分别赋给 diff1 和 diff2
         diff1, diff2 = next(iter(oi_unique)), next(iter(oo_unique))
 
-
-
         # 将两个 frozenset 转换为有序列表
         sorted_diff1 = sorted(diff1, key=lambda x: (x[0], x[1]))  # 按值和坐标排序
         sorted_diff2 = sorted(diff2, key=lambda x: (x[0], x[1]))  # 按值和坐标排序
 
-                # 输出排序后的比较结果
-                # print("第一个 frozenset 排序后的元素:", sorted_diff1)
-                # print("第二个 frozenset 排序后的元素:", sorted_diff2)
-                # 比较差异
+        # 输出排序后的比较结果
+        # print("第一个 frozenset 排序后的元素:", sorted_diff1)
+        # print("第二个 frozenset 排序后的元素:", sorted_diff2)
+        # 比较差异
         diff1_unique = sorted(set(sorted_diff1) - set(sorted_diff2))
         diff2_unique = sorted(set(sorted_diff2) - set(sorted_diff1))
 
@@ -915,11 +788,10 @@ def prepare_diff(task,flags: Dict[str, bool]):
         else:
             flags["is_diff_same_posit"].append(False)
 
-        if is_position_swapped(merged_diffs["diff1"],merged_diffs["diff2"]):
+        if is_position_swapped(merged_diffs["diff1"], merged_diffs["diff2"]):
             flags["is_position_swap"].append(True)
         else:
             flags["is_position_swap"].append(False)
-
 
     is_diff_same_posit = all(flags["is_diff_same_posit"])
     all_is_position_swap_ok = all(flags["is_position_swap"])
@@ -928,27 +800,18 @@ def prepare_diff(task,flags: Dict[str, bool]):
         if all_is_position_swap_ok:
             keys_diff1 = list(merged_diffs['diff1'].keys())[0]  # 获取 diff1 中的键
             keys_diff2 = list(merged_diffs['diff1'].keys())[1]  # 获取  中的键
-            print('switch', keys_diff1,keys_diff2)
-            return switch, keys_diff1,keys_diff2
+            print('switch', keys_diff1, keys_diff2)
+            return switch, keys_diff1, keys_diff2
 
     elif is_diff_same_posit:
         keys_diff1 = list(merged_diffs['diff1'].keys())[0]  # 获取 diff1 中的键
         keys_diff2 = list(merged_diffs['diff2'].keys())[0]  # 获取 diff2 中的键
-        print('replace', keys_diff1,keys_diff2)
-        return replace, keys_diff1,keys_diff2
+        print('replace', keys_diff1, keys_diff2)
+        return replace, keys_diff1, keys_diff2
     return False
 
-
-
-
-        # print("todo ！ 执行 ！  不同部分不止两个 frozenset 或无差异。")
+    # print("todo ！ 执行 ！  不同部分不止两个 frozenset 或无差异。")
     # return 0
-
-
-
-
-
-
 
 
 def compare_positions(merged_diffs: Dict[str, defaultdict]) -> str:
@@ -957,8 +820,10 @@ def compare_positions(merged_diffs: Dict[str, defaultdict]) -> str:
     忽略字典的键，仅比较坐标部分。
     """
     # 提取 diff1 和 diff2 中的坐标列表，忽略键
-    coords1 = [coord for coords in merged_diffs['diff1'].values() for coord in coords]
-    coords2 = [coord for coords in merged_diffs['diff2'].values() for coord in coords]
+    coords1 = [coord for coords in merged_diffs['diff1'].values()
+               for coord in coords]
+    coords2 = [coord for coords in merged_diffs['diff2'].values()
+               for coord in coords]
 
     # 比较坐标列表是否一致
     if sorted(coords1) == sorted(coords2):
@@ -967,7 +832,6 @@ def compare_positions(merged_diffs: Dict[str, defaultdict]) -> str:
     else:
         # return "Different positions"
         return False
-
 
 
 def is_position_swapped(diff1: defaultdict, diff2: defaultdict) -> bool:
@@ -987,7 +851,6 @@ def is_position_swapped(diff1: defaultdict, diff2: defaultdict) -> bool:
     return True
 
 
-from typing import List, Tuple, Optional
 def display_diff_matrices(diff1: List[Tuple[int, Tuple[int, int]]],
                           diff2: List[Tuple[int, Tuple[int, int]]],
                           diff3: Optional[List[Tuple[int, Tuple[int, int]]]] = None):
@@ -1025,9 +888,7 @@ def display_diff_matrices(diff1: List[Tuple[int, Tuple[int, int]]],
         print("\n" + "-"*20 + "\n")
 
 
-
-
-def is_subgrid(task,flags):
+def is_subgrid(task, flags):
     """判断较小的网格是否是较大网格的一个部分"""
     train_data = task['train']
     test_data = task['test']
@@ -1035,7 +896,6 @@ def is_subgrid(task,flags):
     for data_pair in train_data:
         grid1 = data_pair['input']
         grid2 = data_pair['output']
-
 
         # 获取两个矩阵的大小
         rows1, cols1 = len(grid1), len(grid1[0])
@@ -1064,7 +924,6 @@ def is_subgrid(task,flags):
                     if not match:
                         break
                 if match:
-                    return crop, (i, j) # 找到匹配位置，返回 True
+                    return crop, (i, j)  # 找到匹配位置，返回 True
 
     return False  # 未找到匹配位置，返回 False
-
