@@ -1,3 +1,9 @@
+from solvers2 import *
+import solvers
+import tests
+import dsl
+import constants
+import arc_types
 import os
 import json
 import inspect
@@ -7,30 +13,22 @@ import logging
 import traceback
 
 
-
 current_dir = os.path.dirname(os.path.abspath(__file__))
 
 # 将 constants.py 所在路径添加到 Python 路径
 sys.path.append(current_dir)
 
 
-import arc_types
-import constants
-import dsl
-import tests
-import solvers
-from  solvers2 import *
-
-
-
-
 def get_data(train=True):
-    path = f'/Users/zhangdexiang/github/arc-agi/data/{"training" if train else "evaluation"}'    #/home/zdx/github/VSAHDC/arc-agi/data
+    # /home/zdx/github/VSAHDC/arc-agi/data
+    path = f'/Users/zhangdexiang/github/arc-agi/data/{
+        "training" if train else "evaluation"}'
     data = {}
     for fn in os.listdir(path):
         with open(f'{path}/{fn}') as f:
             data[fn.rstrip('.json')] = json.load(f)
-    ast = lambda g: tuple(tuple(r) for r in g)
+
+    def ast(g): return tuple(tuple(r) for r in g)
     return {
         'train': {k: [{
             'input': ast(e['input']),
@@ -70,8 +68,8 @@ def test_solvers_formatting(solvers_module, dsl_module):
     with open('constants.py', 'r') as f:
         constants = [c.split(' = ')[0] for c in f.readlines() if ' = ' in c]
     definitions = {
-        function: inspect.getsource(getattr(solvers_module, function)) \
-            for function in get_functions(solvers_module.__file__)
+        function: inspect.getsource(getattr(solvers_module, function))
+        for function in get_functions(solvers_module.__file__)
     }
     dsl_interface = get_functions(dsl_module.__file__)
     n_correct = 0
@@ -93,7 +91,8 @@ def test_solvers_formatting(solvers_module, dsl_module):
                 calls.add(call)
                 assert function in dsl_interface or function in variables
                 assert args[-1] == ')'
-                args = [args[:-1]] if ',' not in args else args[:-1].split(', ')
+                args = [
+                    args[:-1]] if ',' not in args else args[:-1].split(', ')
                 for arg in args:
                     assert any([
                         arg in variables, arg in dsl_interface,
@@ -110,8 +109,6 @@ def test_solvers_formatting(solvers_module, dsl_module):
         except:
             pass
     print(f'{n_correct} out of {n} solvers formatted correctly.')
-
-
 
 
 def test_solvers_correctness(data, solvers_module):
@@ -133,12 +130,9 @@ def test_solvers_correctness(data, solvers_module):
     print()
     for i, key in enumerate(solvers, start=1):
 
+        # key = '9172f3a0'
 
-
-        # key='5582e5ca'
-
-
-        print(i,key)
+        print(i, key)
         task = {}
         task['train'] = data['train'][key]
         task['test'] = data['test'][key]
@@ -152,7 +146,7 @@ def test_solvers_correctness(data, solvers_module):
             n_correct += 1
             print()
             print()
-            print("success",n_correct)
+            print("success", n_correct)
             print()
             print()
             print()
