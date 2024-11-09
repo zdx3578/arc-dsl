@@ -10,10 +10,10 @@ def solve_arc_task(task):
 
     solutions = []
 
-    solution = solve_individual2(task)
+    # solution = solve_individual2(task)
 
-    # flags = initialize_flags()
-    # solution = solve_individual(task, flags)
+    flags = initialize_flags()
+    solution = solve_individual(task, flags)
 
     if solution:
         return solution
@@ -93,15 +93,17 @@ def solve_individual2(task):
         if result:
             return result
 
-    # if (height_o == 2 * height_i and width_o == width_i) or (width_o == 2 * width_i and height_o == height_i):
+    # part_functions
+    flags_data["out_in"] = True
+    # flags_data.get["out_in"] = [True]
     fun = do_check_inputOutput_proper_1functions(
         part_functions, task, flags_data)
 
-    # fun, arg = do_check_inputOutput_proper_concat_functions(proper_concat_functions
-    #     task, flags_data)
+    # fun, arg = do_check_inputOutput_proper_concat_functions(proper_concat_functions  task, flags_data)
+    fun = hconcat
     ok_fun_names = [fun.__name__ for fun in flags_data["ok_fun"]]
     if ok_fun_names == ['righthalf', 'lefthalf']:
-        fun = hconcat
+
         args_for_fun1 = 'sameinput'
 
     if fun:
@@ -159,6 +161,18 @@ def do_check_inputOutput_proper_1_arg_functions(proper_1arg_functions, task: Dic
                     if funget == fun:
                         fun = funget
                         args = [arg1, arg2]
+        elif fun == crop:
+            args = []
+            funarg = is_subgrid(task, flags)
+            if funarg:
+                if len(funarg) == 3:
+                    funget, arg1, arg2 = funarg
+                    args = [(arg1, arg2), (height_o, width_o)]
+                    fun = funget
+                    # if funget == fun:
+                    #     fun = funget
+                    #     args = [arg1, arg2]
+
         else:
             args = [height_ratio]
         success = True
@@ -167,7 +181,7 @@ def do_check_inputOutput_proper_1_arg_functions(proper_1arg_functions, task: Dic
             output_grid = data_pair['output']
 
             # fun(output_grid)
-            if flags["out_out"] == True:
+            if flags["out_in"] == True:
                 transformed = safe_execute(fun, output_grid, *args)
                 if transformed == input_grid:
                     # out-input-proper_flags
