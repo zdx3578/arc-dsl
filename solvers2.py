@@ -1,19 +1,21 @@
 from dsl import *
 from collections import defaultdict
 from typing import Dict, Any, List, Tuple, Callable, Optional
+
 from collections import defaultdict
 from config import *
 from dslIsDo import *
+from oldfun import *
 
 
 def solve_arc_task(task):
 
     solutions = []
 
-    # solution = solve_individual2(task)
+    solution = solve_individual2(task)
 
-    flags = initialize_flags()
-    solution = solve_individual(task, flags)
+    # flags = initialize_flags()
+    # solution = solve_individual(task, flags)
 
     if solution:
         return solution
@@ -53,10 +55,8 @@ def solve_individual2(task):
     flags_data["use_fun2"] = [False]
     flags_data["use_fun3"] = [False]
     flags_data["use_fun4"] = [False]  # 设置 use_fun2 为 False，不执行 fun2
-    flags_data["order"] = [1]
-
+    flags_data["order"] = [1, 2, 3, 4]
     # flags = initialize_flags()
-
     # if height_ratio == 1 and width_ratio == 1:
     # for fun in proper_functions:
     [fun] = do_check_inputOutput_proper_1functions(
@@ -96,22 +96,20 @@ def solve_individual2(task):
     # part_functions
     flags_data["out_in"] = True
     # flags_data.get["out_in"] = [True]
-    fun = do_check_inputOutput_proper_1functions(
-        part_functions, task, flags_data)
 
-    # fun, arg = do_check_inputOutput_proper_concat_functions(proper_concat_functions  task, flags_data)
-    fun = hconcat
-    ok_fun_names = [fun.__name__ for fun in flags_data["ok_fun"]]
-    if ok_fun_names == ['righthalf', 'lefthalf']:
+    is_fun_flag = do_check_inputComplexOutput_proper_functions(
+        proper_functions, task, flags_data)
 
-        args_for_fun1 = 'sameinput'
+    fun_process_list = howtodo(is_fun_flag)
 
-    if fun:
-        result = do_check_train_get_test(
+    if fun_process_list:
+        result = prepare_and_call_do_test(
+            fun_process_list,
+            do_check_train_get_test,
             do_4fun_task,
             task,
             flags_data,
-            fun, args_for_fun1)
+        )
         if result:
             return result
 
@@ -119,22 +117,137 @@ def solve_individual2(task):
         # proper_fun = fun
         # partfun = do_check_inputOutput_proper_1functions(
         #     part_functions, task, flags_data)
-
         # fun, arg = do_check_inputOutput_proper_mirror_concat_functions(
         #     task, flags_data)
-
     # for fun in proper_functions:
     #     result = do_check_inputComplexOutput_proper_functions
-
     print("----------------------------------------------------------------------------")
     # return
 
 
-def do_check_inputOutput_proper_1_arg_functions(proper_1arg_functions, task: Dict, flags: Dict[str, List[bool]]):
+def prepare_and_call_do_test(fun_process_list: List[List[Any]],
+                             do_check_train_get_test: Callable,
+                             do_4fun_task: Callable,
+                             task: List[Dict],
+                             flags: Dict[str, List[bool]]):
+    # 准备要传入 do_check_train_get_test 的参数
+    fun_args = {}
+
+    # 循环遍历 fun_process_list 并提取函数和参数
+    for i, (fun, args) in enumerate(fun_process_list):
+        fun_key = f"fun{i + 1}"
+        args_key = f"args{i + 1}"
+        fun_args[fun_key] = fun                    # 提取函数
+        fun_args[args_key] = args if args else None  # 提取参数，若为空则设为 None
+
+    # 为没有传回的函数和参数提供默认值 None
+    for i in range(1, 5):  # 确保 fun1 到 fun4 和 args1 到 args4 都存在
+        fun_args.setdefault(f"fun{i}", None)
+        fun_args.setdefault(f"args{i}", None)
+
+    # 调用 do_check_train_get_test 函数
+    return do_check_train_get_test(
+        do_4fun_task,
+        task,
+        flags,
+        fun_args["fun1"], fun_args["args1"],
+        fun_args["fun2"], fun_args["args2"],
+        fun_args["fun3"], fun_args["args3"],
+        fun_args["fun4"], fun_args["args4"]
+    )
+
+
+def howtodo(flags):
+    processed_flags = {}
+    flags_data = flags
+
+    if flags["in_out_fun"]:
+        processed_values = []
+        for value in flags["in_out_fun"]:
+            # 在这里添加处理每个值的逻辑
+            processed_value = process_value(value)
+            processed_values.append(processed_value)
+        processed_flags["in_out_fun"] = processed_values
+
+    # 处理 "out_in_fun" 标签
+    if flags["out_in_fun"]:
+        if lefthalf in flags["out_in_fun"] and righthalf in flags["out_in_fun"]:
+            flags_data["use_fun2"] = [False]
+            return [[hconcat, ['in', 'in']]]
+        if bottomhalf in flags["out_in_fun"] and tophalf in flags["out_in_fun"]:
+            flags_data["use_fun2"] = [False]
+            return [[vconcat, ['in', 'in']]]
+
+        if lefthalf in flags["out_in_fun"]:
+            # 处理 hmirror + lefthalf 的情况
+            pass
+        if righthalf in flags["out_in_fun"]:
+            pass
+
+        if bottomhalf in flags["out_in_fun"]:
+            # 处理 vmirror + bottomhalf 的情况
+            pass
+        if tophalf in flags["out_in_fun"]:
+            # 处理 vmirror + tophalf 的情况
+            pass
+
+    # 处理 "out_out_fun" 标签
+    if flags["out_out_fun"]:
+
+        if vmirror in flags["out_out_fun"]:
+            if lefthalf in flags["out_in_fun"]:
+                # 处理 hmirror + lefthalf 的情况
+                flags_data["use_fun2"] = [True]
+                return [
+                    [vmirror, []],            # vmirror 函数，无参数
+                    [hconcat, ['in', 'pin']]   # hconcat 函数，有参数 'pin' 和 'in'
+                ]
+
+            if righthalf in flags["out_in_fun"]:
+                # 处理 hmirror + righthalf 的情况
+                flags_data["use_fun2"] = [True]
+                return [
+                    [vmirror, []],            # vmirror 函数，无参数
+                    [hconcat, ['pin', 'in']]   # hconcat 函数，有参数 'pin' 和 'in'
+                ]
+
+        if hmirror in flags["out_out_fun"]:
+            if bottomhalf in flags["out_in_fun"]:
+                # 处理 vmirror + bottomhalf 的情况
+                flags_data["use_fun2"] = [True]
+                return [
+                    [hmirror, []],          # hmirror 函数，无参数
+                    [vconcat, ['pin', 'in']]  # vconcat 函数，有参数 'pin' 和 'in'
+                ]
+            if tophalf in flags["out_in_fun"]:
+                # 处理 vmirror + tophalf 的情况
+                flags_data["use_fun2"] = [True]
+                return [
+                    [hmirror, []],          # hmirror 函数，无参数
+                    [vconcat, ['in', 'pin']]  # vconcat 函数，有参数 'pin' 和 'in'
+                ]
+
+    # 处理 "in_in_fun" 标签
+    if flags["in_in_fun"]:
+        processed_values = []
+        for value in flags["in_in_fun"]:
+            # 在这里添加处理每个值的逻辑
+            processed_value = process_value(value)
+            processed_values.append(processed_value)
+        processed_flags["in_in_fun"] = processed_values
+
+    return False
+
+
+def process_value(value: bool) -> Any:
+    return
+
+
+def do_check_inputComplexOutput_proper_functions(proper_1arg_functions, task: Dict, flags: Dict[str, List[bool]]):
     train_data = task['train']
     test_data = task['test']
 
-    flags.get("ok_fun", [])
+    is_judg_fun_flag = flags
 
     I = train_data[0]['input']
     O = train_data[0]['output']
@@ -152,45 +265,37 @@ def do_check_inputOutput_proper_1_arg_functions(proper_1arg_functions, task: Dic
     # get proper and  args
 
     for fun in proper_1arg_functions:
-        if fun == switch or fun == replace:
-            args = []
-            funarg = prepare_diff(task, flags)
-            if funarg:
-                if len(funarg) == 3:
-                    funget, arg1, arg2 = funarg
-                    if funget == fun:
-                        fun = funget
-                        args = [arg1, arg2]
-        elif fun == crop:
-            args = []
-            funarg = is_subgrid(task, flags)
-            if funarg:
-                if len(funarg) == 3:
-                    funget, arg1, arg2 = funarg
-                    args = [(arg1, arg2), (height_o, width_o)]
-                    fun = funget
-                    # if funget == fun:
-                    #     fun = funget
-                    #     args = [arg1, arg2]
 
-        else:
-            args = [height_ratio]
+        args = []
+
         success = True
         for data_pair in train_data:
             input_grid = data_pair['input']
             output_grid = data_pair['output']
 
             # fun(output_grid)
-            if flags["out_in"] == True:
-                transformed = safe_execute(fun, output_grid, *args)
-                if transformed == input_grid:
-                    # out-input-proper_flags
-                    continue
+            # if flags["out_in"] == True:
+            transformed = safe_execute(fun, output_grid, *args)
+            if transformed == input_grid:
+                if fun not in is_judg_fun_flag["out_in_fun"]:
+                    is_judg_fun_flag["out_in_fun"].append(fun)
+                continue
+
+            if transformed == output_grid:
+                if fun not in is_judg_fun_flag["out_out_fun"]:
+                    is_judg_fun_flag["out_out_fun"].append(fun)
+                continue
 
             # fun(input_grid)
             transformed = safe_execute(fun, input_grid, *args)
             if transformed == output_grid:
-                # out-input-proper_flags
+                if fun not in is_judg_fun_flag["in_out_fun"]:
+                    is_judg_fun_flag["in_out_fun"].append(fun)
+                continue
+
+            if transformed == input_grid:
+                if fun not in is_judg_fun_flag["in_in_fun"]:
+                    is_judg_fun_flag["in_in_fun"].append(fun)
                 continue
 
             # else:
@@ -199,227 +304,9 @@ def do_check_inputOutput_proper_1_arg_functions(proper_1arg_functions, task: Dic
             break
         if success:
             print(f"ok____ : {fun.__name__}")
-            flags["ok_fun"].append([fun, *args])
-            # height_ratio is args to exe
-            # return fun, height_ratio
         else:
             print(f"failed : {fun.__name__}")
-    return flags["ok_fun"] if flags["ok_fun"] else [False]
-
-
-def do_check_inputComplexOutput_proper_functions(properComplex_functions, task: Dict, flags: Dict[str, List[bool]]):
-    train_data = task['train']
-    for fun in properComplex_functions:
-        result = fun(train_data)
-        if result:
-            # todo
-            return fun
-
-
-def check_train_fun(
-    do_4fun_task: Callable,
-    task: List[Dict],
-    flags: Dict[str, List[bool]],
-    fun1: Callable[[Any], Any], args1: List[Any],
-    fun2: Callable[[Any], Any], args2: Optional[List[Any]] = None,
-    fun3: Optional[Callable[[Any], Any]] = None, args3: Optional[List[Any]] = None,
-    fun4: Optional[Callable[[Any], Any]] = None, args4: Optional[List[Any]] = None
-) -> Dict[str, Any]:
-
-    all_results = {}  # 存储每批任务的执行结果
-
-    train_data = task['train']
-    test_data = task['test']
-
-    for data_pair in train_data:
-        input_grid = data_pair['input']
-        output_grid = data_pair['output']
-
-        # 使用传入的函数 fun 来检查是否满足条件
-        transformed = do_4fun_task(
-            input_grid, flags, fun1, args1, fun2, args2, fun3, args3, fun4, args4)
-        if transformed == output_grid:
-            # flags["is_fun_ok"].append(True)
-            continue  # 结束本轮循环，直接进行下一个 data_pair
-        else:
-            print(f"failed : {do_4fun_task.__name__}")
-            # return f'failed {fun.__name__}'
-            return False
-    print(f"ok____ : {do_4fun_task.__name__}")
-
-
-def outintput_is_part_fun(fun: Callable, task: Dict, flags: Dict[str, List[bool]]) -> str:
-    """
-    尝试单独处理每个输入输出对，根据传入的函数 fun 检查每对输入输出是否满足条件。
-    """
-
-    train_data = task['train']
-    test_data = task['test']
-
-    for data_pair in train_data:
-        input_grid = data_pair['input']
-        output_grid = data_pair['output']
-
-        # 使用传入的函数 fun 来检查是否满足条件
-        transformed = fun(output_grid)
-        if transformed == input_grid:
-            # flags["is_fun_ok"].append(True)
-            continue  # 结束本轮循环，直接进行下一个 data_pair
-        else:
-            print(f"failed : {fun.__name__}")
-            # return f'failed {fun.__name__}'
-            return False
-    print(f"Do fun all ok : {fun.__name__}")
-    return fun
-
-
-def out_is_proper_fun(fun: Callable, task: Dict, flags: Dict[str, List[bool]]) -> str:
-    """
-    尝试单独处理每个输入输出对，根据传入的函数 fun 检查每对输入输出是否满足条件。
-    """
-
-    train_data = task['train']
-    # test_data = task['test']
-
-    for data_pair in train_data:
-        # input_grid = data_pair['input']
-        output_grid = data_pair['output']
-
-        # 使用传入的函数 fun 来检查是否满足条件
-        transformed = fun(output_grid)
-        if transformed == output_grid:
-            # flags["is_fun_ok"].append(True)
-            continue  # 结束本轮循环，直接进行下一个 data_pair
-        else:
-            print(f"failed : {fun.__name__}")
-            # return f'failed {fun.__name__}'
-            return False
-    print(f"Do fun all ok : {fun.__name__}")
-    return fun
-    # testin = fun(test_data[0]['input'])
-    # assert testin == test_data[0]['output']
-    # return testin
-
-
-def do_2funswicharg_task(fun: Callable, fun22: Callable, task: Dict, flags: Dict[str, List[bool]]) -> str:
-    """
-    尝试单独处理每个输入输出对，根据传入的函数 fun 检查每对输入输出是否满足条件。
-    """
-
-    train_data = task['train']
-    test_data = task['test']
-    # bi_map = BidirectionalMap(mapping)
-
-    # fun2 = bi_map.get(fun22)
-
-    for data_pair in train_data:
-        input_grid = data_pair['input']
-        output_grid = data_pair['output']
-
-        # 使用传入的函数 fun 来检查是否满足条件
-        I2 = fun(input_grid)
-        transformed = fun_swicharg_action(fun22, input_grid, I2)
-        # transformed = fun2(transformed,input_grid)
-        if transformed == output_grid:
-            # flags["is_fun_ok"].append(True)
-            continue  # 结束本轮循环，直接进行下一个 data_pair
-        else:
-            print(f"failed : {fun.__name__},{fun22.__name__}")
-            # return f'failed {fun.__name__}'
-            return False
-    print(f"2 Do fun all ok : {fun.__name__},{fun22.__name__}")
-    I = test_data[0]['input']
-    I2 = fun(test_data[0]['input'])
-    testin = fun_swicharg_action(fun22, I, I2)
-    # testin = fun2(testin,test_data[0]['input'])
-    assert testin == test_data[0]['output']
-    print(f"2 Do fun all - test - ok ")
-    return testin
-
-
-def fun_swicharg_action(fun22: Callable, I, I2):
-    # 获取函数名
-    func_name = fun22.__name__
-
-    bi_map = BidirectionalMap(mapping)
-    fun2 = bi_map.get(fun22)
-    # 根据函数名包含的关键字返回相应的值
-    if "top" in func_name:
-        return fun2(I, I2)
-        # 也可以返回对应的处理结果或执行相应的功能
-    elif "bottom" in func_name:
-        return fun2(I2, I)
-        # 执行 down 的代码
-    elif "left" in func_name:
-        return fun2(I, I2)
-        # 执行 left 的代码
-    elif "right" in func_name:
-        return fun2(I, I2)
-        # 执行 right 的代码
-    else:
-        return "No action matches."
-
-
-def do_fun_task(fun: Callable, task: Dict, flags: Dict[str, List[bool]]) -> str:
-    """
-    尝试单独处理每个输入输出对，根据传入的函数 fun 检查每对输入输出是否满足条件。
-    """
-
-    train_data = task['train']
-    test_data = task['test']
-
-    for data_pair in train_data:
-        input_grid = data_pair['input']
-        output_grid = data_pair['output']
-
-        # 使用传入的函数 fun 来检查是否满足条件
-        transformed = fun(input_grid)
-        if transformed == output_grid:
-            # flags["is_fun_ok"].append(True)
-            continue  # 结束本轮循环，直接进行下一个 data_pair
-        else:
-            print(f"failed : {fun.__name__}")
-            # return f'failed {fun.__name__}'
-            return False
-    print(f"Do fun all ok : {fun.__name__}")
-    testin = fun(test_data[0]['input'])
-    assert testin == test_data[0]['output']
-    print(f"2 Do fun all - test - ok ")
-    return testin
-
-
-def do_fun_arg_task(fun: Callable, task: Dict, flags: Dict[str, List[bool]], *args: Any) -> str:
-    """
-    尝试单独处理每个输入输出对，根据传入的函数 fun 和额外的参数 args 检查每对输入输出是否满足条件。
-    """
-
-    train_data = task['train']
-    test_data = task['test']
-
-    for data_pair in train_data:
-        input_grid = data_pair['input']
-        output_grid = data_pair['output']
-
-        if 'input' in args:
-            transformed = fun(input_grid, input_grid)
-        else:
-            # 使用传入的函数 fun 和额外的参数 args 来检查是否满足条件
-            transformed = fun(input_grid, *args)  # 将额外参数传递给函数
-        if transformed == output_grid:
-            continue  # 结束本轮循环，直接进行下一个 data_pair
-        else:
-            print(f"failed : {fun.__name__}")
-            # return f'failed {fun.__name__}'
-            return False
-    print(f"Do fun all ok : {fun.__name__}")
-
-    if 'input' in args:
-        testin = fun(test_data[0]['input'], test_data[0]['input'])
-    else:
-        testin = fun(test_data[0]['input'], *args)
-    assert testin == test_data[0]['output']
-    print(f"2 Do fun all - test - ok ")
-    return testin
+    return is_judg_fun_flag if is_judg_fun_flag else [False]
 
 
 def solve_combined(input_grids, output_grids, flags: Dict[str, bool]):
@@ -493,175 +380,3 @@ def prepare_color_count(task, flags: Dict[str, bool]):
     return
 
 # change name to get fun args
-
-
-def solve_individual(task, flags: Dict[str, bool]):
-    """
-    尝试单独处理每个输入输出对，根据标志变量确定操作。
-    """
-    train_data = task['train']
-    I = train_data[0]['input']
-    O = train_data[0]['output']
-
-    height_i, width_i = height(I), width(I)    # 输入对象的高度和宽度
-    height_o, width_o = height(O), width(O)    # 输出对象的高度和宽度
-
-    height_ratio = height_o / height_i
-    width_ratio = width_o / width_i
-
-    if height_ratio == 1 and width_ratio == 1:
-        print("输入和输出的高度和宽度都保持不变")
-        # 处理无缩放的情况
-        functions = [
-            vmirror,
-            hmirror,
-            cmirror,
-            dmirror,
-            rot90,
-            rot180,
-            rot270
-        ]
-
-        for fun in functions:
-            result = do_fun_task(fun, task, flags)  # 执行 do_fun_task
-
-            if result:
-                return result
-
-        fun, arg1, arg2 = prepare_diff(task, flags)
-        # functions = [
-        #     replace
-        # ]
-        result = do_fun_arg_task(
-            fun, task, flags, arg1, arg2)  # 执行 do_fun_task
-
-        if result:
-            return result
-
-    elif height_ratio == 2 and width_ratio == 2:
-        print("输入和输出的高度和宽度均为 2 倍")
-        # 处理高度和宽度均为 2 倍的情况
-        functions = [
-            upscale,
-            hupscale,
-            vupscale,
-            downscale
-        ]
-
-        factor = 2
-
-        for fun in functions:
-            result = do_fun_arg_task(
-                fun, task, flags, factor)  # 执行 do_fun_task
-
-            if result:
-                return result
-
-    elif height_ratio == 2 or width_ratio == 2:
-        functions = [
-            hconcat,
-            vconcat
-
-        ]
-        for fun in functions:
-            result = do_fun_arg_task(
-                fun, task, flags, 'input')  # 执行 do_fun_task
-            if result:
-                return result
-
-        exe_fun = [
-            canvas
-        ]
-        for fun in proper_functions:
-            # type: ignore # 执行 do_fun_task
-            isproper = out_is_proper_fun(fun, task, flags)
-            if isproper:
-                for fun in part_functions:
-                    part_fun = outintput_is_part_fun(
-                        fun, task, flags)  # type: ignore
-                    if part_fun:
-                        result3 = do_2funswicharg_task(
-                            isproper, part_fun, task, flags)
-                        return result3
-                for fun in exe_fun:
-                    exe_fun = check_train_fun
-
-    elif height_ratio == 3 and width_ratio == 3:
-        print("输入和输出的高度和宽度均为 3 倍")
-        # 处理高度和宽度均为 3 倍的情况
-        functions = [
-            upscale,
-            hupscale,
-            vupscale,
-            downscale
-        ]
-
-        factor = 3
-
-        for fun in functions:
-            result = do_fun_arg_task(
-                fun, task, flags, factor)  # 执行 do_fun_task
-
-            if result:
-                return result
-
-    elif height_ratio <= 1 and width_ratio <= 1:
-
-        ifsubgrid = is_subgrid(task, flags)
-        if ifsubgrid:
-            fun, (arg1, arg2) = ifsubgrid
-            result = do_fun_arg_task(
-                # 执行 do_fun_task
-                fun, task, flags, (arg1, arg2), (height_o, width_o))
-            if result:
-                return result
-
-    # elif height_ratio == 0.3333333333333333 and width_ratio == 0.3333333333333333:
-        functions = [
-            replace,
-            downscale
-        ]
-
-        flags_data = initialize_flags()
-        flags_data["use_fun1"] = [True]
-        flags_data["use_fun2"] = [True]
-        flags_data["use_fun3"] = [False]
-        flags_data["use_fun4"] = [False]  # 设置 use_fun2 为 False，不执行 fun2
-        flags_data["order"] = [1, 2]
-
-        args_for_fun1 = [5, 0]
-        args_for_fun2 = [3]
-
-        # 调用函数
-        result = do_check_train_get_test(
-            do_4fun_task,
-            task,
-            flags_data,
-            replace, args_for_fun1,
-            downscale, args_for_fun2)
-        if result:
-            return result
-
-    elif height_ratio == 3 and width_ratio == 1:
-        print("高度为 3 倍，宽度保持不变")
-        # 处理高度为 3 倍，宽度不变的情况
-
-    elif height_ratio == 1 and width_ratio == 3:
-        print("高度保持不变，宽度为 3 倍")
-        # 处理高度不变，宽度为 3 倍的情况
-
-    elif height_ratio == 2 and width_ratio == 3:
-        print("高度为 2 倍，宽度为 3 倍")
-        # 处理高度为 2 倍，宽度为 3 倍的情况
-
-    elif height_ratio == 3 and width_ratio == 2:
-        print("高度为 3 倍，宽度为 2 倍")
-        # 处理高度为 3 倍，宽度为 2 倍的情况
-
-    else:
-        print("高度和宽度的比率不在预期范围内")
-        # 处理其他情况
-
-    # do_fun_task(vmirror,task,flags)
-
-    return None

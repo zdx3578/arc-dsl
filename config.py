@@ -126,14 +126,23 @@ def initialize_flags() -> Dict[str, List[bool]]:
         "use_fun3": [False],  # 默认不执行
         "use_fun4": [False],
         # 执行顺序 (可以根据条件动态修改)
-        "order": [1, 2, 4]
+        "order": [1, 2, 4],
+
+        "in_out_fun": [],
+        "out_in_fun": [],
+        "out_out_fun": [],
+        "in_in_fun": []
+
     }
 
 
-def in_out_fun_flags() -> Dict[str, List[bool]]:
-    return {
-        "in_out_fun": [],
-        "out_in": [],
-        "out_out_fun": [],}
-    
+# def is_judg_result_fun_flags() -> Dict[str, List[bool]]:
+#     #in out is input process to output
+#     return {
+#         "in_out_fun": [],
+#         "out_in_fun": [],
+#         "out_out_fun": [],
+#         "in_in_fun": []
+# }
+
 

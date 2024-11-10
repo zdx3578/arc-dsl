@@ -57,6 +57,83 @@ def safe_execute(fun, *args):
         return None
 
 
+def do_check_inputOutput_proper_1_arg_functions(proper_1arg_functions, task: Dict, flags: Dict[str, List[bool]]):
+    train_data = task['train']
+    test_data = task['test']
+
+    flags.get("ok_fun", [])
+
+    I = train_data[0]['input']
+    O = train_data[0]['output']
+
+    height_i, width_i = height(I), width(I)    # 输入对象的高度和宽度
+    height_o, width_o = height(O), width(O)    # 输出对象的高度和宽度
+
+    if height_o > height_i and width_o > width_i:
+        height_ratio = int(height_o / height_i)
+    elif height_o < height_i and width_o < width_i:
+        height_ratio = int(height_i / height_o)
+    else:
+        height_ratio = 0
+
+    # get proper and  args
+
+    for fun in proper_1arg_functions:
+        if fun == switch or fun == replace:
+            args = []
+            funarg = prepare_diff(task, flags)
+            if funarg:
+                if len(funarg) == 3:
+                    funget, arg1, arg2 = funarg
+                    if funget == fun:
+                        fun = funget
+                        args = [arg1, arg2]
+        elif fun == crop:
+            args = []
+            funarg = is_subgrid(task, flags)
+            if funarg:
+                if len(funarg) == 3:
+                    funget, arg1, arg2 = funarg
+                    args = [(arg1, arg2), (height_o, width_o)]
+                    fun = funget
+                    # if funget == fun:
+                    #     fun = funget
+                    #     args = [arg1, arg2]
+
+        else:
+            args = [height_ratio]
+        success = True
+        for data_pair in train_data:
+            input_grid = data_pair['input']
+            output_grid = data_pair['output']
+
+            # fun(output_grid)
+            if flags["out_in"] == True:
+                transformed = safe_execute(fun, output_grid, *args)
+                if transformed == input_grid:
+                    # out-input-proper_flags
+                    continue
+
+            # fun(input_grid)
+            transformed = safe_execute(fun, input_grid, *args)
+            if transformed == output_grid:
+                # out-input-proper_flags
+                continue
+
+            # else:
+            print(f"failed : {fun.__name__}")
+            success = False
+            break
+        if success:
+            print(f"ok____ : {fun.__name__}")
+            flags["ok_fun"].append([fun, *args])
+            # height_ratio is args to exe
+            # return fun, height_ratio
+        else:
+            print(f"failed : {fun.__name__}")
+    return flags["ok_fun"] if flags["ok_fun"] else [False]
+
+
 def do_check_inputOutput_proper_1functions(proper_functions, task: Dict, flags: Dict[str, List[bool]]):
     train_data = task['train']
     # test_data = task['test']
@@ -136,15 +213,19 @@ def do_4fun_task(
 
     # 获取顺序
     order = flags.get("order", [1, 2, 3, 4])
-
+    tmpinput_grid = input_grid
     # 根据顺序调用函数
     for idx in order:
         fun, args = functions[idx - 1]  # idx-1是因为order是从1开始的
         if flags.get(f"use_fun{idx}", [True])[0]:  # 检查是否需要调用当前函数
-            if args == 'sameinput':  # or args == [['righthalf', 'lefthalf']]:
-                input_grid = fun(input_grid, input_grid)
-            # elif args == '' :
-            #     input_grid = fun(input_grid, input_grid)
+            if "concat" in fun.__name__:
+                # 执行包含 "concat" 的函数
+                if args == ['pin', 'in']:
+                    input_grid = fun(input_grid, tmpinput_grid)
+                if args == ['in', 'pin']:
+                    input_grid = fun(tmpinput_grid, input_grid)
+                if args == ['in', 'in']:
+                    input_grid = fun(tmpinput_grid, tmpinput_grid)
             else:
                 input_grid = fun(
                     input_grid, *args) if args else fun(input_grid)
