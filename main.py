@@ -130,7 +130,7 @@ def test_solvers_correctness(data, solvers_module):
     print()
     for i, key in enumerate(solvers, start=1):
 
-        # key = '6d0aefbc'
+        # key = '5614dbcf'
 
         print(i, key)
         task = {}
@@ -147,6 +147,15 @@ def test_solvers_correctness(data, solvers_module):
             print()
             print()
             print("success", n_correct+1, " . . . . . . .  .  - 1 ")
+            print()
+            print()
+            print()
+            print()
+            print()
+            print()
+            print()
+            print()
+            print()
             print()
             print()
             print()

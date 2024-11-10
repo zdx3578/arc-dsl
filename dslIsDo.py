@@ -79,6 +79,12 @@ def do_check_inputOutput_proper_1_arg_functions(proper_1arg_functions, task: Dic
     # get proper and  args
 
     for fun in proper_1arg_functions:
+        # if "half" in fun.__name__:
+        #     flags["out_in"] = True
+        # else:
+        #     ##!!!!!! set false after use
+        #     flags["out_in"] = False
+
         if fun == switch or fun == replace:
             args = []
             funarg = prepare_diff(task, flags)
@@ -99,9 +105,9 @@ def do_check_inputOutput_proper_1_arg_functions(proper_1arg_functions, task: Dic
                     # if funget == fun:
                     #     fun = funget
                     #     args = [arg1, arg2]
-
         else:
             args = [height_ratio]
+
         success = True
         for data_pair in train_data:
             input_grid = data_pair['input']
@@ -139,6 +145,13 @@ def do_check_inputOutput_proper_1functions(proper_functions, task: Dict, flags: 
     # test_data = task['test']
     flags.get("ok_fun", [])
     for fun in proper_functions:
+
+        if "concat" in fun.__name__:
+            flags["out_in"] = True
+        else:
+            ##!!!!!! set false after use
+            flags["out_in"] = False
+
         success = True
         for data_pair in train_data:
             input_grid = data_pair['input']

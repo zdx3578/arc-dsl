@@ -132,12 +132,12 @@ def solve_individual(task, flags: Dict[str, bool]):
             downscale
         ]
 
-        flags_data = initialize_flags()
-        flags_data["use_fun1"] = [True]
-        flags_data["use_fun2"] = [True]
-        flags_data["use_fun3"] = [False]
-        flags_data["use_fun4"] = [False]  # 设置 use_fun2 为 False，不执行 fun2
-        flags_data["order"] = [1, 2]
+        flags = initialize_flags()
+        flags["use_fun1"] = [True]
+        flags["use_fun2"] = [True]
+        flags["use_fun3"] = [False]
+        flags["use_fun4"] = [False]  # 设置 use_fun2 为 False，不执行 fun2
+        flags["order"] = [1, 2]
 
         args_for_fun1 = [5, 0]
         args_for_fun2 = [3]
@@ -146,7 +146,7 @@ def solve_individual(task, flags: Dict[str, bool]):
         result = do_check_train_get_test(
             do_4fun_task,
             task,
-            flags_data,
+            flags,
             replace, args_for_fun1,
             downscale, args_for_fun2)
         if result:

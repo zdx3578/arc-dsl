@@ -60,7 +60,7 @@ def multiply(
     elif isinstance(a, int) and isinstance(b, tuple):
         return (a * b[0], a * b[1])
     return (a[0] * b, a[1] * b)
-    
+
 
 def divide(
     a: Numerical,
@@ -578,7 +578,7 @@ def mostcolor(
     """ most common color """
     values = [v for r in element for v in r] if isinstance(element, tuple) else [v for v, _ in element]
     return max(set(values), key=values.count)
-    
+
 
 def leastcolor(
     element: Element
@@ -773,13 +773,13 @@ def objects(
     """ Extract objects occurring on the grid """
     # 计算背景颜色
     bg = mostcolor(grid) if without_bg else None
-    
+
     objs = set()  # 存放所有对象
     occupied = set()  # 记录已经属于某个对象的单元格
     h, w = len(grid), len(grid[0])  # 网格的高度和宽度
     unvisited = asindices(grid)  # 获取所有单元格的坐标
     diagfun = neighbors if diagonal else dneighbors  # 确定邻居获取函数
-    
+
     for loc in unvisited:
         if loc in occupied:
             continue  # 如果该单元格已经属于某个对象，则跳过
@@ -801,7 +801,7 @@ def objects(
                     }
             cands = neighborhood - occupied  # 更新候选单元格集合，去掉已占用的单元格
         objs.add(frozenset(obj))  # 将当前对象加入对象集合
-    
+
     return frozenset(objs)  # 返回所有对象
 
 
@@ -1273,7 +1273,7 @@ def index(
     h, w = len(grid), len(grid[0])
     if not (0 <= i < h and 0 <= j < w):
         return None
-    return grid[loc[0]][loc[1]] 
+    return grid[loc[0]][loc[1]]
 
 
 def canvas(
