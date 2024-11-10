@@ -129,7 +129,7 @@ def solve_individual2(task):
 
 def preprocess_noise(task):
     """
-    对 task 中的所有 train 和 test 样本的 input 进行噪声替换处理
+    now just for #18, 5614dbcf
     """
     # 遍历任务中的所有训练和测试样本
     for sample in task['train'] + task['test']:
@@ -317,9 +317,9 @@ def do_check_inputComplexOutput_proper_functions(proper_1arg_functions, task: Di
 
         if "half" in fun.__name__ or "mirror" in fun.__name__:
             flags["out_in"] = True
-        else:
-            ##!!!!!! set false after use  half not concat
-            flags["out_in"] = False
+        # else:
+        #     ##!!!!!! set false after use  half not concat
+        #     flags["out_in"] = False
 
         args = []
 
@@ -361,6 +361,8 @@ def do_check_inputComplexOutput_proper_functions(proper_1arg_functions, task: Di
             print(f"ok____ : {fun.__name__}")
         else:
             print(f"failed : {fun.__name__}")
+        flags["out_in"] = False
+    print('do_check_input___ComplexOutput___proper_functions')
     return is_judg_fun_flag if is_judg_fun_flag else [False]
 
 

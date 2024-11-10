@@ -137,6 +137,7 @@ def do_check_inputOutput_proper_1_arg_functions(proper_1arg_functions, task: Dic
             # return fun, height_ratio
         else:
             print(f"failed : {fun.__name__}")
+    print('do_check_inputOutput_proper_1___arg___functions')
     return flags["ok_fun"] if flags["ok_fun"] else [False]
 
 
@@ -146,11 +147,11 @@ def do_check_inputOutput_proper_1functions(proper_functions, task: Dict, flags: 
     flags.get("ok_fun", [])
     for fun in proper_functions:
 
-        if "concat" in fun.__name__:
-            flags["out_in"] = True
-        else:
-            ##!!!!!! set false after use
-            flags["out_in"] = False
+        # if "concat" in fun.__name__:
+        #     flags["out_in"] = True
+        # else:
+        #     ##!!!!!! set false after use
+        #     flags["out_in"] = False
 
         success = True
         for data_pair in train_data:
@@ -210,6 +211,7 @@ def do_check_inputOutput_proper_1functions(proper_functions, task: Dict, flags: 
         else:
             print(f"failed : {fun.__name__}")
     # 验证成功几个函数
+    print('do_check_inputOutput___proper___functions')
     return flags["ok_fun"] if flags["ok_fun"] else [False]
 
 

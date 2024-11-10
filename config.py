@@ -6,13 +6,13 @@ from collections import defaultdict
 # from solvers2 import do_output_most_input_color
 from dslIsDo import *
 
-part_functions = [
-    # 长方形
-    righthalf,
-    lefthalf,
-    bottomhalf,
-    tophalf
-]
+# part_functions = [
+#     # 长方形
+#     righthalf,
+#     lefthalf,
+#     bottomhalf,
+#     tophalf
+# ]
 
 proper_functions = [
     # out is what input 正方形
@@ -28,6 +28,7 @@ proper_functions = [
     lefthalf,
     tophalf,
     righthalf,
+    # do_output_most_input_color,
     # out is what output
 
     # in is what output
@@ -40,12 +41,13 @@ proper_1arg_functions = [upscale,
                          replace,
                          switch,
                          crop,
+
                          ]
 
-proper_concat_functions = [hconcat,
-                           vconcat]
+# proper_concat_functions = [hconcat,
+#                            vconcat]
 
-proper_Complex_functions = [is_output_most_input_color]
+# proper_Complex_functions = [is_output_most_input_color]
 
 is_do_mapping = {
     # out is what input
@@ -144,5 +146,3 @@ def initialize_flags() -> Dict[str, List[bool]]:
 #         "out_out_fun": [],
 #         "in_in_fun": []
 # }
-
-
