@@ -40,9 +40,9 @@ def is_output_most_input_color(I, O) -> bool:
     return True
 
 
-def do_output_most_input_color(color, h, w):
-
-    return canvas(color, (h, w))
+def do_output_most_input_color(I):
+    x1 = mostcolor(I)
+    return canvas(x1, (height(I), width(I)))
 
 
 def safe_execute(fun, *args):
@@ -519,6 +519,7 @@ def is_subgrid(task, flags):
                     if not match:
                         break
                 if match:
-                    return crop, i, j  # 找到匹配位置，返回 True
+                    if i == small_rows and j == small_rows:
+                        return crop, i, j  # 找到匹配位置，返回 True
 
     return False  # 未找到匹配位置，返回 False

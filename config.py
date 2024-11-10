@@ -16,6 +16,8 @@ from dslIsDo import *
 
 proper_functions = [
     # out is what input 正方形
+    # ! ! 每个任务都可能是一个 几个 独立的 高级 抽象 的is proper判断
+    # 模式判断  patter，高级 复杂 抽象 patter；语言中的单词
     vmirror,
     hmirror,
     cmirror,
@@ -28,8 +30,15 @@ proper_functions = [
     lefthalf,
     tophalf,
     righthalf,
-    # do_output_most_input_color,
+    do_output_most_input_color,
     # out is what output
+    #扣洞
+    #叠加
+    #溢水
+    #直线框
+    # 沿线
+    #墙柱
+    # 单词含义
 
     # in is what output
 ]
@@ -78,10 +87,7 @@ is_do_mapping = {
 
 def initialize_flags() -> Dict[str, List[bool]]:
     """
-    初始化一组标志变量。
-
-    返回:
-    - Dict[str, List[bool]]: 标志变量的字典，默认为 False。
+    几乎每个任务都是一个独立的操作单元的标志
     """
     return {
         "is_mirror": [],
@@ -94,6 +100,9 @@ def initialize_flags() -> Dict[str, List[bool]]:
         "is_color_transform": [],
         "is_output_one_color": [],
         "is_output_most_input_color": [],
+        "is_out_subgrid_in": [False],
+        "is_one_third": [],
+        "is_one_third_left": [],
         # # template
         # "in_is_?": [],
         # "out_is_??": [],
