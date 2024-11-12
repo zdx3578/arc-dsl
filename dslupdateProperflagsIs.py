@@ -7,6 +7,7 @@ import traceback
 from config import *
 
 
+
 def update_objects_proper_flags(input_grid, output_grid, flags):
     # 提取输入和输出的对象集合
     input_objects = objects(input_grid, True, True, True)
@@ -21,6 +22,13 @@ def update_objects_proper_flags(input_grid, output_grid, flags):
         flags["input_first_obj"] = input_first_obj
     if "output_first_obj" not in flags:
         flags["output_first_obj"] = output_first_obj
+    if "all_obj" not in flags:
+        flags["all_obj"] = {"input": input_objects, "output": output_objects}
+    else:
+        flags["all_obj"]["input"] = input_objects
+        flags["all_obj"]["output"] = output_objects
+
+    processdiff
 
 # 初始化 flags 的函数
 

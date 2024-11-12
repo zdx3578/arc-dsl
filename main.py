@@ -130,7 +130,7 @@ def test_solvers_correctness(data, solvers_module):
     print()
     for i, key in enumerate(solvers, start=1):
 
-        # key = '32597951'
+        key = '32597951'
 
         print(i, key)
         task = {}
@@ -140,7 +140,7 @@ def test_solvers_correctness(data, solvers_module):
             solver = getattr(solvers_module, f'solve_{key}')
             # preparetask(task)
             solve_arc_task(task)
-            
+
             # for ex in task['train']:
             #     # prepare_diff(ex['input'],ex['output'])
             #     assert solver(ex['input']) == ex['output']

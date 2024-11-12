@@ -5,7 +5,7 @@ from typing import Dict, Any, List, Tuple, Callable, Optional
 from config import *
 from dslIsDo import *
 from oldfun import *
-from dslProperIs import *
+from dslupdateProperflagsIs import *
 
 
 def solve_arc_task(task):
