@@ -1,4 +1,5 @@
 from dsl import *
+from dsl2 import *
 from collections import defaultdict
 from typing import Dict, Any, List, Tuple, Callable, Optional
 from collections import defaultdict
@@ -25,19 +26,22 @@ proper_functions = [
     rot90,
     rot180,
     rot270,
+    upper_third, middle_third, lower_third, left_third, center_third, right_third,
 
     bottomhalf,
     lefthalf,
     tophalf,
     righthalf,
     do_output_most_input_color,
+    get_first_object,
+
     # out is what output
-    #扣洞
-    #叠加
-    #溢水
-    #直线框
-    # 沿线
-    #墙柱
+    # 扣洞
+    # 叠加
+    # 溢水
+    # 直线框
+    # 沿线，连线，
+    # 墙柱
     # 单词含义
 
     # in is what output
@@ -50,6 +54,7 @@ proper_1arg_functions = [upscale,
                          replace,
                          switch,
                          crop,
+                         #  upper_third, middle_third, lower_third, left_third, center_third, right_third,
 
                          ]
 
@@ -91,6 +96,8 @@ def initialize_flags() -> Dict[str, List[bool]]:
     """
     return {
         "is_mirror": [],
+        "in_is_out_mirror": [],
+        "out_is_in_mirror": [],
         "is_fun_ok": [],
         "is_scale": [],
         "is_diff_same_posit": [],
@@ -100,9 +107,22 @@ def initialize_flags() -> Dict[str, List[bool]]:
         "is_color_transform": [],
         "is_output_one_color": [],
         "is_output_most_input_color": [],
-        "is_out_subgrid_in": [False],
-        "is_one_third": [],
-        "is_one_third_left": [],
+
+        'is_subgrid': [],
+        "out_is_in_subgrid": [False],
+        "in_is_out_subgrid": [False],
+
+        "out_is_in_third": [],
+        "is_in_third_left": [],
+
+        'is_a_object_of': [],
+
+        'height_ratio': [],
+        'width_ratio': [],
+        'output_allone_color': [],
+
+
+
         # # template
         # "in_is_?": [],
         # "out_is_??": [],
@@ -114,7 +134,7 @@ def initialize_flags() -> Dict[str, List[bool]]:
         # "all_out_of_in_is_??": [],
         # "all_in_of_out_is_?": [],
 
-        #
+        #  property
         "in_out": [],
         "out_in": [],
         "out_out": [],
@@ -138,7 +158,7 @@ def initialize_flags() -> Dict[str, List[bool]]:
         "use_fun4": [False],
         # 执行顺序 (可以根据条件动态修改)
         "order": [1, 2, 4],
-
+        # process in to out
         "in_out_fun": [],
         "out_in_fun": [],
         "out_out_fun": [],

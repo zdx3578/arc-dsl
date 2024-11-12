@@ -1,12 +1,11 @@
-from collections import Counter
+from collections import Counter, defaultdict
 from dsl import *
-from collections import defaultdict
+from dsl2 import *
 from typing import Dict, Any, List, Tuple, Callable, Optional
-
-from collections import defaultdict
 from config import *
 from dslIsDo import *
 from oldfun import *
+from dslProperIs import *
 
 
 def solve_arc_task(task):
@@ -61,42 +60,48 @@ def solve_individual2(task):
     # if height_ratio == 1 and width_ratio == 1:
     # for fun in proper_functions:
 
-    for i in range(3):
-        [fun] = do_check_inputOutput_proper_1functions(
-            proper_functions, task, flags)
-        # proper_fun = fun
-        # args = []
-        # if fun list order  = [1,2,3] and usefun2 ture
-        args_for_fun1 = []
-        if fun:
-            result = do_check_train_get_test(
-                do_4fun_task,
-                task,
-                flags,
-                fun, args_for_fun1)
-            if result:
-                return result
+    for i in range(2):
+        try:
+            [fun] = do_check_inputOutput_proper_1functions(
+                proper_functions, task, flags)
+            # proper_fun = fun
+            # args = []
+            # if fun list order  = [1,2,3] and usefun2 ture
+            args_for_fun1 = []
+
+            if fun:
+                result = do_check_train_get_test(
+                    do_4fun_task,
+                    task,
+                    flags,
+                    fun, args_for_fun1)
+                if result:
+                    return result
+        except:
+            pass
 
         ###############################
+        try:
+            [funarg] = do_check_inputOutput_proper_1_arg_functions(
+                proper_1arg_functions, task, flags)
+            if funarg:
+                if len(funarg) == 3:
+                    fun, arg1, arg2 = funarg
+                    args_for_fun1 = [arg1, arg2]
+                elif len(funarg) == 2:
+                    fun, arg1 = funarg
+                    args_for_fun1 = [arg1]
 
-        [funarg] = do_check_inputOutput_proper_1_arg_functions(
-            proper_1arg_functions, task, flags)
-        if funarg:
-            if len(funarg) == 3:
-                fun, arg1, arg2 = funarg
-                args_for_fun1 = [arg1, arg2]
-            elif len(funarg) == 2:
-                fun, arg1 = funarg
-                args_for_fun1 = [arg1]
-
-        if fun:
-            result = do_check_train_get_test(
-                do_4fun_task,
-                task,
-                flags,
-                fun, args_for_fun1)
-            if result:
-                return result
+            if fun:
+                result = do_check_train_get_test(
+                    do_4fun_task,
+                    task,
+                    flags,
+                    fun, args_for_fun1)
+                if result:
+                    return result
+        except:
+            pass
 
         # part_functions
         # flags["out_in"] = True
@@ -106,9 +111,9 @@ def solve_individual2(task):
         # flags.get["out_in"] = [True]
 
         ##############################
-
+        proper_all_functions = proper_functions
         is_fun_flag = do_check_inputComplexOutput_proper_functions(
-            proper_functions, task, flags)
+            proper_all_functions, task, flags)
 
         fun_process_list = howtodo(is_fun_flag)
 
@@ -125,53 +130,73 @@ def solve_individual2(task):
 
         # if all failed
         task = preprocess_noise(task)
+        is_proper_finding(task, flags)
 
 
-def preprocess_noise(task):
-    """
-    now just for #18, 5614dbcf
-    """
-    # 遍历任务中的所有训练和测试样本
-    for sample in task['train'] + task['test']:
-        input2dgrid = sample['input']
-        # 找到所有噪声位置
-        noise = ofcolor(input2dgrid, 5)
-        replaced_grid = input2dgrid
+def is_proper_finding(task):
+    train_data = task['train']
+    findedflags = {}
 
-        # 遍历每个噪声位置，替换为其邻居的主要颜色
-        for n in noise:
-            # 获取噪声位置的邻居
-            neighbors_list = neighbors(n)
-            neighbor_colors = [index(input2dgrid, pos) for pos in neighbors_list if index(
-                input2dgrid, pos) is not None]
-            # 计算邻居颜色的频率
-            most_color = mostcolor2(neighbor_colors)
-            # 将噪声位置的值替换为邻居中最多的颜色
-            replaced_grid = replace2(replaced_grid, n, most_color)
-        # 更新 sample 中的 input 为替换后的网格
-        sample['input'] = replaced_grid
-    return task
+    for i, data_pair in enumerate(train_data):
+        flags = initialize_flags()
+
+        input_grid = data_pair['input']
+        output_grid = data_pair['output']
+
+        # 获取输入和输出的高度和宽度
 
 
-def mostcolor2(colors: list) -> int:
-    """ 返回列表中出现次数最多的颜色 """
-    if not colors:  # 如果列表为空，返回 None 或其他默认值
-        return None
-    count = Counter(colors)  # 统计颜色出现的次数
-    most_common_color, _ = count.most_common(1)[0]  # 获取出现次数最多的颜色
-    return most_common_color
+
+        # 提取输入对象特征
+        update_objects_proper_flags(input_grid, output_grid, flags)
+
+        # 处理信息更新 findflags[i]
+        update_proper_in_out_flags(input_grid, output_grid, flags)
 
 
-def replace2(grid, position, new_value):
-    """替换网格中特定位置的值"""
-    i, j = position
 
-    # 将 grid 转换为列表，以便进行修改
-    new_grid = [list(row) for row in grid]  # 深复制并将每一行转换为列表
-    new_grid[i][j] = new_value  # 修改指定位置的值
 
-    # 将新网格转换回不可变的元组结构
-    return tuple(tuple(row) for row in new_grid)
+
+        # 更新 is_scale 标志项
+        if (height_i != height_o or width_i != width_o):
+            flags["is_scale"].append(True)
+        else:
+            flags["is_scale"].append(False)
+
+        # 更新 is_color_transform 标志项
+        if palette(input_grid) != palette(output_grid):
+            flags["is_color_transform"].append(True)
+        else:
+            flags["is_color_transform"].append(False)
+
+        # 更新 is_position_swap 标志项（示例：通过位置互换判断）
+        if position_swap(input_grid, output_grid):
+            flags["is_position_swap"].append(True)
+        else:
+            flags["is_position_swap"].append(False)
+
+        # 更新 is_output_one_color 标志项
+        if len(palette(output_grid)) == 1:
+            flags["is_output_one_color"].append(True)
+        else:
+            flags["is_output_one_color"].append(False)
+
+        # 更新 output_allone_color 标志项
+        flags["output_allone_color"].append(all(cell == output_grid[0][0] for row in output_grid for cell in row))
+
+        # 更新 out_is_in_subgrid 和 in_is_out_subgrid 标志项
+        if is_subgrid(input_grid, output_grid):
+            flags["in_is_out_subgrid"][0] = True
+        if is_subgrid(output_grid, input_grid):
+            flags["out_is_in_subgrid"][0] = True
+
+
+        findedflags[i] = flags
+
+    is_input_firstobjsame_outallobject()
+
+
+    return findedflags
 
 
 def prepare_and_call_do_test(fun_process_list: List[List[Any]],
@@ -211,12 +236,9 @@ def howtodo(flags):
     flags = flags
 
     if flags["in_out_fun"]:
-        processed_values = []
-        for value in flags["in_out_fun"]:
-            # 在这里添加处理每个值的逻辑
-            processed_value = process_value(value)
-            processed_values.append(processed_value)
-        processed_flags["in_out_fun"] = processed_values
+        if left_third in flags["in_out_fun"] and right_third in flags["in_out_fun"]:
+            flags["use_fun2"] = [False]
+            return [[left_third, []]]
 
     # 处理 "out_in_fun" 标签
     if flags["out_in_fun"]:
@@ -288,15 +310,13 @@ def howtodo(flags):
     return False
 
 
-def process_value(value: bool) -> Any:
-    return
+def do_check_inputComplexOutput_proper_functions(proper_functions, task: Dict, flags: Dict[str, List[bool]]):
 
-
-def do_check_inputComplexOutput_proper_functions(proper_1arg_functions, task: Dict, flags: Dict[str, List[bool]]):
+    print('do_check_input___ComplexOutput___proper_functions')
     train_data = task['train']
     test_data = task['test']
 
-    is_judg_fun_flag = flags
+    # flags = flags
 
     I = train_data[0]['input']
     O = train_data[0]['output']
@@ -313,7 +333,7 @@ def do_check_inputComplexOutput_proper_functions(proper_1arg_functions, task: Di
 
     # get proper and  args
 
-    for fun in proper_1arg_functions:
+    for fun in proper_functions:
 
         if "half" in fun.__name__ or "mirror" in fun.__name__:
             flags["out_in"] = True
@@ -332,25 +352,25 @@ def do_check_inputComplexOutput_proper_functions(proper_1arg_functions, task: Di
             if flags["out_in"] == True:
                 transformed = safe_execute(fun, output_grid, *args)
                 if transformed == input_grid:
-                    if fun not in is_judg_fun_flag["out_in_fun"]:
-                        is_judg_fun_flag["out_in_fun"].append(fun)
+                    if fun not in flags["out_in_fun"]:
+                        flags["out_in_fun"].append(fun)
                     continue
 
                 if transformed == output_grid:
-                    if fun not in is_judg_fun_flag["out_out_fun"]:
-                        is_judg_fun_flag["out_out_fun"].append(fun)
+                    if fun not in flags["out_out_fun"]:
+                        flags["out_out_fun"].append(fun)
                     continue
 
             # fun(input_grid)
             transformed = safe_execute(fun, input_grid, *args)
             if transformed == output_grid:
-                if fun not in is_judg_fun_flag["in_out_fun"]:
-                    is_judg_fun_flag["in_out_fun"].append(fun)
+                if fun not in flags["in_out_fun"]:
+                    flags["in_out_fun"].append(fun)
                 continue
 
             if transformed == input_grid:
-                if fun not in is_judg_fun_flag["in_in_fun"]:
-                    is_judg_fun_flag["in_in_fun"].append(fun)
+                if fun not in flags["in_in_fun"]:
+                    flags["in_in_fun"].append(fun)
                 continue
 
             # else:
@@ -363,7 +383,7 @@ def do_check_inputComplexOutput_proper_functions(proper_1arg_functions, task: Di
             print(f"failed : {fun.__name__}")
         flags["out_in"] = False
     print('do_check_input___ComplexOutput___proper_functions')
-    return is_judg_fun_flag if is_judg_fun_flag else [False]
+    return flags if flags else [False]
 
 
 def solve_combined(input_grids, output_grids, flags: Dict[str, bool]):

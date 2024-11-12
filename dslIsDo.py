@@ -7,6 +7,26 @@ import traceback
 from config import *
 
 
+def is_input_firstobjsame_outallobject():
+
+    return
+
+
+# 如何判断是get_first_object
+def is_a_object_of(I,O,flags):
+    x1 = objects(I, T, T, T)
+    # O is  partof x1
+    flags["is_a_object_of"] = True
+    return
+def is_move():
+    return
+
+def get_first_object(I):
+    x1 = objects(I, T, T, T)
+    x2 = first(x1)
+    O = subgrid(x2, I)
+    return O
+
 def is_output_most_input_color(I, O) -> bool:
     """
     判断 output 是否完全由 input 中出现最多的颜色组成。
@@ -45,6 +65,36 @@ def do_output_most_input_color(I):
     return canvas(x1, (height(I), width(I)))
 
 
+def process_value(value: bool) -> Any:
+    return
+
+
+def preprocess_noise(task):
+    """
+    now just for #18, 5614dbcf
+    """
+    # 遍历任务中的所有训练和测试样本
+    for sample in task['train'] + task['test']:
+        input2dgrid = sample['input']
+        # 找到所有噪声位置
+        noise = ofcolor(input2dgrid, 5)
+        replaced_grid = input2dgrid
+
+        # 遍历每个噪声位置，替换为其邻居的主要颜色
+        for n in noise:
+            # 获取噪声位置的邻居
+            neighbors_list = neighbors(n)
+            neighbor_colors = [index(input2dgrid, pos) for pos in neighbors_list if index(
+                input2dgrid, pos) is not None]
+            # 计算邻居颜色的频率
+            most_color = mostcolor2(neighbor_colors)
+            # 将噪声位置的值替换为邻居中最多的颜色
+            replaced_grid = replace2(replaced_grid, n, most_color)
+        # 更新 sample 中的 input 为替换后的网格
+        sample['input'] = replaced_grid
+    return task
+
+
 def safe_execute(fun, *args):
     try:
         # 调用传入的函数并传递参数
@@ -60,6 +110,7 @@ def safe_execute(fun, *args):
 def do_check_inputOutput_proper_1_arg_functions(proper_1arg_functions, task: Dict, flags: Dict[str, List[bool]]):
     train_data = task['train']
     test_data = task['test']
+    print('do_check_inputOutput_proper_1___arg___functions')
 
     flags.get("ok_fun", [])
 
@@ -103,8 +154,8 @@ def do_check_inputOutput_proper_1_arg_functions(proper_1arg_functions, task: Dic
                     args = [(arg1, arg2), (height_o, width_o)]
                     fun = funget
                     # if funget == fun:
-                    #     fun = funget
-                    #     args = [arg1, arg2]
+                        # fun = funget
+                        # args = [arg1, arg2]
         else:
             args = [height_ratio]
 
@@ -113,6 +164,15 @@ def do_check_inputOutput_proper_1_arg_functions(proper_1arg_functions, task: Dic
             input_grid = data_pair['input']
             output_grid = data_pair['output']
 
+            # if fun == crop:
+            #     args = []
+            #     height_o, width_o = height(output_grid), width(output_grid)
+            #     funarg = is_subgrid(task, flags)
+            #     if funarg:
+            #         if len(funarg) == 3:
+            #             funget, arg1, arg2 = funarg
+            #             args = [(arg1, arg2), (height_o, width_o)]
+            #             fun = funget
             # fun(output_grid)
             if flags["out_in"] == True:
                 transformed = safe_execute(fun, output_grid, *args)
@@ -144,6 +204,7 @@ def do_check_inputOutput_proper_1_arg_functions(proper_1arg_functions, task: Dic
 def do_check_inputOutput_proper_1functions(proper_functions, task: Dict, flags: Dict[str, List[bool]]):
     train_data = task['train']
     # test_data = task['test']
+    print('do_check_inputOutput___proper___functions')
     flags.get("ok_fun", [])
     for fun in proper_functions:
 
@@ -519,7 +580,8 @@ def is_subgrid(task, flags):
                     if not match:
                         break
                 if match:
-                    if i == small_rows and j == small_rows:
-                        return crop, i, j  # 找到匹配位置，返回 True
+                    flags['is_subgrid'] = [True]
+                    # if i == small_rows and j == small_rows:
+                    return crop, i, j  # 找到匹配位置，返回 True
 
     return False  # 未找到匹配位置，返回 False
