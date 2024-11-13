@@ -3,7 +3,7 @@ from dsl import *
 from typing import Dict, Any, List, Tuple, Callable, Optional
 import logging
 import traceback
-from config import *
+# from config import *
 # from config import *
 # from dslIsDo import *
 # from oldfun import *
@@ -133,6 +133,53 @@ def right_third(grid: Grid) -> Grid:
     """ Right third of grid """
     return rot270(lower_third(rot90(grid)))
 
+def getIO_diff(I,O, flags: Dict[str, bool]):
+    # 调用 objects 函数两次
+    oi = objects(I, False, True, False)
+    oo = objects(O, False, True, False)
+
+    same_objects = oi.intersection(oo)
+
+    oi_unique = oi - oo  # 获取在 oi 中但不在 oo 中的元素
+    oo_unique = oo - oi  # 获取在 oo 中但不在 oi 中的元素
+
+    # 将它们分别赋给 diff1 和 diff2
+    diff1, diff2 = next(iter(oi_unique)), next(iter(oo_unique))
+
+    # 将两个 frozenset 转换为有序列表
+    sorted_diff1 = sorted(diff1, key=lambda x: (x[0], x[1]))  # 按值和坐标排序
+    sorted_diff2 = sorted(diff2, key=lambda x: (x[0], x[1]))  # 按值和坐标排序
+
+    # 输出排序后的比较结果
+    print("第一个 frozenset 排序后的元素:", sorted_diff1)
+    print("第二个 frozenset 排序后的元素:", sorted_diff2)
+    # 比较差异
+    diff1_unique = sorted(set(sorted_diff1) - set(sorted_diff2))
+    diff2_unique = sorted(set(sorted_diff2) - set(sorted_diff1))
+
+    print("第一个 frozenset 特有的元素（排序后）:", diff1_unique)
+    print("第二个 frozenset 特有的元素（排序后）:", diff2_unique)
+
+    merged_diffs = {
+        "diff1": defaultdict(list),
+        "diff2": defaultdict(list)
+    }
+
+    # 将 diff1_unique 中的数据按第一个值分组
+    for value, coord in diff1_unique:
+        merged_diffs["diff1"][value].append(coord)
+
+    # 将 diff2_unique 中的数据按第一个值分组
+    for value, coord in diff2_unique:
+        merged_diffs["diff2"][value].append(coord)
+
+    # 输出合并后的差异
+    for key in merged_diffs:
+        for value, positions in merged_diffs[key].items():
+            print(f"{key} - 值 {value} 的特有坐标:", positions)
+
+    display_diff_matrices(diff1_unique,diff2_unique)
+    return merged_diffs
 
 
 

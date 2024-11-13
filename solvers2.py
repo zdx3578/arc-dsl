@@ -12,7 +12,9 @@ def solve_arc_task(task):
 
     solutions = []
 
-    solution = solve_individual2(task)
+    solution = solve_individual3(task)
+
+    # solution = solve_individual2(task)
 
     # flags = initialize_flags()
     # solution = solve_individual(task, flags)
@@ -35,6 +37,11 @@ def solve_arc_task(task):
                for test_input in test_data]
     return results
 
+def solve_individual3(task):
+
+    is_proper_finding(task)
+
+    return
 
 def solve_individual2(task):
     """
@@ -143,7 +150,9 @@ def is_proper_finding(task):
         input_grid = data_pair['input']
         output_grid = data_pair['output']
 
-        # 获取输入和输出的高度和宽度
+        getIO_diff(input_grid, output_grid, flags)
+
+        is_objectComplete_change_color(input_grid, output_grid, flags)
 
 
 

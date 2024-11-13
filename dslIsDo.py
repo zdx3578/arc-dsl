@@ -11,7 +11,7 @@ def is_input_firstobjsame_outallobject():
     return
 
 def is_objectComplete_change_color(I,O):
-    difference = prepare_diff?
+    difference = prepare_diff
     contained = contains_object(difference)
     complete = complementofobject(contained)
     complete_ischange = is_change_color(complete)
