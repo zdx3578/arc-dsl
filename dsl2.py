@@ -20,7 +20,7 @@ def contains_object(obj: Object, objects: List[Object]) -> bool:
     return False
 
 
-def complementofobject( obj: Object) -> Object:
+def complementofobject(obj: Object) -> Object:
     """获取对象在矩阵中的补集"""
     obj_indices = toindices(obj)
     ul = ulcorner(obj_indices)
@@ -133,7 +133,8 @@ def right_third(grid: Grid) -> Grid:
     """ Right third of grid """
     return rot270(lower_third(rot90(grid)))
 
-def getIO_diff(I,O, flags: Dict[str, bool]):
+
+def getIO_diff(I, O, flags: Dict[str, bool]):
     # 调用 objects 函数两次
     oi = objects(I, False, True, False)
     oo = objects(O, False, True, False)
@@ -146,13 +147,15 @@ def getIO_diff(I,O, flags: Dict[str, bool]):
     # 将它们分别赋给 diff1 和 diff2
     diff1, diff2 = next(iter(oi_unique)), next(iter(oo_unique))
 
+    assert oi_unique == {diff1} and oo_unique == {diff2}
+
     # 将两个 frozenset 转换为有序列表
     sorted_diff1 = sorted(diff1, key=lambda x: (x[0], x[1]))  # 按值和坐标排序
     sorted_diff2 = sorted(diff2, key=lambda x: (x[0], x[1]))  # 按值和坐标排序
 
     # 输出排序后的比较结果
-    print("第一个 frozenset 排序后的元素:", sorted_diff1)
-    print("第二个 frozenset 排序后的元素:", sorted_diff2)
+    # # # print("第一个diff frozenset 排序后的元素:", sorted_diff1)
+    # # # print("第二个diff frozenset 排序后的元素:", sorted_diff2)
     # 比较差异
     diff1_unique = sorted(set(sorted_diff1) - set(sorted_diff2))
     diff2_unique = sorted(set(sorted_diff2) - set(sorted_diff1))
@@ -178,8 +181,8 @@ def getIO_diff(I,O, flags: Dict[str, bool]):
         for value, positions in merged_diffs[key].items():
             print(f"{key} - 值 {value} 的特有坐标:", positions)
 
-    display_diff_matrices(diff1_unique,diff2_unique)
-    return merged_diffs
+    display_diff_matrices(diff1_unique, diff2_unique)
+    return diff1_unique, diff2_unique
 
 
 
@@ -276,6 +279,10 @@ def prepare_diff(task, flags: Dict[str, bool]):
     # print("todo ！ 执行 ！  不同部分不止两个 frozenset 或无差异。")
     # return 0
 
+# def position(grid):
+#     coords1 = [coord for coords in merged_diffs['diff1'].values()
+#                for coord in coords]
+
 
 def compare_positions(merged_diffs: Dict[str, defaultdict]) -> str:
     """
@@ -345,9 +352,11 @@ def display_diff_matrices(diff1: List[Tuple[int, Tuple[int, int]]],
         for row, col in positions:
             matrix[row][col] = str(key)
 
-        # 打印矩阵
+        # 打印矩阵并添加边界框
+        print("+" + "-" * (max_col * 2 - 1) + "+")
         for row in matrix:
-            print(" ".join(row))
+            print("|" + " ".join(row) + "|")
+        print("+" + "-" * (max_col * 2 - 1) + "+")
         print("\n" + "-"*20 + "\n")
 
 

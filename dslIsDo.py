@@ -10,15 +10,29 @@ def is_input_firstobjsame_outallobject():
 
     return
 
-def is_objectComplete_change_color(I,O):
-    difference = prepare_diff
-    contained = contains_object(difference)
+
+def is_objectComplete_change_color(I, O,                                   flags):
+    diff1, diff2 = getIO_diff(I, O, flags)
+    tmp=index(diff1)
+    
+    if index(diff1) == index(diff2):
+        flags["same_diff"] = True
+    else:
+        flags["same_diff"] = False
+
+
+    contained = contains_object(diff1)
+    contained2 = contains_object(diff2)
+    if index(contained) == index(contained2):
+        flags["same_contained"] = True
+    else:
+        flags["same_contained"] = False
+
+
     complete = complementofobject(contained)
     complete_ischange = is_change_color(complete)
 
-
     return
-
 
 
 # # 如何判断是get_first_object
@@ -30,11 +44,13 @@ def is_objectComplete_change_color(I,O):
 def is_move():
     return
 
+
 def get_first_object(I):
     x1 = objects(I, T, T, T)
     x2 = first(x1)
     O = subgrid(x2, I)
     return O
+
 
 def is_output_most_input_color(I, O) -> bool:
     """
@@ -163,8 +179,8 @@ def do_check_inputOutput_proper_1_arg_functions(proper_1arg_functions, task: Dic
                     args = [(arg1, arg2), (height_o, width_o)]
                     fun = funget
                     # if funget == fun:
-                        # fun = funget
-                        # args = [arg1, arg2]
+                    # fun = funget
+                    # args = [arg1, arg2]
         else:
             args = [height_ratio]
 
@@ -383,4 +399,3 @@ class BidirectionalMap:
     def get(self, key):
         print('! convert a function ')
         return self.forward.get(key) or self.reverse.get(key)
-

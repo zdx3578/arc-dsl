@@ -37,11 +37,13 @@ def solve_arc_task(task):
                for test_input in test_data]
     return results
 
+
 def solve_individual3(task):
 
     is_proper_finding(task)
 
     return
+
 
 def solve_individual2(task):
     """
@@ -150,21 +152,15 @@ def is_proper_finding(task):
         input_grid = data_pair['input']
         output_grid = data_pair['output']
 
-        getIO_diff(input_grid, output_grid, flags)
+
 
         is_objectComplete_change_color(input_grid, output_grid, flags)
-
-
 
         # 提取输入对象特征
         update_objects_proper_flags(input_grid, output_grid, flags)
 
         # 处理信息更新 findflags[i]
         update_proper_in_out_flags(input_grid, output_grid, flags)
-
-
-
-
 
         # 更新 is_scale 标志项
         if (height_i != height_o or width_i != width_o):
@@ -191,7 +187,8 @@ def is_proper_finding(task):
             flags["is_output_one_color"].append(False)
 
         # 更新 output_allone_color 标志项
-        flags["output_allone_color"].append(all(cell == output_grid[0][0] for row in output_grid for cell in row))
+        flags["output_allone_color"].append(
+            all(cell == output_grid[0][0] for row in output_grid for cell in row))
 
         # 更新 out_is_in_subgrid 和 in_is_out_subgrid 标志项
         if is_subgrid(input_grid, output_grid):
@@ -199,11 +196,9 @@ def is_proper_finding(task):
         if is_subgrid(output_grid, input_grid):
             flags["out_is_in_subgrid"][0] = True
 
-
         findedflags[i] = flags
 
     is_input_firstobjsame_outallobject()
-
 
     return findedflags
 
