@@ -12,69 +12,6 @@ def is_input_firstobjsame_outallobject():
     return
 
 
-def is_objectComplete_change_color(I, O, flags):
-    diff1, diff2 = getIO_diff(I, O, flags)
-    # tmp=toindices(diff1)
-    same_obj = getIO_same(I, O)
-
-    if toindices(diff1) == toindices(diff2):
-        flags["diff_position_same"] = True
-        if contains_object(diff1, same_obj):
-            flags["diff_in_same_contained"] = True
-            tocolor = Union(index(diff2))
-
-    else:
-        flags["diff_position_same"] = False
-
-
-
-    # change what ；change where
-
-
-    contained1 = contains_object(diff1)
-    contained2 = contains_object(diff2)
-    if toindices(contained) == toindices(contained2):
-        flags["position_same_contained"] = True
-        contained1_color = Union(index(contained1))
-
-    else:
-        flags["position_same_contained"] = False
-
-    contained1complete1 = complementofobject(contained1)
-    contained2complete2 = complementofobject(contained2)
-
-    if contained1complete1 == diff2:
-        flags["is_in_box_change_color"] = True
-        return
-
-
-
-    # if is_judge:
-    #     if toindices(complete1) == toindices(complete2):
-    #         flags["position_same_complete"] = True
-    #     else:
-    #         flags["position_same_complete"] = False
-
-    if is_done:
-        if is_change_color(complete1) == is_change_color(complete2):
-            flags["position_same_complete_ischange"] = True
-            if tocolor == tocolor(diff1):
-                return
-
-        if toindices(contained1complete1) == toindices(diff2):
-
-            where_todo_is = contained1complete1
-            return
-
-        else:
-            flags["position_same_complete_ischange"] = False
-
-    complete = complementofobject(contained)
-    complete_ischange = is_change_color(complete)
-
-    return
-
-
 # # 如何判断是get_first_object
 # def is_a_object_of(I,O,flags):
 #     x1 = objects(I, T, T, T)
@@ -85,11 +22,7 @@ def is_move():
     return
 
 
-def get_first_object(I):
-    x1 = objects(I, T, T, T)
-    x2 = first(x1)
-    O = subgrid(x2, I)
-    return O
+
 
 
 def is_output_most_input_color(I, O) -> bool:
@@ -125,9 +58,7 @@ def is_output_most_input_color(I, O) -> bool:
     return True
 
 
-def do_output_most_input_color(I):
-    x1 = mostcolor(I)
-    return canvas(x1, (height(I), width(I)))
+
 
 
 def process_value(value: bool) -> Any:

@@ -40,9 +40,9 @@ def solve_arc_task(task):
 
 def solve_individual3(task):
 
-    is_proper_finding(task)
+    result = is_proper_finding(task)
 
-    return
+    return result
 
 
 def solve_individual2(task):
@@ -145,16 +145,19 @@ def solve_individual2(task):
 def is_proper_finding(task):
     train_data = task['train']
     findedflags = {}
+    flags = initialize_flags()
+
+    result = is_objectComplete_change_color(task, flags, True)
+    if result:
+        return result
 
     for i, data_pair in enumerate(train_data):
+        data_pair = train_data[1]
+        #! 上面已经初始化了
         flags = initialize_flags()
 
         input_grid = data_pair['input']
         output_grid = data_pair['output']
-
-
-
-        is_objectComplete_change_color(input_grid, output_grid, flags)
 
         # 提取输入对象特征
         update_objects_proper_flags(input_grid, output_grid, flags)

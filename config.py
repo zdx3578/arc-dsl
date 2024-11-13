@@ -34,6 +34,7 @@ proper_functions = [
     righthalf,
     do_output_most_input_color,
     get_first_object,
+    move,
 
     # out is what output
     # 扣洞
@@ -122,12 +123,13 @@ def initialize_flags() -> Dict[str, List[bool]]:
         'output_allone_color': [],
         "position_same_contained": [],
         "diff_position_same": [],
-        "diff_in_same_contained": [],
+        "diff_in_same_contained": False,
+        "diff_in_same_fg": [],
         "is_in_box_change_color": [],
         "is_in_box_change_shape": [],
         "is_in_box_change_size": [],
         "is_in_box_change_position": [],
-        
+
 
 
         # # template

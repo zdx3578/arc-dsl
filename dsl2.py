@@ -9,15 +9,86 @@ import traceback
 # from oldfun import *
 
 
+def is_objectComplete_change_color(task, flags, done=False):
+    train_data = task['train']
+    test_data = task['test']
+    for i, data_pair in enumerate(train_data):
+        # data_pair = train_data[1]
+        # flags = initialize_flags()
+
+        I = data_pair['input']
+        O = data_pair['output']
+
+        diff1, diff2 = getIO_diff(I, O, flags)
+        # same_obj = getIO_same_obj(I, O)
+        same_fg = getIO_same_fg(I, O)
+
+        if toindices(diff1) == toindices(diff2):
+            flags["diff_position_same"] = True
+            # contain_object = contains_object(diff1, same_obj)
+            fg_outof_diff = contains_object(diff1, same_fg)
+            if fg_outof_diff:
+                flags["diff_in_same_fg"] = True
+                fg_outof_diff_complete = complementofobject(fg_outof_diff)
+                if toindices(fg_outof_diff_complete) == toindices(diff2):
+                    same_fg_color = list(next(iter(same_fg)))[0][0]
+                    tocolor = list(diff2)[0][0]
+                    flags["diff_in_same_contained"] = [tocolor, same_fg_color]
+                    if fill(I, tocolor, delta(ofcolor(I, same_fg_color))) == O:
+                        print("input  same output: ", {i})
+                        if done:
+                            pass
+                        else:
+                            return True
+                    else:
+                        print("input no same output")
+                else:
+                    print("fg_box_diff_complete same diff ")
+            else:
+                print("not contain object")
+        else:
+            print("toindices not same")
+            flags["diff_position_same"] = False
+        # change what ；change where
+        # return False
+
+    if done:
+        I = test_data[0]['input']
+
+        if flags["diff_in_same_contained"]:
+            tocolor, same_fg_color = flags["diff_in_same_contained"]
+            x1 = ofcolor(I, same_fg_color)
+            posit = delta(x1)
+            result = fill(I, tocolor, posit)
+            assert result == test_data[0]['output']
+            return result
+
+
 def contains_object(obj: Object, objects: List[Object]) -> bool:
     """检查对象是否包含在对象列表中"""
     obj_set = set(obj)
-    objects_sorted = [sorted(o) for o in objects]
+    objects_sorted = [set(o) for o in objects]  # 将每个对象转换为集合
+    objtang = object_to_rectangle(obj_set)
 
     for other_obj in objects_sorted:
-        if obj_set.issubset(set(other_obj)):
-            return other_obj
+        othertang = object_to_rectangle(other_obj)
+        # and len(objtang[0]) == len(othertang[0]):
+        if len(objtang) <= len(othertang):
+            if is_subgrid_grid(objtang, othertang):
+                return other_obj
     return False
+
+
+def getIO_same_fg(I, O):
+    fg1 = fgpartition(I)
+    fg2 = fgpartition(O)
+    same_fg = fg1.intersection(fg2)
+    # display_diff_matrices(same_fg)
+    same_objects_list = [(value, coord)
+                         for obj in same_fg for value, coord in obj]
+    print("fgpartition 相同对象的值和坐标:")
+    display_diff_matrices(same_objects_list)
+    return same_fg
 
 
 def complementofobject(obj: Object) -> Object:
@@ -59,6 +130,8 @@ def move2(obj: Object, direction: Tuple[int, int]) -> Object:
     moved_obj = frozenset({(value, (i + dx, j + dy)) for value, (i, j) in obj})
     return moved_obj
 
+# same as   backdrop
+
 
 def object_to_rectangle(obj: Object) -> Grid:
     """ 将对象扩展为包含对象的一个长方形矩阵 """
@@ -75,14 +148,26 @@ def object_to_rectangle(obj: Object) -> Grid:
 
     # 填充矩阵
     for value, (i, j) in obj:
-        rectangle[i - ul[0]][j - ul[1]] = value
+        rectangle[i - ul[0]][j - ul[1]] = 0
 
     return tuple(tuple(row) for row in rectangle)
 
 
+def get_first_object(I):
+    x1 = objects(I, T, T, T)
+    x2 = first(x1)
+    O = subgrid(x2, I)
+    return O
+
+
+def do_output_most_input_color(I):
+    x1 = mostcolor(I)
+    return canvas(x1, (height(I), width(I)))
+
+
 def mostcolor2(colors: list) -> int:
     """ 返回列表中出现次数最多的颜色 """
-    if not colors:  # 如果列表为空，返回 None 或其默认值
+    if not colors:  # 如果列表为空，返回 None 或其��认值
         return None
     count = Counter(colors)  # 统计颜色出现的次数
     most_common_color, _ = count.most_common(1)[0]  # 获取出现次数最多的颜色
@@ -134,15 +219,29 @@ def right_third(grid: Grid) -> Grid:
     return rot270(lower_third(rot90(grid)))
 
 
-def getIO_same(I, O):
-    oi = objects(I, False, True, False)
-    oo = objects(O, False, True, False)
+def getIO_same_obj(I, O):
+    oi = objects(I, True, True, True)
+    oo = objects(O, True, True, True)
     same_objects = oi.intersection(oo)
 
-    # 将 same_objects 转换为适当的格式
-    same_objects_list = [(value, coord) for obj in same_objects for value, coord in obj]
+    # if same_objects:
+    #     pass
+    # else:
+    #     oi = objects(I, True, True, False)
+    #     oo = objects(O, True, True, False)
+    #     same_objects = oi.intersection(oo)
 
+    # 将 same_objects 转换为适当的格式
+    same_objects_list = [(value, coord)
+                         for obj in same_objects for value, coord in obj]
+    print("相同对象的值和坐标:")
     display_diff_matrices(same_objects_list)
+
+    # same_objects = [(value, coord)
+    #                 for obj in same_objects for value, coord in obj]
+    # print("单个对象 :")
+    # for obj in same_objects:
+    #     display_diff_matrices([obj])
     return same_objects
 
 
@@ -192,6 +291,8 @@ def getIO_diff(I, O, flags: Dict[str, bool]):
     for key in merged_diffs:
         for value, positions in merged_diffs[key].items():
             print(f"{key} - 值 {value} 的特有坐标:", positions)
+
+    print("比较结果:不同 diff 集合的坐标是否一致:")
 
     display_diff_matrices(diff1_unique, diff2_unique)
     return diff1_unique, diff2_unique
@@ -370,6 +471,41 @@ def display_diff_matrices(diff1: List[Tuple[int, Tuple[int, int]]],
             print("|" + " ".join(row) + "|")
         print("+" + "-" * (max_col * 2 - 1) + "+")
         print("\n" + "-"*20 + "\n")
+
+
+def is_subgrid_grid(grid1: Grid, grid2: Grid) -> bool:
+    """
+    检查 grid1 是否是 grid2 的子网格。
+
+    参数:
+    - grid1: Grid - 第一个矩形网格。
+    - grid2: Grid - 第二个矩形网格。
+
+    返回:
+    - bool: 如果 grid1 是 grid2 的子网格，返回 True；否则返回 False。
+    """
+    h1, w1 = len(grid1), len(grid1[0])
+    h2, w2 = len(grid2), len(grid2[0])
+
+    # 检查 grid1 的尺寸是否小于或等于 grid2
+    if h1 > h2 or w1 > w2:
+        return False
+
+    # 遍历 grid2，检查是否存在与 grid1 匹配的子网格
+    for i in range(h2 - h1 + 1):
+        for j in range(w2 - w1 + 1):
+            match = True
+            for x in range(h1):
+                for y in range(w1):
+                    if grid1[x][y] != grid2[i + x][j + y]:
+                        match = False
+                        break
+                if not match:
+                    break
+            if match:
+                return True
+
+    return False
 
 
 def is_subgrid(task, flags):
