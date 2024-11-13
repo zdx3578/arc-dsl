@@ -34,7 +34,10 @@ proper_functions = [
     righthalf,
     do_output_most_input_color,
     get_first_object,
-    move,
+    get_partition_min_subgrid,
+    get_max_object,
+    get_min_object,
+    move_down,
 
     # out is what output
     # 扣洞

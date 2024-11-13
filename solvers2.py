@@ -139,7 +139,7 @@ def solve_individual2(task):
 
         # if all failed
         task = preprocess_noise(task)
-        is_proper_finding(task, flags)
+        is_proper_finding(task)
 
 
 def is_proper_finding(task):
@@ -151,10 +151,21 @@ def is_proper_finding(task):
     if result:
         return result
 
+    result = check_largest_objects_dimensions(train_data[1]['input'])
+    if result:
+        flags["can_partition"] = True
+
+    result = is_get_mirror_hole(task, flags)
+    if result:
+        flags["is_get_mirror_hole"] = result
+        get_mirror_hole(I,color=0)
+        
+
+
     for i, data_pair in enumerate(train_data):
-        data_pair = train_data[1]
+        # data_pair = train_data[1]
         #! 上面已经初始化了
-        flags = initialize_flags()
+        # flags = initialize_flags()
 
         input_grid = data_pair['input']
         output_grid = data_pair['output']

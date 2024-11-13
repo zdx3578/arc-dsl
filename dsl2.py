@@ -3,10 +3,106 @@ from dsl import *
 from typing import Dict, Any, List, Tuple, Callable, Optional
 import logging
 import traceback
-# from config import *
-# from config import *
-# from dslIsDo import *
-# from oldfun import *
+
+
+def get_object_dimensions(obj: Object) -> Tuple[int, int]:
+    """
+    获取对象的高度和宽度。
+
+    参数:
+    obj: Object - 输入的对象。
+
+    返回:
+    Tuple[int, int] - 对象的高度和宽度。
+    """
+    indices = toindices(obj)
+    if not indices:
+        return 0, 0
+
+    ul = ulcorner(indices)
+    lr = lrcorner(indices)
+    height = lr[0] - ul[0] + 1
+    width = lr[1] - ul[1] + 1
+
+    return height, width
+
+
+def find_largest_objects(grid: Grid) -> Tuple[Object, Object, bool]:
+    """
+    找到网格中最高和最宽的对象，并检查它们是否是同一个对象。
+
+    参数:
+    grid: Grid - 输入的网格。
+
+    返回:
+    Tuple[Object, Object, bool] - 最高和最宽的对象，以及它们是否是同一个对象。
+    """
+    objs = objects(grid, univalued=True, diagonal=True, without_bg=False)
+    max_height = 0
+    max_width = 0
+    tallest_obj = None
+    widest_obj = None
+
+    for obj in objs:
+        height, width = get_object_dimensions(obj)
+        if height > max_height:
+            max_height = height
+            tallest_obj = obj
+        if width > max_width:
+            max_width = width
+            widest_obj = obj
+
+    same_object = tallest_obj == widest_obj
+    return tallest_obj, widest_obj, same_object
+
+
+def check_largest_objects_dimensions(grid: Grid) -> bool:
+    """
+    检查网格中最高和最宽的对象的高度和宽度是否等于输入网格的高度和宽度，并确认它们是否是同一个对象。
+
+    参数:
+    grid: Grid - 输入的网格。
+
+    返回:
+    bool - 如果最高和最宽的对象的高度和宽度等于输入网格的高度和宽度，并且它们是同一个对象，返回 True；否则返回 False。
+    """
+    height, width = len(grid), len(grid[0])
+    tallest_obj, widest_obj, same_object = find_largest_objects(grid)
+
+    tallest_height, _ = get_object_dimensions(tallest_obj)
+    _, widest_width = get_object_dimensions(widest_obj)
+
+    return tallest_height == height and widest_width == width and same_object
+
+
+def get_mirror_hole(I, color):
+    # need judge is !! mirror,half is mirrir otherhalf not mirror
+    # color is size big obj obj(I,T,T,F)
+    x1 = vmirror(I)
+    x2 = ofcolor(I, color)
+    O = subgrid(x2, x1)
+    return O
+
+
+def get_partition_min_subgrid(I):
+    x1 = partition(I)
+    x2 = argmin(x1, size)
+    O = subgrid(x2, I)
+    return O
+
+
+def get_max_object(I):
+    x1 = objects(I, T, T, T)
+    x2 = argmax(x1, size)
+    O = subgrid(x2, I)
+    return O
+
+
+def get_min_object(I):
+    x1 = objects(I, T, T, T)
+    x2 = argmin(x1, size)
+    O = subgrid(x2, I)
+    return O
 
 
 def is_objectComplete_change_color(task, flags, done=False):
@@ -130,11 +226,63 @@ def move2(obj: Object, direction: Tuple[int, int]) -> Object:
     moved_obj = frozenset({(value, (i + dx, j + dy)) for value, (i, j) in obj})
     return moved_obj
 
-# same as   backdrop
+
+def move_down(obj: Object) -> Object:
+    """
+    向下移动对象。
+
+    参数:
+    obj: Object - 要移动的对象。
+
+    返回:
+    Object - 移动后的对象。
+    """
+    return move2(obj, (1, 0))
+
+
+def move_right(obj: Object) -> Object:
+    """
+    向右移动对象。
+
+    参数:
+    obj: Object - 要移动的对象。
+
+    返回:
+    Object - 移动后的对象。
+    """
+    return move2(obj, (0, 1))
+
+
+def move_up(obj: Object) -> Object:
+    """
+    向上移动对象。
+
+    参数:
+    obj: Object - 要移动的对象。
+
+    返回:
+    Object - 移动后的对象。
+    """
+    return move2(obj, (-1, 0))
+
+
+def move_left(obj: Object) -> Object:
+    """
+    向左移动对象。
+
+    参数:
+    obj: Object - 要移动的对象。
+
+    返回:
+    Object - 移动后的对象。
+    """
+    return move2(obj, (0, -1))
 
 
 def object_to_rectangle(obj: Object) -> Grid:
     """ 将对象扩展为包含对象的一个长方形矩阵 """
+    # same as   backdrop
+
     indices = toindices(obj)
     if not indices:
         return tuple()
