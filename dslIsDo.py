@@ -4,6 +4,7 @@ from typing import Dict, Any, List, Tuple, Callable, Optional
 import logging
 import traceback
 from config import *
+from dsl2 import *
 
 
 def is_input_firstobjsame_outallobject():
@@ -11,23 +12,62 @@ def is_input_firstobjsame_outallobject():
     return
 
 
-def is_objectComplete_change_color(I, O,                                   flags):
+def is_objectComplete_change_color(I, O, flags):
     diff1, diff2 = getIO_diff(I, O, flags)
-    tmp=index(diff1)
-    
-    if index(diff1) == index(diff2):
-        flags["same_diff"] = True
+    # tmp=toindices(diff1)
+    same_obj = getIO_same(I, O)
+
+    if toindices(diff1) == toindices(diff2):
+        flags["diff_position_same"] = True
+        if contains_object(diff1, same_obj):
+            flags["diff_in_same_contained"] = True
+            tocolor = Union(index(diff2))
+
     else:
-        flags["same_diff"] = False
+        flags["diff_position_same"] = False
 
 
-    contained = contains_object(diff1)
+
+    # change what ；change where
+
+
+    contained1 = contains_object(diff1)
     contained2 = contains_object(diff2)
-    if index(contained) == index(contained2):
-        flags["same_contained"] = True
-    else:
-        flags["same_contained"] = False
+    if toindices(contained) == toindices(contained2):
+        flags["position_same_contained"] = True
+        contained1_color = Union(index(contained1))
 
+    else:
+        flags["position_same_contained"] = False
+
+    contained1complete1 = complementofobject(contained1)
+    contained2complete2 = complementofobject(contained2)
+
+    if contained1complete1 == diff2:
+        flags["is_in_box_change_color"] = True
+        return
+
+
+
+    # if is_judge:
+    #     if toindices(complete1) == toindices(complete2):
+    #         flags["position_same_complete"] = True
+    #     else:
+    #         flags["position_same_complete"] = False
+
+    if is_done:
+        if is_change_color(complete1) == is_change_color(complete2):
+            flags["position_same_complete_ischange"] = True
+            if tocolor == tocolor(diff1):
+                return
+
+        if toindices(contained1complete1) == toindices(diff2):
+
+            where_todo_is = contained1complete1
+            return
+
+        else:
+            flags["position_same_complete_ischange"] = False
 
     complete = complementofobject(contained)
     complete_ischange = is_change_color(complete)

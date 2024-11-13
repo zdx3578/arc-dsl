@@ -120,7 +120,14 @@ def initialize_flags() -> Dict[str, List[bool]]:
         'height_ratio': [],
         'width_ratio': [],
         'output_allone_color': [],
-
+        "position_same_contained": [],
+        "diff_position_same": [],
+        "diff_in_same_contained": [],
+        "is_in_box_change_color": [],
+        "is_in_box_change_shape": [],
+        "is_in_box_change_size": [],
+        "is_in_box_change_position": [],
+        
 
 
         # # template

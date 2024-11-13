@@ -82,7 +82,7 @@ def object_to_rectangle(obj: Object) -> Grid:
 
 def mostcolor2(colors: list) -> int:
     """ 返回列表中出现次数最多的颜色 """
-    if not colors:  # 如果列表为空，返回 None 或其他默认值
+    if not colors:  # 如果列表为空，返回 None 或其默认值
         return None
     count = Counter(colors)  # 统计颜色出现的次数
     most_common_color, _ = count.most_common(1)[0]  # 获取出现次数最多的颜色
@@ -134,12 +134,24 @@ def right_third(grid: Grid) -> Grid:
     return rot270(lower_third(rot90(grid)))
 
 
+def getIO_same(I, O):
+    oi = objects(I, False, True, False)
+    oo = objects(O, False, True, False)
+    same_objects = oi.intersection(oo)
+
+    # 将 same_objects 转换为适当的格式
+    same_objects_list = [(value, coord) for obj in same_objects for value, coord in obj]
+
+    display_diff_matrices(same_objects_list)
+    return same_objects
+
+
 def getIO_diff(I, O, flags: Dict[str, bool]):
     # 调用 objects 函数两次
     oi = objects(I, False, True, False)
     oo = objects(O, False, True, False)
 
-    same_objects = oi.intersection(oo)
+    # same_objects = oi.intersection(oo)
 
     oi_unique = oi - oo  # 获取在 oi 中但不在 oo 中的元素
     oo_unique = oo - oi  # 获取在 oo 中但不在 oi 中的元素
@@ -183,7 +195,6 @@ def getIO_diff(I, O, flags: Dict[str, bool]):
 
     display_diff_matrices(diff1_unique, diff2_unique)
     return diff1_unique, diff2_unique
-
 
 
 def prepare_diff(task, flags: Dict[str, bool]):
@@ -247,7 +258,7 @@ def prepare_diff(task, flags: Dict[str, bool]):
         #     for value, positions in merged_diffs[key].items():
         #         print(f"{key} - 值 {value} 的特有坐标:", positions)
 
-        # display_diff_matrices(diff1_unique,diff2_unique)
+        display_diff_matrices(diff1_unique, diff2_unique)
 
         if compare_positions(merged_diffs):
             flags["is_diff_same_posit"].append(True)
@@ -322,19 +333,20 @@ def is_position_swapped(diff1: defaultdict, diff2: defaultdict) -> bool:
 
 
 def display_diff_matrices(diff1: List[Tuple[int, Tuple[int, int]]],
-                          diff2: List[Tuple[int, Tuple[int, int]]],
+                          diff2: Optional[List[Tuple[int,
+                                                     Tuple[int, int]]]] = None,
                           diff3: Optional[List[Tuple[int, Tuple[int, int]]]] = None):
     """
     展示不同元素位置的二维矩阵。
 
     参数:
-    - diff1, diff2: 必填，每个包含不同元素及其位置的集合。
-    - diff3: 可选，额外的不同元素及其位置集合。
+    - diff1: 必填，包含不同元素及其位置的集合。
+    - diff2, diff3: 可选，额外的不同元素及其位置集合。
     """
     combined_diff = {}
 
     # 合并所有不同元素的位置
-    for value, pos in diff1 + diff2 + (diff3 if diff3 else []):
+    for value, pos in diff1 + (diff2 if diff2 else []) + (diff3 if diff3 else []):
         if value not in combined_diff:
             combined_diff[value] = []
         combined_diff[value].append(pos)
