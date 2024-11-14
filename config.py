@@ -37,7 +37,7 @@ proper_functions = [
     get_partition_min_subgrid,
     get_max_object,
     get_min_object,
-    move_down,
+    move_down_1obj,
 
     # out is what output
     # 扣洞
@@ -58,6 +58,7 @@ proper_1arg_functions = [upscale,
                          replace,
                          switch,
                          crop,
+                         #  move_down,
                          #  upper_third, middle_third, lower_third, left_third, center_third, right_third,
 
                          ]

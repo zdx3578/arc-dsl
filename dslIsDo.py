@@ -22,9 +22,6 @@ def is_move():
     return
 
 
-
-
-
 def is_output_most_input_color(I, O) -> bool:
     """
     判断 output 是否完全由 input 中出现最多的颜色组成。
@@ -58,8 +55,74 @@ def is_output_most_input_color(I, O) -> bool:
     return True
 
 
+def is_mirror_hole_get_args(task: Dict, flags: Dict[str, List[bool]]) -> List[Any]:
+    """
+    判断是否是镜像扣洞任务，并获取参数。
+
+    参数:
+    - task (Dict[str, Any]): 包含 'input' 和 'output' 的任务字典，分别为二维列表。
+    - flags (Dict[str, List[bool]]): 用于控制任务执行的标志字典。
+
+    返回:
+    - List[Any]: 镜像扣洞任务的参数列表，包括扣洞的位置和大小。
+    """
+    train_data = task['train']
+    test_data = task['test']
+
+    # 遍历所有训练样本
+    for data_pair in train_data:
+        input_grid = data_pair['input']
+        output_grid = data_pair['output']
+
+        result = is_half_mirror(input_grid)
+        if result:
+            # 获取镜像扣洞的参数
+            return get_hole(input_grid)
 
 
+
+    return None
+
+
+def get_hole(input_grid):
+    assert False
+
+def is_half_mirror(grid: Grid) -> bool:
+    """
+    判断网格是否满足一半是镜像的，另一半不是镜像的。
+
+    参数:
+    grid: Grid - 输入的网格。
+
+    返回:
+    bool - 如果网格满足条件，返回 True；否则返回 False。
+    """
+    # 获取网格的不同部分
+    left_half = lefthalf(grid)
+    right_half = righthalf(grid)
+    top_half = tophalf(grid)
+    bottom_half = bottomhalf(grid)
+
+    # 检查左右两半是否自身是镜像的
+    is_left_mirror = left_half == vmirror(left_half)
+    is_right_mirror = right_half == vmirror(right_half)
+
+    # 检查上下两半是否自身是镜像的
+    is_top_mirror = top_half == hmirror(top_half)
+    is_bottom_mirror = bottom_half == hmirror(bottom_half)
+
+    # 检查是否满足一半是镜像的，另一半不是镜像的
+    true_conditions = []
+    if is_left_mirror:
+        true_conditions.append("is_left_mirror")
+    if is_right_mirror:
+        true_conditions.append("is_right_mirror")
+    if is_top_mirror:
+        true_conditions.append("is_top_mirror")
+    if is_bottom_mirror:
+        true_conditions.append("is_bottom_mirror")
+
+    return true_conditions
 
 def process_value(value: bool) -> Any:
     return
@@ -100,7 +163,7 @@ def safe_execute(fun, *args):
         # 捕获异常并打印错误信息
         logging.error("捕获到异常：%s", e)
         logging.error("详细错误信息：\n%s", traceback.format_exc())
-        return None
+        pass
 
 
 def do_check_inputOutput_proper_1_arg_functions(proper_1arg_functions, task: Dict, flags: Dict[str, List[bool]]):

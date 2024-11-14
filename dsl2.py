@@ -105,6 +105,20 @@ def get_min_object(I):
     return O
 
 
+def get_max_object_color(I):
+    x1 = objects(I, T, T, T)
+    x2 = argmax(x1, color)
+    O = subgrid(x2, I)
+    return O
+
+
+# def get_max_object_size(I):
+#     x1 = objects(I, T, T, T)
+#     x2 = argmax(x1, size)
+#     O = subgrid(x2, I)
+#     return O
+
+
 def is_objectComplete_change_color(task, flags, done=False):
     train_data = task['train']
     test_data = task['test']
@@ -138,15 +152,18 @@ def is_objectComplete_change_color(task, flags, done=False):
                             return True
                     else:
                         print("input no same output")
+                        return False
                 else:
-                    print("fg_box_diff_complete same diff ")
+                    print("fg_box_diff_complete not same diff ")
+                    return False
             else:
                 print("not contain object")
+                return False
         else:
             print("toindices not same")
             flags["diff_position_same"] = False
-        # change what ；change where
-        # return False
+            return False
+    # change what ；change where
 
     if done:
         I = test_data[0]['input']
@@ -211,23 +228,23 @@ def complementofobject(obj: Object) -> Object:
     return complement_obj
 
 
-def move2(obj: Object, direction: Tuple[int, int]) -> Object:
-    """
-    移动对象到指定方向。
+# def move(obj: Object, direction: Tuple[int, int]) -> Object:
+#     """
+#     移动对象到指定方向。
 
-    参数:
-    obj: Object - 要移动的对象。
-    direction: Tuple[int, int] - 移动的方向，格式为 (dx, dy)。
+#     参数:
+#     obj: Object - 要移动的对象。
+#     direction: Tuple[int, int] - 移动的方向，格式为 (dx, dy)。
 
-    返回:
-    Object - 移动后的对象。
-    """
-    dx, dy = direction
-    moved_obj = frozenset({(value, (i + dx, j + dy)) for value, (i, j) in obj})
-    return moved_obj
+#     返回:
+#     Object - 移动后的对象。
+#     """
+#     dx, dy = direction
+#     moved_obj = frozenset({(value, (i + dx, j + dy)) for value, (i, j) in obj})
+#     return moved_obj
 
 
-def move_down(obj: Object) -> Object:
+def move_down(I, obj: Object) -> Object:
     """
     向下移动对象。
 
@@ -237,10 +254,15 @@ def move_down(obj: Object) -> Object:
     返回:
     Object - 移动后的对象。
     """
-    return move2(obj, (1, 0))
+    return move(I, obj, (1, 0))
 
 
-def move_right(obj: Object) -> Object:
+def move_down_1obj(input):
+    obj = first(objects(input, T, T, T))
+    return move_down(input,obj)
+
+
+def move_right(I, obj: Object) -> Object:
     """
     向右移动对象。
 
@@ -250,10 +272,10 @@ def move_right(obj: Object) -> Object:
     返回:
     Object - 移动后的对象。
     """
-    return move2(obj, (0, 1))
+    return move(I, obj, (0, 1))
 
 
-def move_up(obj: Object) -> Object:
+def move_up(I, obj: Object) -> Object:
     """
     向上移动对象。
 
@@ -263,10 +285,10 @@ def move_up(obj: Object) -> Object:
     返回:
     Object - 移动后的对象。
     """
-    return move2(obj, (-1, 0))
+    return move(I, obj, (-1, 0))
 
 
-def move_left(obj: Object) -> Object:
+def move_left(I, obj: Object) -> Object:
     """
     向左移动对象。
 
@@ -276,7 +298,7 @@ def move_left(obj: Object) -> Object:
     返回:
     Object - 移动后的对象。
     """
-    return move2(obj, (0, -1))
+    return move(I, obj, (0, -1))
 
 
 def object_to_rectangle(obj: Object) -> Grid:

@@ -12,12 +12,14 @@ def solve_arc_task(task):
 
     solutions = []
 
-    solution = solve_individual3(task)
+    # solution = solve_individual3(task)
 
-    # solution = solve_individual2(task)
+    solution = solve_individual2(task)
 
     # flags = initialize_flags()
     # solution = solve_individual(task, flags)
+    # 测试解决方案是否正确test_data[0]['output']
+    assert solution == task['test'][0]['output']
 
     if solution:
         return solution
@@ -71,22 +73,26 @@ def solve_individual2(task):
 
     for i in range(2):
         try:
-            [fun] = do_check_inputOutput_proper_1functions(
+            funs = do_check_inputOutput_proper_1functions(
                 proper_functions, task, flags)
             # proper_fun = fun
             # args = []
             # if fun list order  = [1,2,3] and usefun2 ture
             args_for_fun1 = []
 
-            if fun:
-                result = do_check_train_get_test(
-                    do_4fun_task,
-                    task,
-                    flags,
-                    fun, args_for_fun1)
-                if result:
-                    return result
-        except:
+            for fun in funs:
+                if fun:
+                    result = do_check_train_get_test(
+                        do_4fun_task,
+                        task,
+                        flags,
+                        fun, args_for_fun1)
+                    if result:
+                        return result
+        except Exception as e:
+            # 捕获异常并打印错误信息
+            logging.error("捕获到异常：%s", e)
+            logging.error("详细错误信息：\n%s", traceback.format_exc())
             pass
 
         ###############################
@@ -109,7 +115,9 @@ def solve_individual2(task):
                     fun, args_for_fun1)
                 if result:
                     return result
-        except:
+        except Exception as e:
+            logging.error("捕获到异常：%s", e)
+            logging.error("详细错误信息：\n%s", traceback.format_exc())
             pass
 
         # part_functions
@@ -139,7 +147,9 @@ def solve_individual2(task):
 
         # if all failed
         task = preprocess_noise(task)
-        is_proper_finding(task)
+        result = is_proper_finding(task)
+        if result:
+            return result
 
 
 def is_proper_finding(task):
@@ -155,12 +165,10 @@ def is_proper_finding(task):
     if result:
         flags["can_partition"] = True
 
-    result = is_get_mirror_hole(task, flags)
+    result = is_mirror_hole_get_args(task, flags)
     if result:
         flags["is_get_mirror_hole"] = result
-        get_mirror_hole(I,color=0)
-        
-
+        get_mirror_hole(I, color=0)
 
     for i, data_pair in enumerate(train_data):
         # data_pair = train_data[1]
@@ -176,45 +184,46 @@ def is_proper_finding(task):
         # 处理信息更新 findflags[i]
         update_proper_in_out_flags(input_grid, output_grid, flags)
 
-        # 更新 is_scale 标志项
-        if (height_i != height_o or width_i != width_o):
-            flags["is_scale"].append(True)
-        else:
-            flags["is_scale"].append(False)
+        # # 更新 is_scale 标志项
+        # if (height_i != height_o or width_i != width_o):
+        #     flags["is_scale"].append(True)
+        # else:
+        #     flags["is_scale"].append(False)
 
-        # 更新 is_color_transform 标志项
-        if palette(input_grid) != palette(output_grid):
-            flags["is_color_transform"].append(True)
-        else:
-            flags["is_color_transform"].append(False)
+        # # 更新 is_color_transform 标志项
+        # if palette(input_grid) != palette(output_grid):
+        #     flags["is_color_transform"].append(True)
+        # else:
+        #     flags["is_color_transform"].append(False)
 
-        # 更新 is_position_swap 标志项（示例：通过位置互换判断）
-        if position_swap(input_grid, output_grid):
-            flags["is_position_swap"].append(True)
-        else:
-            flags["is_position_swap"].append(False)
+        # # 更新 is_position_swap 标志项（示例：通过位置互换判断）
+        # if position_swap(input_grid, output_grid):
+        #     flags["is_position_swap"].append(True)
+        # else:
+        #     flags["is_position_swap"].append(False)
 
-        # 更新 is_output_one_color 标志项
-        if len(palette(output_grid)) == 1:
-            flags["is_output_one_color"].append(True)
-        else:
-            flags["is_output_one_color"].append(False)
+        # # 更新 is_output_one_color 标志项
+        # if len(palette(output_grid)) == 1:
+        #     flags["is_output_one_color"].append(True)
+        # else:
+        #     flags["is_output_one_color"].append(False)
 
-        # 更新 output_allone_color 标志项
-        flags["output_allone_color"].append(
-            all(cell == output_grid[0][0] for row in output_grid for cell in row))
+        # # 更新 output_allone_color 标志项
+        # flags["output_allone_color"].append(
+        #     all(cell == output_grid[0][0] for row in output_grid for cell in row))
 
-        # 更新 out_is_in_subgrid 和 in_is_out_subgrid 标志项
-        if is_subgrid(input_grid, output_grid):
-            flags["in_is_out_subgrid"][0] = True
-        if is_subgrid(output_grid, input_grid):
-            flags["out_is_in_subgrid"][0] = True
+        # # 更新 out_is_in_subgrid 和 in_is_out_subgrid 标志项
+        # if is_subgrid(input_grid, output_grid):
+        #     flags["in_is_out_subgrid"][0] = True
+        # if is_subgrid(output_grid, input_grid):
+        #     flags["out_is_in_subgrid"][0] = True
 
-        findedflags[i] = flags
+        # findedflags[i] = flags
 
-    is_input_firstobjsame_outallobject()
+    # is_input_firstobjsame_outallobject()
 
-    return findedflags
+    # return findedflags
+    return False
 
 
 def prepare_and_call_do_test(fun_process_list: List[List[Any]],

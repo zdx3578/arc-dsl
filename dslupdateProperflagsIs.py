@@ -29,7 +29,7 @@ def update_objects_proper_flags(input_grid, output_grid, flags):
         flags["all_obj"]["input"] = input_objects
         flags["all_obj"]["output"] = output_objects
 
-    processdiff
+    # processdiff
 
 # 初始化 flags 的函数
 
