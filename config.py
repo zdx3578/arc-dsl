@@ -38,6 +38,9 @@ proper_functions = [
     get_max_object,
     get_min_object,
     move_down_1obj,
+    get_mirror_hole,
+    do_color_count_upscale,
+    box_cut,
 
     # out is what output
     # 扣洞

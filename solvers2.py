@@ -92,7 +92,7 @@ def solve_individual2(task):
         except Exception as e:
             # 捕获异常并打印错误信息
             logging.error("捕获到异常：%s", e)
-            logging.error("详细错误信息：\n%s", traceback.format_exc())
+            # logging.error("详细错误信息：\n%s", traceback.format_exc())
             pass
 
         ###############################
@@ -117,7 +117,7 @@ def solve_individual2(task):
                     return result
         except Exception as e:
             logging.error("捕获到异常：%s", e)
-            logging.error("详细错误信息：\n%s", traceback.format_exc())
+            # logging.error("详细错误信息：\n%s", traceback.format_exc())
             pass
 
         # part_functions
@@ -165,10 +165,10 @@ def is_proper_finding(task):
     if result:
         flags["can_partition"] = True
 
-    result = is_mirror_hole_get_args(task, flags)
-    if result:
-        flags["is_get_mirror_hole"] = result
-        get_mirror_hole(I, color=0)
+    # result = is_mirror_hole_get_args(task, flags)
+    # if result:
+    #     flags["is_get_mirror_hole"] = result
+    #     get_mirror_hole(I, color=0)
 
     for i, data_pair in enumerate(train_data):
         # data_pair = train_data[1]
@@ -401,13 +401,14 @@ def do_check_inputComplexOutput_proper_functions(proper_functions, task: Dict, f
                 continue
 
             # else:
-            print(f"failed : {fun.__name__}")
+            # print(f"failed : {fun.__name__}")
             success = False
             break
         if success:
             print(f"ok____ : {fun.__name__}")
         else:
-            print(f"failed : {fun.__name__}")
+            # print(f"failed : {fun.__name__}")
+            pass
         flags["out_in"] = False
     print('do_check_input___ComplexOutput___proper_functions')
     return flags if flags else [False]

@@ -130,7 +130,7 @@ def test_solvers_correctness(data, solvers_module):
     print()
     for i, key in enumerate(solvers, start=1):
 
-        key = '9ecd008a'
+        # key = '9ecd008a'
 
         print(i, key)
         task = {}
@@ -139,7 +139,7 @@ def test_solvers_correctness(data, solvers_module):
         try:
             solver = getattr(solvers_module, f'solve_{key}')
             # preparetask(task)
-            if n_correct >= 30:
+            if n_correct % 32 == 0:
                 print()
             solve_arc_task(task)
 
@@ -148,24 +148,24 @@ def test_solvers_correctness(data, solvers_module):
             #     assert solver(ex['input']) == ex['output']
             n_correct += 1
             print()
-            print()
-            print("success", n_correct+1, " . . . . . . .  .  - 1 ")
-            print()
-            print()
+            # print()
+            print(n_correct+1, "success"," . . . . . . .  .  - 1 ")
             print()
             print()
             print()
             print()
-            print()
-            print()
-            print()
-            print()
-            print()
+            # print()
+            # print()
+            # print()
+            # print()
+            # print()
+            # print()
+            # print()
             print()
 
         except Exception as e:
             logging.error("捕获到异常：%s", e)
-            logging.error("详细错误信息：\n%s", traceback.format_exc())
+            # logging.error("详细错误信息：\n%s", traceback.format_exc())
     print(f'{n_correct} out of {n} tasks solved correctly.')
 
 

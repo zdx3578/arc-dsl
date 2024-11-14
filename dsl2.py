@@ -75,9 +75,9 @@ def check_largest_objects_dimensions(grid: Grid) -> bool:
     return tallest_height == height and widest_width == width and same_object
 
 
-def get_mirror_hole(I, color):
+def get_mirror_hole(I, color=0):
     # need judge is !! mirror,half is mirrir otherhalf not mirror
-    # color is size big obj obj(I,T,T,F)
+    # color is size big obj obj(I,T,T,F)  default zero,hole in the not mirror part
     x1 = vmirror(I)
     x2 = ofcolor(I, color)
     O = subgrid(x2, x1)
@@ -89,6 +89,84 @@ def get_partition_min_subgrid(I):
     x2 = argmin(x1, size)
     O = subgrid(x2, I)
     return O
+
+
+def do_color_count_upscale(I):
+    x1 = colorcount(I, ZERO)
+    x2 = subtract(NINE, x1)
+    O = upscale(I, x2)
+    return O
+
+
+def box_cut(I):
+    x2 = get_inbox_position(I)
+    O = subgrid(x2, I)
+    return O
+
+
+def get_inbox_position(I):
+    box = get_empty_box(I)
+
+    return toindices(box)
+
+
+def get_empty_box(I):
+    x1 = objects(I, T, T, T)
+    for obj in x1:
+        if is_valid_empty_box(obj, I):
+            ##
+            return obj
+    return False
+
+
+def is_valid_empty_box(obj: Object, grid: Grid) -> bool:
+    """
+    判断对象是否是一个空心矩阵框，并且高度和宽度大于 2，并且小于输入网格的高度和宽度。
+
+    参数:
+    obj: Object - 输入的对象。
+    grid: Grid - 输入的网格。
+
+    返回:
+    bool - 如果对象是一个空心矩阵框，并且高度和宽度大于 2，并且小于输入网格的高度和宽度，返回 True；否则返回 False。
+    """
+    # 获取对象的高度和宽度
+    obj_height, obj_width = get_object_dimensions(obj)
+    grid_height, grid_width = len(grid), len(grid[0])
+
+    # 检查对象的高度和宽度是否大于 2，并且小于输入网格的高度和宽度
+    if not (obj_height > 2 and obj_width > 2 and obj_height < grid_height and obj_width < grid_width):
+        return False
+
+    # 获取对象的边框
+    obj_box = box(obj)
+
+    # 检查对象是否与其边框相同
+    if obj != obj_box:
+        return False
+
+    # 获取对象的内部
+    obj_interior = toindices(obj) - obj_box
+
+    # 检查对象的内部是否为空
+    return len(obj_interior) == 0
+
+
+def is_box(obj: Object) -> bool:
+    """
+    判断对象是否是一个矩阵框。
+
+    参数:
+    obj: Object - 输入的对象。
+
+    返回:
+    bool - 如果对象是一个矩阵框，返回 True；否则返回 False。
+    """
+    # 获取对象的边框
+    obj_box = box(obj)
+
+    # 检查对象是否与其边框相同
+    return obj == obj_box
 
 
 def get_max_object(I):
@@ -200,7 +278,7 @@ def getIO_same_fg(I, O):
     same_objects_list = [(value, coord)
                          for obj in same_fg for value, coord in obj]
     print("fgpartition 相同对象的值和坐标:")
-    display_diff_matrices(same_objects_list)
+    # display_diff_matrices(same_objects_list)
     return same_fg
 
 
@@ -259,7 +337,7 @@ def move_down(I, obj: Object) -> Object:
 
 def move_down_1obj(input):
     obj = first(objects(input, T, T, T))
-    return move_down(input,obj)
+    return move_down(input, obj)
 
 
 def move_right(I, obj: Object) -> Object:
@@ -405,7 +483,7 @@ def getIO_same_obj(I, O):
     same_objects_list = [(value, coord)
                          for obj in same_objects for value, coord in obj]
     print("相同对象的值和坐标:")
-    display_diff_matrices(same_objects_list)
+    # display_diff_matrices(same_objects_list)
 
     # same_objects = [(value, coord)
     #                 for obj in same_objects for value, coord in obj]
@@ -441,8 +519,8 @@ def getIO_diff(I, O, flags: Dict[str, bool]):
     diff1_unique = sorted(set(sorted_diff1) - set(sorted_diff2))
     diff2_unique = sorted(set(sorted_diff2) - set(sorted_diff1))
 
-    print("第一个 frozenset 特有的元素（排序后）:", diff1_unique)
-    print("第二个 frozenset 特有的元素（排序后）:", diff2_unique)
+    # print("第一个 frozenset 特有的元素（排序后）:", diff1_unique)
+    # print("第二个 frozenset 特有的元素（排序后）:", diff2_unique)
 
     merged_diffs = {
         "diff1": defaultdict(list),
@@ -458,13 +536,13 @@ def getIO_diff(I, O, flags: Dict[str, bool]):
         merged_diffs["diff2"][value].append(coord)
 
     # 输出合并后的差异
-    for key in merged_diffs:
-        for value, positions in merged_diffs[key].items():
-            print(f"{key} - 值 {value} 的特有坐标:", positions)
+    # for key in merged_diffs:
+    #     for value, positions in merged_diffs[key].items():
+    #         print(f"{key} - 值 {value} 的特有坐标:", positions)
 
     print("比较结果:不同 diff 集合的坐标是否一致:")
 
-    display_diff_matrices(diff1_unique, diff2_unique)
+    # display_diff_matrices(diff1_unique, diff2_unique)
     return diff1_unique, diff2_unique
 
 
@@ -529,7 +607,7 @@ def prepare_diff(task, flags: Dict[str, bool]):
         #     for value, positions in merged_diffs[key].items():
         #         print(f"{key} - 值 {value} 的特有坐标:", positions)
 
-        display_diff_matrices(diff1_unique, diff2_unique)
+        # display_diff_matrices(diff1_unique, diff2_unique)
 
         if compare_positions(merged_diffs):
             flags["is_diff_same_posit"].append(True)

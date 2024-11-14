@@ -56,16 +56,16 @@ def is_output_most_input_color(I, O) -> bool:
 
 
 def is_mirror_hole_get_args(task: Dict, flags: Dict[str, List[bool]]) -> List[Any]:
-    """
-    判断是否是镜像扣洞任务，并获取参数。
-
+    """    判断是否是镜像扣洞任务，并获取参数。
     参数:
     - task (Dict[str, Any]): 包含 'input' 和 'output' 的任务字典，分别为二维列表。
     - flags (Dict[str, List[bool]]): 用于控制任务执行的标志字典。
-
     返回:
-    - List[Any]: 镜像扣洞任务的参数列表，包括扣洞的位置和大小。
-    """
+    - List[Any]: 镜像扣洞任务的参数列表，包括扣洞的位置和大小。    """
+
+    # need judge is !! mirror,half is mirrir otherhalf not mirror
+    # color is size big obj obj(I,T,T,F)  default zero,hole in the not mirror part
+    # todo complete
     train_data = task['train']
     test_data = task['test']
 
@@ -76,16 +76,17 @@ def is_mirror_hole_get_args(task: Dict, flags: Dict[str, List[bool]]) -> List[An
 
         result = is_half_mirror(input_grid)
         if result:
-            # 获取镜像扣洞的参数
-            return get_hole(input_grid)
+            if len(result) == 2:
+                # where is the hole   how to mirror                         # 获取镜像扣洞的参数
+                is_mirror_hole_get_args
 
-
-
-    return None
+    return get_hole(input_grid)
 
 
 def get_hole(input_grid):
+    # or  get  Space-time portal
     assert False
+
 
 def is_half_mirror(grid: Grid) -> bool:
     """
@@ -123,6 +124,7 @@ def is_half_mirror(grid: Grid) -> bool:
         true_conditions.append("is_bottom_mirror")
 
     return true_conditions
+
 
 def process_value(value: bool) -> Any:
     return
@@ -162,7 +164,7 @@ def safe_execute(fun, *args):
     except Exception as e:
         # 捕获异常并打印错误信息
         logging.error("捕获到异常：%s", e)
-        logging.error("详细错误信息：\n%s", traceback.format_exc())
+        # logging.error("详细错误信息：\n%s", traceback.format_exc())
         pass
 
 
@@ -246,7 +248,7 @@ def do_check_inputOutput_proper_1_arg_functions(proper_1arg_functions, task: Dic
                 continue
 
             # else:
-            print(f"failed : {fun.__name__}")
+            # print(f"failed : {fun.__name__}")
             success = False
             break
         if success:
@@ -255,7 +257,9 @@ def do_check_inputOutput_proper_1_arg_functions(proper_1arg_functions, task: Dic
             # height_ratio is args to exe
             # return fun, height_ratio
         else:
-            print(f"failed : {fun.__name__}")
+            # print(f"failed : {fun.__name__}")
+            pass
+
     print('do_check_inputOutput_proper_1___arg___functions')
     return flags["ok_fun"] if flags["ok_fun"] else [False]
 
@@ -317,7 +321,7 @@ def do_check_inputOutput_proper_1functions(proper_functions, task: Dict, flags: 
                 continue
 
             # else:
-            print(f"failed : {fun.__name__}")
+            # print(f"failed : {fun.__name__}")
             success = False
             break
         if success:
@@ -329,7 +333,8 @@ def do_check_inputOutput_proper_1functions(proper_functions, task: Dict, flags: 
             # else:
             #     return fun
         else:
-            print(f"failed : {fun.__name__}")
+            pass
+            # print(f"failed : {fun.__name__}")
     # 验证成功几个函数
     print('do_check_inputOutput___proper___functions')
     return flags["ok_fun"] if flags["ok_fun"] else [False]
@@ -409,13 +414,14 @@ def do_check_train_get_test(
             print(f"failed : {do_4fun_task.__name__}")
             # return f'failed {fun.__name__}'
             return False
-    print(f"ok____ : {do_4fun_task.__name__}")
+    print(f"ok__________ : {do_4fun_task.__name__}")
+    print(f"ok___ fun1 _ : {fun1.__name__}")
     input_grid = test_data[0]['input']
     testin = do_4fun_task(input_grid, flags, fun1, args1,
                           fun2, args2, fun3, args3, fun4, args4)
 
     assert testin == test_data[0]['output']
-    print(f"ok____ - test - ok ")
+    print(f"ok_________- : test - ok ")
     return testin
 
 
