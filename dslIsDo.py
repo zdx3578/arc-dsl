@@ -7,6 +7,32 @@ from config import *
 from dsl2 import *
 
 
+def is_underfill_corners(task, flags) -> bool:
+    train_data = task['train']
+    for data_pair in train_data:
+        I = data_pair['input']
+        O = data_pair['output']
+        _, diff2 = getIO_diff(I, O)
+        merged_diffs = {
+            "diff2": defaultdict(list)
+        }
+        # 将 diff1_unique 中的数据按第一个值分组
+        for value, coord in diff2:
+            merged_diffs["diff2"][value].append(coord)
+        colorset = set(merged_diffs["diff2"])
+        if len(colorset) == 1:
+            color = next(iter(colorset))
+            if underfill_corners(I, color) == O:
+                flags["is_underfill_corners_color"].append(color)
+    all_values_equal = len(set(flags["is_underfill_corners_color"])) == 1
+    if all_values_equal:
+        color = next(iter(flags["is_underfill_corners_color"]))
+        I = task['test'][0]['input']
+        O = underfill_corners(I, color)
+        return O
+    return False
+
+
 def is_input_firstobjsame_outallobject():
 
     return

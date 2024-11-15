@@ -93,6 +93,15 @@ def preprocess_cut_background(task: Dict[str, Any]) -> None:
     return task
 
 
+
+
+def underfill_corners(I: Grid, color: int) -> Grid:
+    x1 = objects(I, T, F, T)
+    x2 = mapply(corners, x1)
+    O = underfill(I, color, x2)
+    return O
+
+
 def cut_background(grid: Grid) -> Grid:
     """
     去掉矩阵中成行或成列的 0，但保留包含非 0 元素的行和列，以及这些行和列之间的所有行和列。
@@ -136,9 +145,9 @@ def get_partition_min_subgrid(I):
     return O
 
 
-def do_color_count_upscale(I):
-    x1 = colorcount(I, ZERO)
-    x2 = subtract(NINE, x1)
+def do_numb_color_upscale(I):
+    x1 = numcolors(I)
+    x2 = decrement(x1)
     O = upscale(I, x2)
     return O
 
@@ -205,7 +214,6 @@ def is_valid_empty_box(obj: Object, grid: Grid) -> bool:
 
     # 检查对象的内部是否为空，并且对象的边框与 obj_box 相同
     return len(obj_interior) == 0 and obj_box == toindices(obj)
-
 
 
 def is_box(obj: Object) -> bool:
@@ -549,7 +557,7 @@ def getIO_same_obj(I, O):
     return same_objects
 
 
-def getIO_diff(I, O, flags: Dict[str, bool]):
+def getIO_diff(I: Grid, O: Grid, flags: Optional[Dict[str, bool]] = None):
     # 调用 objects 函数两次
     oi = objects(I, False, True, False)
     oo = objects(O, False, True, False)
@@ -675,8 +683,6 @@ def prepare_diff(task, flags: Dict[str, bool]):
         else:
             flags["is_diff_same_posit"].append(False)
 
-
-
         if is_position_swapped(merged_diffs["diff1"], merged_diffs["diff2"]):
             flags["is_position_swap"].append(True)
         else:
@@ -699,6 +705,7 @@ def prepare_diff(task, flags: Dict[str, bool]):
         return replace, keys_diff1, keys_diff2
     return False
 
+
 def do_frontier(I, color):
     x1 = frontiers(I)
     x2 = merge(x1)
@@ -706,7 +713,7 @@ def do_frontier(I, color):
     return O
 
 
-def is_frontier(diff,grid: Grid) -> bool:
+def is_frontier(diff, grid: Grid) -> bool:
     """检查网格是否有边界元素"""
     x1 = frontiers(grid)
     x2 = merge(x1)

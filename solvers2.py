@@ -168,6 +168,10 @@ def is_proper_finding(task):
     findedflags = {}
     flags = initialize_flags()
 
+    result = is_underfill_corners(task, flags)
+    if result:
+        return result
+
     result = is_objectComplete_change_color(task, flags, True)
     if result:
         return result
@@ -229,7 +233,7 @@ def is_proper_finding(task):
         # if is_subgrid(output_grid, input_grid):
         #     flags["out_is_in_subgrid"][0] = True
 
-        # findedflags[i] = flags
+        findedflags[i] = flags
 
     # is_input_firstobjsame_outallobject()
 

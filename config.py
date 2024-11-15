@@ -38,7 +38,7 @@ proper_functions = [
     get_min_object,
     move_down_1obj,
     get_mirror_hole,
-    do_color_count_upscale,
+    do_numb_color_upscale,
     box_cut,
     get_partition_min_subgrid,
     is_subgrid_grid,
@@ -139,6 +139,7 @@ def initialize_flags() -> Dict[str, List[bool]]:
         "is_in_box_change_position": [],
         "same_diff_is_frontier": [],
         "fill_frontier_color": [],
+        "is_underfill_corners_color": [],
 
 
 
