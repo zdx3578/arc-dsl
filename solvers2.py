@@ -163,6 +163,86 @@ def solve_individual2(task):
             pass
 
 
+def do_check_inputComplexOutput_proper_functions(proper_functions, task: Dict, flags: Dict[str, List[bool]]):
+
+    print('do_check_input___ComplexOutput___proper_functions')
+
+    prepare_diff(task, flags)
+
+    train_data = task['train']
+    test_data = task['test']
+
+    # flags = flags
+
+    I = train_data[0]['input']
+    O = train_data[0]['output']
+
+    height_i, width_i = height(I), width(I)    # 输入对象的高度和宽度
+    height_o, width_o = height(O), width(O)    # 输出对象的高度和宽度
+
+    if height_o > height_i and width_o > width_i:
+        height_ratio = int(height_o / height_i)
+    elif height_o < height_i and width_o < width_i:
+        height_ratio = int(height_i / height_o)
+    else:
+        height_ratio = 0
+
+    # get proper and  args
+
+    for fun in proper_functions:
+
+        if "half" in fun.__name__ or "mirror" in fun.__name__:
+            flags["out_in"] = True
+        # else:
+        #     ##!!!!!! set false after use  half not concat
+        #     flags["out_in"] = False
+
+        args = []
+
+        success = True
+        for data_pair in train_data:
+            input_grid = data_pair['input']
+            output_grid = data_pair['output']
+
+            # fun(output_grid)
+            if flags["out_in"] == True:
+                transformed = safe_execute(fun, output_grid, *args)
+                if transformed == input_grid:
+                    if fun not in flags["out_in_fun"]:
+                        flags["out_in_fun"].append(fun)
+                    continue
+
+                if transformed == output_grid:
+                    if fun not in flags["out_out_fun"]:
+                        flags["out_out_fun"].append(fun)
+                    continue
+
+            # fun(input_grid)
+            transformed = safe_execute(fun, input_grid, *args)
+            if transformed == output_grid:
+                if fun not in flags["in_out_fun"]:
+                    flags["in_out_fun"].append(fun)
+                continue
+
+            if transformed == input_grid:
+                if fun not in flags["in_in_fun"]:
+                    flags["in_in_fun"].append(fun)
+                continue
+
+            # else:
+            # print(f"failed : {fun.__name__}")
+            success = False
+            break
+        if success:
+            print(f"ok____ : {fun.__name__}")
+        else:
+            # print(f"failed : {fun.__name__}")
+            pass
+        flags["out_in"] = False
+    print('do_check_input___ComplexOutput___proper_functions')
+    return flags if flags else [False]
+
+
 def is_proper_finding(task):
     train_data = task['train']
     findedflags = {}
@@ -354,83 +434,3 @@ def howtodo(flags):
         processed_flags["in_in_fun"] = processed_values
 
     return False
-
-
-def do_check_inputComplexOutput_proper_functions(proper_functions, task: Dict, flags: Dict[str, List[bool]]):
-
-    print('do_check_input___ComplexOutput___proper_functions')
-
-    prepare_diff(task, flags)
-
-    train_data = task['train']
-    test_data = task['test']
-
-    # flags = flags
-
-    I = train_data[0]['input']
-    O = train_data[0]['output']
-
-    height_i, width_i = height(I), width(I)    # 输入对象的高度和宽度
-    height_o, width_o = height(O), width(O)    # 输出对象的高度和宽度
-
-    if height_o > height_i and width_o > width_i:
-        height_ratio = int(height_o / height_i)
-    elif height_o < height_i and width_o < width_i:
-        height_ratio = int(height_i / height_o)
-    else:
-        height_ratio = 0
-
-    # get proper and  args
-
-    for fun in proper_functions:
-
-        if "half" in fun.__name__ or "mirror" in fun.__name__:
-            flags["out_in"] = True
-        # else:
-        #     ##!!!!!! set false after use  half not concat
-        #     flags["out_in"] = False
-
-        args = []
-
-        success = True
-        for data_pair in train_data:
-            input_grid = data_pair['input']
-            output_grid = data_pair['output']
-
-            # fun(output_grid)
-            if flags["out_in"] == True:
-                transformed = safe_execute(fun, output_grid, *args)
-                if transformed == input_grid:
-                    if fun not in flags["out_in_fun"]:
-                        flags["out_in_fun"].append(fun)
-                    continue
-
-                if transformed == output_grid:
-                    if fun not in flags["out_out_fun"]:
-                        flags["out_out_fun"].append(fun)
-                    continue
-
-            # fun(input_grid)
-            transformed = safe_execute(fun, input_grid, *args)
-            if transformed == output_grid:
-                if fun not in flags["in_out_fun"]:
-                    flags["in_out_fun"].append(fun)
-                continue
-
-            if transformed == input_grid:
-                if fun not in flags["in_in_fun"]:
-                    flags["in_in_fun"].append(fun)
-                continue
-
-            # else:
-            # print(f"failed : {fun.__name__}")
-            success = False
-            break
-        if success:
-            print(f"ok____ : {fun.__name__}")
-        else:
-            # print(f"failed : {fun.__name__}")
-            pass
-        flags["out_in"] = False
-    print('do_check_input___ComplexOutput___proper_functions')
-    return flags if flags else [False]
