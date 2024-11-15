@@ -34,13 +34,14 @@ proper_functions = [
     righthalf,
     do_output_most_input_color,
     get_first_object,
-    get_partition_min_subgrid,
     get_max_object,
     get_min_object,
     move_down_1obj,
     get_mirror_hole,
     do_color_count_upscale,
     box_cut,
+    get_partition_min_subgrid,
+    is_subgrid_grid,
 
     # out is what output
     # 扣洞
@@ -136,6 +137,8 @@ def initialize_flags() -> Dict[str, List[bool]]:
         "is_in_box_change_shape": [],
         "is_in_box_change_size": [],
         "is_in_box_change_position": [],
+        "same_diff_is_frontier": [],
+        "fill_frontier_color": [],
 
 
 

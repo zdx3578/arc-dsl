@@ -75,6 +75,51 @@ def check_largest_objects_dimensions(grid: Grid) -> bool:
     return tallest_height == height and widest_width == width and same_object
 
 
+def preprocess_cut_background(task: Dict[str, Any]) -> None:
+    """
+    处理任务中的所有训练和测试样本，去掉矩阵中成行或成列的 0。
+
+    参数:
+    task: Dict[str, Any] - 包含 'train' 和 'test' 的任务字典，分别为二维列表。
+    """
+    # 遍历任务中的所有训练和测试样本
+    for sample in task['train'] + task['test']:
+        input_grid = sample['input']
+        output_grid = sample['output']
+
+        # 处理输入和输出网格
+        sample['input'] = cut_background(input_grid)
+        sample['output'] = cut_background(output_grid)
+    return task
+
+
+def cut_background(grid: Grid) -> Grid:
+    """
+    去掉矩阵中成行或成列的 0，但保留包含非 0 元素的行和列，以及这些行和列之间的所有行和列。
+
+    参数:
+    grid: Grid - 输入的矩阵。
+
+    返回:
+    Grid - 去掉成行或成列的 0 后的矩阵。
+    """
+    # 找到包含非 0 元素的行和列的索引
+    non_zero_rows = {i for i, row in enumerate(
+        grid) if any(cell != 0 for cell in row)}
+    non_zero_cols = {j for j in range(
+        len(grid[0])) if any(row[j] != 0 for row in grid)}
+
+    # 找到需要保留的行和列的范围
+    if non_zero_rows and non_zero_cols:
+        min_row, max_row = min(non_zero_rows), max(non_zero_rows)
+        min_col, max_col = min(non_zero_cols), max(non_zero_cols)
+
+        # 保留这些行和列之间的所有行和列
+        grido = [row[min_col:max_col + 1] for row in grid[min_row:max_row + 1]]
+
+    return tuple(tuple(row) for row in grido)
+
+
 def get_mirror_hole(I, color=0):
     # need judge is !! mirror,half is mirrir otherhalf not mirror
     # color is size big obj obj(I,T,T,F)  default zero,hole in the not mirror part
@@ -112,10 +157,20 @@ def get_inbox_position(I):
 
 def get_empty_box(I):
     x1 = objects(I, T, T, T)
-    for obj in x1:
-        if is_valid_empty_box(obj, I):
-            ##
-            return obj
+    try:
+        for obj in x1:
+            # if isinstance(obj, frozenset) and all(isinstance(item, tuple) and len(item) == 2 for item in obj):
+            #     diff1 = [(value, pos) for value, pos in obj]  # 创建 diff1 列表
+            #     display_diff_matrices(diff1)
+            # else:
+            #     logging.error("对象格式不正确：%s", obj)
+            if is_valid_empty_box(obj, I):
+                ##
+                return obj
+    except Exception as e:
+        logging.error("捕获到异常：%s", e)
+        logging.error("详细错误信息：\n%s", traceback.format_exc())
+        pass
     return False
 
 
@@ -130,6 +185,10 @@ def is_valid_empty_box(obj: Object, grid: Grid) -> bool:
     返回:
     bool - 如果对象是一个空心矩阵框，并且高度和宽度大于 2，并且小于输入网格的高度和宽度，返回 True；否则返回 False。
     """
+    # 确保 obj 的格式正确
+    if not (isinstance(obj, frozenset) and all(isinstance(item, tuple) and len(item) == 2 for item in obj)):
+        return False
+
     # 获取对象的高度和宽度
     obj_height, obj_width = get_object_dimensions(obj)
     grid_height, grid_width = len(grid), len(grid[0])
@@ -141,15 +200,12 @@ def is_valid_empty_box(obj: Object, grid: Grid) -> bool:
     # 获取对象的边框
     obj_box = box(obj)
 
-    # 检查对象是否与其边框相同
-    if obj != obj_box:
-        return False
-
     # 获取对象的内部
     obj_interior = toindices(obj) - obj_box
 
-    # 检查对象的内部是否为空
-    return len(obj_interior) == 0
+    # 检查对象的内部是否为空，并且对象的边框与 obj_box 相同
+    return len(obj_interior) == 0 and obj_box == toindices(obj)
+
 
 
 def is_box(obj: Object) -> bool:
@@ -611,8 +667,13 @@ def prepare_diff(task, flags: Dict[str, bool]):
 
         if compare_positions(merged_diffs):
             flags["is_diff_same_posit"].append(True)
+            if is_frontier(merged_diffs):
+                flags["same_diff_is_frontier"].append(True) 
+                flags["fill_frontier_color"] = color(merged_diffs["diff2"])
         else:
             flags["is_diff_same_posit"].append(False)
+
+
 
         if is_position_swapped(merged_diffs["diff1"], merged_diffs["diff2"]):
             flags["is_position_swap"].append(True)
@@ -636,12 +697,21 @@ def prepare_diff(task, flags: Dict[str, bool]):
         return replace, keys_diff1, keys_diff2
     return False
 
-    # print("todo ！ 执行 ！  不同部分不止两个 frozenset 或无差异。")
-    # return 0
+def do_frontier(I, color):
+    x1 = frontiers(I)
+    x2 = merge(x1)
+    O = fill(I, color, x2)
+    return O
+    return
 
-# def position(grid):
-#     coords1 = [coord for coords in merged_diffs['diff1'].values()
-#                for coord in coords]
+
+def is_frontier(grid: Grid) -> bool:
+    """检查网格是否有边界元素"""
+    x1 = frontiers(I)
+
+
+
+    return False
 
 
 def compare_positions(merged_diffs: Dict[str, defaultdict]) -> str:

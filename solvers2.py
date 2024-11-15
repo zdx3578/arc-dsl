@@ -55,11 +55,11 @@ def solve_individual2(task):
     I = train_data[0]['input']
     O = train_data[0]['output']
 
-    height_i, width_i = height(I), width(I)    # 输入对象的高度和宽度
-    height_o, width_o = height(O), width(O)    # 输出对象的高度和宽度
+    # height_i, width_i = height(I), width(I)    # 输入对象的高度和宽度
+    # height_o, width_o = height(O), width(O)    # 输出对象的高度和宽度
 
-    height_ratio = height_o / height_i
-    width_ratio = width_o / width_i
+    # height_ratio = height_o / height_i
+    # width_ratio = width_o / width_i
 
     flags = initialize_flags()
     flags["use_fun1"] = [True]
@@ -135,7 +135,7 @@ def solve_individual2(task):
         fun_process_list = howtodo(is_fun_flag)
 
         if fun_process_list:
-            result = prepare_and_call_do_test(
+            result = prepare_funlist_and_call_do_test(
                 fun_process_list,
                 do_check_train_get_test,
                 do_4fun_task,
@@ -146,8 +146,10 @@ def solve_individual2(task):
                 return result
 
         # if all failed
+        task = preprocess_cut_background(task)
         task = preprocess_noise(task)
         result = is_proper_finding(task)
+        # ！！ add prepare_diff(task)
         if result:
             return result
 
@@ -226,11 +228,11 @@ def is_proper_finding(task):
     return False
 
 
-def prepare_and_call_do_test(fun_process_list: List[List[Any]],
-                             do_check_train_get_test: Callable,
-                             do_4fun_task: Callable,
-                             task: List[Dict],
-                             flags: Dict[str, List[bool]]):
+def prepare_funlist_and_call_do_test(fun_process_list: List[List[Any]],
+                                     do_check_train_get_test: Callable,
+                                     do_4fun_task: Callable,
+                                     task: List[Dict],
+                                     flags: Dict[str, List[bool]]):
     # 准备要传入 do_check_train_get_test 的参数
     fun_args = {}
 
@@ -245,7 +247,7 @@ def prepare_and_call_do_test(fun_process_list: List[List[Any]],
     for i in range(1, 5):  # 确保 fun1 到 fun4 和 args1 到 args4 都存在
         fun_args.setdefault(f"fun{i}", None)
         fun_args.setdefault(f"args{i}", None)
-
+    print("Fun List : calling is prepare_funlist_and_call_do_test")
     # 调用 do_check_train_get_test 函数
     return do_check_train_get_test(
         do_4fun_task,
@@ -412,76 +414,3 @@ def do_check_inputComplexOutput_proper_functions(proper_functions, task: Dict, f
         flags["out_in"] = False
     print('do_check_input___ComplexOutput___proper_functions')
     return flags if flags else [False]
-
-
-def solve_combined(input_grids, output_grids, flags: Dict[str, bool]):
-    """
-    尝试将多个输入和多个输出整体处理，使用标志变量辅助判断。
-    """
-    # 示例：根据标志条件判断
-    if flags["is_mirror"] and flags["is_scale"]:
-        return handle_combined_mirror_scale(input_grids, output_grids)
-    elif flags["is_rotation"]:
-        return handle_combined_rotation(input_grids, output_grids)
-    # 可以添加更多组合操作
-
-    return None
-
-
-def apply_solution(test_input, solution):
-    """
-    将解决方案应用于测试输入。
-    """
-    return solution(test_input)
-
-
-def handle_combined_mirror_scale(input_grids, output_grids):
-    """处理组合镜像和缩放的逻辑"""
-    return lambda x: x  # 示例处理函数
-
-
-def handle_combined_rotation(input_grids, output_grids):
-    """处理组合旋转的逻辑"""
-    return lambda x: x  # 示例处理函数
-
-
-def has_same_obj(I, O):
-    return
-
-
-def composeObject(I):
-    # remove bg
-    return
-
-
-def unique_objects(I, O):
-    # 使用 set 存储唯一的结果
-    unique_results = {
-        objects(I, F, T, T),
-        objects(I, F, F, T),
-        objects(I, T, F, T),
-        objects(I, T, T, T),
-        objects(O, F, T, T),
-        objects(O, F, F, T),
-        objects(O, T, F, T),
-        objects(O, T, T, T),
-    }
-    return unique_results
-
-
-def prepare_diff_insec(I, O):
-
-    # 调用 objects 函数两次
-    oi = objects(I, False, True, True)
-    oo = objects(O, False, True, True)
-
-    same_objects = oi.intersection(oo)
-    # 获取对称差集
-    diff_objects = oi.symmetric_difference(oo)
-
-
-def prepare_color_count(task, flags: Dict[str, bool]):
-
-    return
-
-# change name to get fun args
