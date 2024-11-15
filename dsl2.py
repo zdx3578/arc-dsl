@@ -89,7 +89,7 @@ def preprocess_cut_background(task: Dict[str, Any]) -> None:
 
         # 处理输入和输出网格
         sample['input'] = cut_background(input_grid)
-        sample['output'] = cut_background(output_grid)
+        # sample['output'] = cut_background(output_grid)
     return task
 
 
@@ -667,9 +667,11 @@ def prepare_diff(task, flags: Dict[str, bool]):
 
         if compare_positions(merged_diffs):
             flags["is_diff_same_posit"].append(True)
-            if is_frontier(merged_diffs):
-                flags["same_diff_is_frontier"].append(True) 
-                flags["fill_frontier_color"] = color(merged_diffs["diff2"])
+            if is_frontier(diff1_unique, I):
+                flags["same_diff_is_frontier"].append(True)
+                colorset = set(merged_diffs["diff2"])
+                color = next(iter(colorset))
+                flags["fill_frontier_color"] = color
         else:
             flags["is_diff_same_posit"].append(False)
 
@@ -702,16 +704,15 @@ def do_frontier(I, color):
     x2 = merge(x1)
     O = fill(I, color, x2)
     return O
-    return
 
 
-def is_frontier(grid: Grid) -> bool:
+def is_frontier(diff,grid: Grid) -> bool:
     """检查网格是否有边界元素"""
-    x1 = frontiers(I)
-
-
-
-    return False
+    x1 = frontiers(grid)
+    x2 = merge(x1)
+    x3 = sorted(list(x2))
+    # assert diff == x3
+    return diff == x3
 
 
 def compare_positions(merged_diffs: Dict[str, defaultdict]) -> str:

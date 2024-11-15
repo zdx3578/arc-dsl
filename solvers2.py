@@ -128,30 +128,39 @@ def solve_individual2(task):
         # flags.get["out_in"] = [True]
 
         ##############################
-        proper_all_functions = proper_functions
-        is_fun_flag = do_check_inputComplexOutput_proper_functions(
-            proper_all_functions, task, flags)
 
-        fun_process_list = howtodo(is_fun_flag)
+        try:
 
-        if fun_process_list:
-            result = prepare_funlist_and_call_do_test(
-                fun_process_list,
-                do_check_train_get_test,
-                do_4fun_task,
-                task,
-                flags,
-            )
+            proper_all_functions = proper_functions
+            is_fun_flag = do_check_inputComplexOutput_proper_functions(
+                proper_all_functions, task, flags)
+
+            fun_process_list = howtodo(is_fun_flag)
+
+            if fun_process_list:
+                result = prepare_funlist_and_call_do_test(
+                    fun_process_list,
+                    do_check_train_get_test,
+                    do_4fun_task,
+                    task,
+                    flags,
+                )
+                if result:
+                    return result
+
+            result = is_proper_finding(task)
+            # ！！ add prepare_diff(task)
             if result:
                 return result
 
-        # if all failed
-        task = preprocess_cut_background(task)
-        task = preprocess_noise(task)
-        result = is_proper_finding(task)
-        # ！！ add prepare_diff(task)
-        if result:
-            return result
+            # if all failed
+            task = preprocess_cut_background(task)
+            task = preprocess_noise(task)
+
+        except Exception as e:
+            logging.error("捕获到异常：%s", e)
+            logging.error("详细错误信息：\n%s", traceback.format_exc())
+            pass
 
 
 def is_proper_finding(task):
@@ -264,6 +273,10 @@ def howtodo(flags):
     processed_flags = {}
     flags = flags
 
+    if flags["same_diff_is_frontier"]:
+        color = flags["fill_frontier_color"]
+        return [[do_frontier, [color]]]
+
     if flags["in_out_fun"]:
         if left_third in flags["in_out_fun"] and right_third in flags["in_out_fun"]:
             flags["use_fun2"] = [False]
@@ -342,6 +355,9 @@ def howtodo(flags):
 def do_check_inputComplexOutput_proper_functions(proper_functions, task: Dict, flags: Dict[str, List[bool]]):
 
     print('do_check_input___ComplexOutput___proper_functions')
+
+    prepare_diff(task, flags)
+
     train_data = task['train']
     test_data = task['test']
 
