@@ -48,6 +48,13 @@ def is_move():
     return
 
 
+def do_portrait_half(I: Grid) -> Grid:
+    x1 = portrait(I)
+    x2 = branch(x1, tophalf, lefthalf)
+    O = x2(I)
+    return O
+
+
 def is_output_most_input_color(I, O) -> bool:
     """
     判断 output 是否完全由 input 中出现最多的颜色组成。

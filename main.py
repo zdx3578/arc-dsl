@@ -130,7 +130,7 @@ def test_solvers_correctness(data, solvers_module):
     print()
     for i, key in enumerate(solvers, start=1):
 
-        # key = '7b7f7511'
+        key = '7b7f7511'
 
         print(i, key)
         task = {}
@@ -165,7 +165,7 @@ def test_solvers_correctness(data, solvers_module):
 
         except Exception as e:
             logging.error("捕获到异常：%s", e)
-            # logging.error("详细错误信息：\n%s", traceback.format_exc())
+            logging.error("详细错误信息：\n%s", traceback.format_exc())
     print(f'{n_correct} out of {n} tasks solved correctly.')
 
 

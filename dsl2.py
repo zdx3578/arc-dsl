@@ -75,6 +75,7 @@ def check_largest_objects_dimensions(grid: Grid) -> bool:
     return tallest_height == height and widest_width == width and same_object
 
 
+
 def preprocess_cut_background(task: Dict[str, Any]) -> None:
     """
     处理任务中的所有训练和测试样本，去掉矩阵中成行或成列的 0。

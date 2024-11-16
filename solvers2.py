@@ -245,21 +245,20 @@ def do_check_inputComplexOutput_proper_functions(proper_functions, task: Dict, f
 
 def is_proper_finding(task):
     train_data = task['train']
-    findedflags = {}
+    test_data = task['test']
     flags = initialize_flags()
 
     result = is_underfill_corners(task, flags)
     if result:
         return result
-
     result = is_objectComplete_change_color(task, flags, True)
     if result:
         return result
-
     result = check_largest_objects_dimensions(train_data[1]['input'])
     if result:
         flags["can_partition"] = True
 
+    findedflags = [{} for _ in range(len(train_data))]
     # result = is_mirror_hole_get_args(task, flags)
     # if result:
     #     flags["is_get_mirror_hole"] = result
@@ -268,57 +267,54 @@ def is_proper_finding(task):
     for i, data_pair in enumerate(train_data):
         # data_pair = train_data[1]
         #! 上面已经初始化了
-        # flags = initialize_flags()
+        flagK= initialize_flags()
 
-        input_grid = data_pair['input']
-        output_grid = data_pair['output']
+        I = input_grid = data_pair['input']
+        O = output_grid = data_pair['output']
 
         # 提取输入对象特征
-        update_objects_proper_flags(input_grid, output_grid, flags)
+        update_objects_proper_flags(input_grid, output_grid, flagK)
 
         # 处理信息更新 findflags[i]
-        update_proper_in_out_flags(input_grid, output_grid, flags)
+        update_proper_in_out_flags(input_grid, output_grid, flagK)
 
-        # # 更新 is_scale 标志项
-        # if (height_i != height_o or width_i != width_o):
-        #     flags["is_scale"].append(True)
-        # else:
-        #     flags["is_scale"].append(False)
+        #################################################################
 
-        # # 更新 is_color_transform 标志项
-        # if palette(input_grid) != palette(output_grid):
-        #     flags["is_color_transform"].append(True)
-        # else:
-        #     flags["is_color_transform"].append(False)
+        findedflags[i] = flagK
 
-        # # 更新 is_position_swap 标志项（示例：通过位置互换判断）
-        # if position_swap(input_grid, output_grid):
-        #     flags["is_position_swap"].append(True)
-        # else:
-        #     flags["is_position_swap"].append(False)
+    ################################################
+    height_ratios = [flagK["height_ratio"][0]
+                     for flagK in findedflags if "height_ratio" in flagK and flagK["height_ratio"]]
+    width_ratios = [flagK["width_ratio"][0]
+                   for flagK in findedflags if "width_ratio" in flagK and flagK["width_ratio"]]
+    # all_in_out_fun = [flagK["in_out_fun"]
+    #                   for flagK in findedflags if "in_out_fun" in flagK and flagK["in_out_fun"]]
+    all_in_out_fun = {
+        fun for flagK in findedflags if "in_out_fun" in flagK for fun in flagK["in_out_fun"]}
 
-        # # 更新 is_output_one_color 标志项
-        # if len(palette(output_grid)) == 1:
-        #     flags["is_output_one_color"].append(True)
-        # else:
-        #     flags["is_output_one_color"].append(False)
+    # 38 7b7f7511
+    if len(set(height_ratios)) == 1 :
+        pass
+    elif len(set(height_ratios)) == 2:
+        if len(set(width_ratios)) == 2:
+            if len(all_in_out_fun) == 4:
+            # if (0.5 in height_ratios and ((lefthalf and righthalf) in flag-i-k['in_out_fun']) and 0.5 in width_ratio and (tophalf and bottomhalf) in flagK['in_out_fun']:
+                # if (lefthalf and righthalf) in flagK['in_out_fun']
+                for flagK in findedflags:
+                    if 0.5 in height_ratios and 0.5 in width_ratios:
+                        in_out_fun = flagK.get("in_out_fun", [])
+                        if lefthalf in in_out_fun and righthalf in in_out_fun:
+                            for other_flagK in findedflags:
+                                if other_flagK != flagK:
+                                    other_in_out_fun = other_flagK.get("in_out_fun", [])
+                                    if tophalf in other_in_out_fun and bottomhalf in other_in_out_fun:
+                                        result = do_portrait_half(test_data[0]['input'])
+                                        if result:
+                                            return result
 
-        # # 更新 output_allone_color 标志项
-        # flags["output_allone_color"].append(
-        #     all(cell == output_grid[0][0] for row in output_grid for cell in row))
 
-        # # 更新 out_is_in_subgrid 和 in_is_out_subgrid 标志项
-        # if is_subgrid(input_grid, output_grid):
-        #     flags["in_is_out_subgrid"][0] = True
-        # if is_subgrid(output_grid, input_grid):
-        #     flags["out_is_in_subgrid"][0] = True
 
-        findedflags[i] = flags
 
-    # is_input_firstobjsame_outallobject()
-
-    # return findedflags
-    return False
 
 
 def prepare_funlist_and_call_do_test(fun_process_list: List[List[Any]],
