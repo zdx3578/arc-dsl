@@ -43,6 +43,7 @@ proper_functions = [
     get_partition_min_subgrid,
     is_subgrid_grid,
 
+
     # out is what output
     # 扣洞
     # 叠加
@@ -62,6 +63,8 @@ proper_1arg_functions = [upscale,
                          replace,
                          switch,
                          crop,
+                         do_neighbour_color
+
                          #  move_down,
                          #  upper_third, middle_third, lower_third, left_third, center_third, right_third,
 
@@ -92,7 +95,7 @@ is_do_mapping = {
     # replace:replace,
 
     bottomhalf: vconcat, lefthalf: hconcat, tophalf: vconcat, righthalf: hconcat,
-    is_output_most_input_color: do_output_most_input_color,
+    # is_output_most_input_color: do_output_most_input_color,
     # in is what output
 }
 
@@ -113,9 +116,9 @@ def initialize_flags() -> Dict[str, List[bool]]:
         "is_position_swap": [],
         "is_rotation": [],
         "is_translation": [],
-        "is_color_transform": [],
-        "is_output_one_color": [],
-        "is_output_most_input_color": [],
+        "out_train_i_diff_color_is": [],
+        "out_train_all_diff_color_is": [],
+        # "is_output_most_input_color": [],
 
         'is_subgrid': [],
         "out_is_in_subgrid": [False],

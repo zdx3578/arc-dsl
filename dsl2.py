@@ -75,7 +75,6 @@ def check_largest_objects_dimensions(grid: Grid) -> bool:
     return tallest_height == height and widest_width == width and same_object
 
 
-
 def preprocess_cut_background(task: Dict[str, Any]) -> None:
     """
     处理任务中的所有训练和测试样本，去掉矩阵中成行或成列的 0。
@@ -92,8 +91,6 @@ def preprocess_cut_background(task: Dict[str, Any]) -> None:
         sample['input'] = cut_background(input_grid)
         # sample['output'] = cut_background(output_grid)
     return task
-
-
 
 
 def underfill_corners(I: Grid, color: int) -> Grid:
@@ -272,7 +269,7 @@ def is_objectComplete_change_color(task, flags, done=False):
         I = data_pair['input']
         O = data_pair['output']
 
-        diff1, diff2 = getIO_diff(I, O, flags)
+        diff1, diff2,_,_ = getIO_diff(I, O, flags)
         # same_obj = getIO_same_obj(I, O)
         same_fg = getIO_same_fg(I, O)
 
@@ -600,15 +597,31 @@ def getIO_diff(I: Grid, O: Grid, flags: Optional[Dict[str, bool]] = None):
     for value, coord in diff2_unique:
         merged_diffs["diff2"][value].append(coord)
 
+    diff_output_colorset = set(merged_diffs["diff2"])
+    if len(diff_output_colorset) == 1:
+        diff_output_color = next(iter(diff_output_colorset))
+        flags["out_train_i_diff_color_is"].append(diff_output_color)
+    else:
+        diff_output_color = None
+
     # 输出合并后的差异
     # for key in merged_diffs:
     #     for value, positions in merged_diffs[key].items():
     #         print(f"{key} - 值 {value} 的特有坐标:", positions)
 
-    print("比较结果:不同 diff 集合的坐标是否一致:")
-
+    # print("比较结果:不同 diff 集合的坐标是否一致:")
     # display_diff_matrices(diff1_unique, diff2_unique)
-    return diff1_unique, diff2_unique
+    return diff1_unique, diff2_unique, diff_output_colorset, diff_output_color
+
+
+def do_neighbour_color(I, color):
+    x1 = objects(I, T, T, T)
+    # x3 = ofcolor(I, FIVE)
+    positions = frozenset(
+        coord for inner_set in x1 for _, coord in inner_set)
+    x2=mapply(neighbors, positions)
+    O = fill(I, color, x2)
+    return O
 
 
 def prepare_diff(task, flags: Dict[str, bool]):

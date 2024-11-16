@@ -12,21 +12,24 @@ def is_underfill_corners(task, flags) -> bool:
     for data_pair in train_data:
         I = data_pair['input']
         O = data_pair['output']
-        _, diff2 = getIO_diff(I, O)
-        merged_diffs = {
-            "diff2": defaultdict(list)
-        }
-        # 将 diff1_unique 中的数据按第一个值分组
-        for value, coord in diff2:
-            merged_diffs["diff2"][value].append(coord)
-        colorset = set(merged_diffs["diff2"])
+        _, _, colorset, _ = getIO_diff(I, O, flags)
+        # merged_diffs = {
+        #     "diff2": defaultdict(list)
+        # }
+        # # 将 diff1_unique 中的数据按第一个值分组
+        # for value, coord in diff2:
+        #     merged_diffs["diff2"][value].append(coord)
+        # colorset = set(merged_diffs["diff2"])
         if len(colorset) == 1:
             color = next(iter(colorset))
+            # flags["out_train_i_diff_color_is"].append(color)
             if underfill_corners(I, color) == O:
                 flags["is_underfill_corners_color"].append(color)
+
     all_values_equal = len(set(flags["is_underfill_corners_color"])) == 1
     if all_values_equal:
         color = next(iter(flags["is_underfill_corners_color"]))
+        # flags["out_train_all_diff_color_is"] = color
         I = task['test'][0]['input']
         O = underfill_corners(I, color)
         return O
@@ -55,37 +58,37 @@ def do_portrait_half(I: Grid) -> Grid:
     return O
 
 
-def is_output_most_input_color(I, O) -> bool:
-    """
-    判断 output 是否完全由 input 中出现最多的颜色组成。
+# def is_output_most_input_color(I, O) -> bool:
+#     """
+#     判断 output 是否完全由 input 中出现最多的颜色组成。
 
-    参数:
-    - task (Dict[str, Any]): 包含 'input' 和 'output' 的任务字典，分别为二维列表。
+#     参数:
+#     - task (Dict[str, Any]): 包含 'input' 和 'output' 的任务字典，分别为二维列表。
 
-    返回:
-    - bool: 如果 output 由 input 中的最多颜色组成，返回 True；否则返回 False。
-    """
-    input_grid = I
-    output_grid = O
+#     返回:
+#     - bool: 如果 output 由 input 中的最多颜色组成，返回 True；否则返回 False。
+#     """
+#     input_grid = I
+#     output_grid = O
 
-    # 统计每种颜色的出现次数
-    color_counts = {}
-    for row in input_grid:
-        for color in row:
-            if color in color_counts:
-                color_counts[color] += 1
-            else:
-                color_counts[color] = 1
+#     # 统计每种颜色的出现次数
+#     color_counts = {}
+#     for row in input_grid:
+#         for color in row:
+#             if color in color_counts:
+#                 color_counts[color] += 1
+#             else:
+#                 color_counts[color] = 1
 
-    # 找到出现次数最多的颜色
-    most_common_color = max(color_counts, key=color_counts.get)
+#     # 找到出现次数最多的颜色
+#     most_common_color = max(color_counts, key=color_counts.get)
 
-    # 检查 output 中是否完全由该颜色组成
-    for row in output_grid:
-        if any(cell != most_common_color for cell in row):
-            return False
+#     # 检查 output 中是否完全由该颜色组成
+#     for row in output_grid:
+#         if any(cell != most_common_color for cell in row):
+#             return False
 
-    return True
+#     return True
 
 
 def is_mirror_hole_get_args(task: Dict, flags: Dict[str, List[bool]]) -> List[Any]:
@@ -250,6 +253,19 @@ def do_check_inputOutput_proper_1_arg_functions(proper_1arg_functions, task: Dic
                     # if funget == fun:
                     # fun = funget
                     # args = [arg1, arg2]
+        elif fun == do_neighbour_color:
+            # is_underfill_corners(task, flags)  had exe this
+            for data_pair in train_data:
+                I = data_pair['input']
+                O = data_pair['output']
+                getIO_diff(I, O, flags)
+
+            all_values_equal = len(
+                set(flags["out_train_i_diff_color_is"])) == 1
+            if all_values_equal:
+                color = next(iter(flags["out_train_i_diff_color_is"]))
+                flags["out_train_all_diff_color_is"] = color
+                args = [color]
         else:
             args = [height_ratio]
 

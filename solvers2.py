@@ -117,7 +117,7 @@ def solve_individual2(task):
                     return result
         except Exception as e:
             logging.error("捕获到异常：%s", e)
-            # logging.error("详细错误信息：\n%s", traceback.format_exc())
+            logging.error("详细错误信息：\n%s", traceback.format_exc())
             pass
 
         # part_functions
@@ -152,7 +152,7 @@ def solve_individual2(task):
             # ！！ add prepare_diff(task)
             if result:
                 return result
-
+            print("-----------------------------------------单独处理失败，需进一步尝试联合处理。---------------------------------")
             # if all failed
             task = preprocess_cut_background(task)
             task = preprocess_noise(task)
@@ -273,7 +273,7 @@ def is_proper_finding(task):
         O = output_grid = data_pair['output']
 
         # 提取输入对象特征
-        update_objects_proper_flags(input_grid, output_grid, flagK)
+        # update_objects_proper_flags(input_grid, output_grid, flagK)
 
         # 处理信息更新 findflags[i]
         update_proper_in_out_flags(input_grid, output_grid, flagK)
