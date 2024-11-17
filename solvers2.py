@@ -222,6 +222,7 @@ def do_check_inputComplexOutput_proper_functions(proper_functions, task: Dict, f
                     if fun not in flags["out_out_fun"]:
                         flags["out_out_fun"].append(fun)
                     continue
+                # if transformed == otherfun(input_grid):
 
             # fun(input_grid)
             transformed = safe_execute(fun, input_grid, *args)
@@ -278,6 +279,15 @@ def is_proper_finding(task):
         I = input_grid = data_pair['input']
         O = output_grid = data_pair['output']
 
+        # height_i, width_i = height(I), width(I)    # 输入对象的高度和宽度
+        # height_o, width_o = height(O), width(O)    # 输出对象的高度和宽度
+
+        # height_ratio = height_o / height_i
+        # width_ratio = width_o / width_i
+
+        # flagK["height_ratio"].append(height_ratio)
+        # flagK["width_ratio"].append(width_ratio)
+
         # 提取输入对象特征
         # update_objects_proper_flags(input_grid, output_grid, flagK)
 
@@ -319,6 +329,13 @@ def is_proper_finding(task):
                                             test_data[0]['input'])
                                         if result:
                                             return result
+    #                                 return
+    #                             return
+    #                     return
+    #                 return
+    #         return
+    #     return
+    # return
 
 
 def prepare_funlist_and_call_do_test(fun_process_list: List[List[Any]],
@@ -407,6 +424,18 @@ def howtodo(flags):
                     [vmirror, []],            # vmirror 函数，无参数
                     [hconcat, ['pin', 'in']]   # hconcat 函数，有参数 'pin' 和 'in'
                 ]
+            if hmirror in flags["out_out_fun"]:
+                if top_half_left_quarter in flags["out_in_fun"]:
+                    # # 处理 vmirror + top_half_left_quarter 的情况
+                    flags["use_fun2"] = [True]
+                    flags["use_fun3"] = [True]
+                    flags["use_fun4"] = [True]
+                    return [
+                        [vmirror, []],          # hmirror 函数，无参数
+                        [hconcat, ['in', 'pin']],  # vconcat 函数，有参数 'pin' 和 'in'
+                        [hmirror, []],          # hmirror 函数，无参数
+                        [vconcat, ['in', 'pin']]  # vconcat 函数，有参数 'pin' 和 'in'
+                    ]
 
         if hmirror in flags["out_out_fun"]:
             if bottomhalf in flags["out_in_fun"]:

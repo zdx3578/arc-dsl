@@ -27,13 +27,13 @@ proper_functions = [
     rot180,
     rot270,
     upper_third, middle_third, lower_third, left_third, center_third, right_third,
-
+    top_half_left_quarter, top_half_right_quarter, bottom_half_left_quarter, bottom_half_right_quarter,
     bottomhalf,
     lefthalf,
     tophalf,
     righthalf,
     do_output_most_input_color,
-    get_first_object,
+    # get_first_object,
     get_max_object,
     get_min_object,
     move_down_1obj,
@@ -42,6 +42,10 @@ proper_functions = [
     box_cut,
     get_partition_min_subgrid,
     is_subgrid_grid,
+    get_most_colors_part,
+
+    firstobj_is_outputhalf,
+    concat_first_obj
 
 
     # out is what output

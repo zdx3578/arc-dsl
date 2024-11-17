@@ -130,9 +130,9 @@ def test_solvers_correctness(data, solvers_module):
     print()
     for i, key in enumerate(solvers, start=1):
 
-        # key = '2dc579da'
+        # key = '3af2c5a8'
 
-        key = 'c1d99e64'
+        # key = 'c1d99e64'
 
         print(i, key)
         task = {}
@@ -141,7 +141,7 @@ def test_solvers_correctness(data, solvers_module):
         try:
             solver = getattr(solvers_module, f'solve_{key}')
             # preparetask(task)
-            if n_correct % 39 == 0:
+            if n_correct % 42 == 0:
                 print()
             solve_arc_task(task)
 

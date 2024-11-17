@@ -37,7 +37,6 @@ def is_underfill_corners(task, flags) -> bool:
 
 
 def is_input_firstobjsame_outallobject():
-
     return
 
 
@@ -47,14 +46,24 @@ def is_input_firstobjsame_outallobject():
 #     # O is  partof x1
 #     flags["is_a_object_of"] = True
 #     return
-def is_move():
-    return
+# def is_move():
+#     return
 
 
 def do_portrait_half(I: Grid) -> Grid:
     x1 = portrait(I)
     x2 = branch(x1, tophalf, lefthalf)
     O = x2(I)
+    return O
+
+
+def get_most_colors_part(grid: Grid) -> Grid:
+    x1 = vsplit(grid, TWO)
+    x2 = rbind(hsplit, TWO)
+    x3 = mapply(x2, x1)
+
+    subgrids = split_grid_by_indices(grid, include_lines=False)
+    O = argmax(subgrids, numcolors)
     return O
 
 
@@ -91,37 +100,37 @@ def do_portrait_half(I: Grid) -> Grid:
 #     return True
 
 
-def is_mirror_hole_get_args(task: Dict, flags: Dict[str, List[bool]]) -> List[Any]:
-    """    判断是否是镜像扣洞任务，并获取参数。
-    参数:
-    - task (Dict[str, Any]): 包含 'input' 和 'output' 的任务字典，分别为二维列表。
-    - flags (Dict[str, List[bool]]): 用于控制任务执行的标志字典。
-    返回:
-    - List[Any]: 镜像扣洞任务的参数列表，包括扣洞的位置和大小。    """
+# def is_mirror_hole_get_args(task: Dict, flags: Dict[str, List[bool]]) -> List[Any]:
+#     """    判断是否是镜像扣洞任务，并获取参数。
+#     参数:
+#     - task (Dict[str, Any]): 包含 'input' 和 'output' 的任务字典，分别为二维列表。
+#     - flags (Dict[str, List[bool]]): 用于控制任务执行的标志字典。
+#     返回:
+#     - List[Any]: 镜像扣洞任务的参数列表，包括扣洞的位置和大小。    """
 
-    # need judge is !! mirror,half is mirrir otherhalf not mirror
-    # color is size big obj obj(I,T,T,F)  default zero,hole in the not mirror part
-    # todo complete
-    train_data = task['train']
-    test_data = task['test']
+#     # need judge is !! mirror,half is mirrir otherhalf not mirror
+#     # color is size big obj obj(I,T,T,F)  default zero,hole in the not mirror part
+#     # todo complete
+#     train_data = task['train']
+#     test_data = task['test']
 
-    # 遍历所有训练样本
-    for data_pair in train_data:
-        input_grid = data_pair['input']
-        output_grid = data_pair['output']
+#     # 遍历所有训练样本
+#     for data_pair in train_data:
+#         input_grid = data_pair['input']
+#         output_grid = data_pair['output']
 
-        result = is_half_mirror(input_grid)
-        if result:
-            if len(result) == 2:
-                # where is the hole   how to mirror                         # 获取镜像扣洞的参数
-                is_mirror_hole_get_args
+#         result = is_half_mirror(input_grid)
+#         if result:
+#             if len(result) == 2:
+#                 # where is the hole   how to mirror                         # 获取镜像扣洞的参数
+#                 is_mirror_hole_get_args
 
-    return get_hole(input_grid)
+#     return get_hole(input_grid)
 
 
-def get_hole(input_grid):
-    # or  get  Space-time portal
-    assert False
+# def get_hole(input_grid):
+#     # or  get  Space-time portal
+#     assert False
 
 
 def is_half_mirror(grid: Grid) -> bool:
@@ -402,22 +411,34 @@ def do_4fun_task(
 
     # 获取顺序
     order = flags.get("order", [1, 2, 3, 4])
-    tmpinput_grid = input_grid
+    oldinput_grid = input_grid
     # 根据顺序调用函数
     for idx in order:
         fun, args = functions[idx - 1]  # idx-1是因为order是从1开始的
         if flags.get(f"use_fun{idx}", [True])[0]:  # 检查是否需要调用当前函数
-            if "concat" in fun.__name__:
+
+            # oldinput_grid = input_grid
+
+            if "concat_first_obj" in fun.__name__:
+                input_grid = fun(
+                    input_grid, *args) if args else fun(input_grid)
+            elif "concat" in fun.__name__:
                 # 执行包含 "concat" 的函数
                 if args == ['pin', 'in']:
-                    input_grid = fun(input_grid, tmpinput_grid)
+                    input_grid = fun(input_grid, oldinput_grid)
+                    oldinput_grid = input_grid
                 if args == ['in', 'pin']:
-                    input_grid = fun(tmpinput_grid, input_grid)
+                    input_grid = fun(oldinput_grid, input_grid)
+                    oldinput_grid = input_grid
                 if args == ['in', 'in']:
-                    input_grid = fun(tmpinput_grid, tmpinput_grid)
+                    input_grid = fun(oldinput_grid, oldinput_grid)
+                    oldinput_grid = input_grid
+                # else:
+                #     input_grid = fun(input_grid, *args) if args else fun(input_grid)
             else:
                 input_grid = fun(
                     input_grid, *args) if args else fun(input_grid)
+
     out = input_grid
     return out
 
@@ -456,6 +477,8 @@ def do_check_train_get_test(
         # 使用传入的函数 fun 来检查是否满足条件
         transformed = do_4fun_task(
             input_grid, flags, fun1, args1, fun2, args2, fun3, args3, fun4, args4)
+        # display_diff_matrices(transformed)
+        # display_diff_matrices(output_grid)
         if transformed == output_grid:
             # flags["is_fun_ok"].append(True)
             continue  # 结束本轮循环，直接进行下一个 data_pair

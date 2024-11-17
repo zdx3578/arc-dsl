@@ -75,6 +75,18 @@ def check_largest_objects_dimensions(grid: Grid) -> bool:
 
     return tallest_height == height and widest_width == width and same_object
 
+def concat_first_obj(I):
+    x1 = objects(I, T, T, T)
+    x2 = first(x1)
+    x3 = subgrid(x2, I)
+    O = hconcat(x3, x3)
+    return O
+def find_concat_first_obj(task, flags):
+    #todo
+    return False
+def grid_is_concat(I):
+    lefthalf == right_half ## todo add to process logic
+    return
 
 def preprocess_cut_background(task: Dict[str, Any]) -> None:
     """
@@ -211,8 +223,32 @@ def split_grid_by_indices(grid,  include_lines=False):
     h_splits = [0] + h_indices + [len(grid)]
     v_splits = [0] + v_indices + [len(grid[0])]
 
-    sub_grids = {}
-    index = 0  # 子网格编号
+    # sub_grids = {}
+    # index = 0  # 子网格编号
+    # for i in range(len(h_splits) - 1):
+    #     for j in range(len(v_splits) - 1):
+    #         if include_lines:
+    #             start_row = h_splits[i]
+    #             end_row = h_splits[i+1]
+    #             start_col = v_splits[j]
+    #             end_col = v_splits[j+1]
+    #         else:
+    #             start_row = h_splits[i] + (0 if i == 0 else 1)
+    #             end_row = h_splits[i+1]
+    #             start_col = v_splits[j] + (0 if j == 0 else 1)
+    #             end_col = v_splits[j+1]
+
+    #         # 检查子网格是否为空
+    #         if start_row >= end_row or start_col >= end_col:
+    #             continue
+
+    #         sub_grid = [row[start_col:end_col]
+    #                     for row in grid[start_row:end_row]]
+    #         key = f'grid_{index}'
+    #         sub_grids[key] = sub_grid
+    #         index += 1
+
+    sub_grids = []
     for i in range(len(h_splits) - 1):
         for j in range(len(v_splits) - 1):
             if include_lines:
@@ -232,10 +268,9 @@ def split_grid_by_indices(grid,  include_lines=False):
 
             sub_grid = [row[start_col:end_col]
                         for row in grid[start_row:end_row]]
-            key = f'grid_{index}'
-            sub_grids[key] = sub_grid
-            index += 1
-    return sub_grids
+            sub_grids.append(tuple(sub_grid))
+
+    return tuple(sub_grids)
 
 
 def do_numb_color_upscale(I):
@@ -564,6 +599,21 @@ def get_first_object(I):
     O = subgrid(x2, I)
     return O
 
+def firstobj_is_outputhalf(I,O):
+    x1 = objects(I, T, T, T)
+    x2 = first(x1)
+    x3 = subgrid(x2, I)
+    result = []
+    if x3 == lefthalf(O):
+        result.append(lefthalf)
+    elif x3 == righthalf(O):
+        result.append(righthalf)
+    elif x3 == tophalf(O):
+        result.append(tophalf)
+    elif x3 == bottomhalf(O):
+        result.append(bottomhalf)
+    return result
+
 
 def do_output_most_input_color(I):
     x1 = mostcolor(I)
@@ -590,6 +640,28 @@ def replace2(grid, position, new_value):
     # 将新网格转换回不可变的元组结构
     return tuple(tuple(row) for row in new_grid)
 
+def top_half_left_quarter(I):
+    x1 = tophalf(I)
+    x2 = lefthalf(x1)
+    return x2
+
+
+def top_half_right_quarter(I):
+    x1 = tophalf(I)
+    x2 = righthalf(x1)
+    return x2
+
+
+def bottom_half_left_quarter(I):
+    x1 = bottomhalf(I)
+    x2 = lefthalf(x1)
+    return x2
+
+
+def bottom_half_right_quarter(I):
+    x1 = bottomhalf(I)
+    x2 = righthalf(x1)
+    return x2
 
 def upper_third(grid: Grid) -> Grid:
     """ Upper third of grid """
