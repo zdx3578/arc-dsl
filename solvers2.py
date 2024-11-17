@@ -61,6 +61,11 @@ def solve_individual2(task):
     # height_ratio = height_o / height_i
     # width_ratio = width_o / width_i
 
+    # spm1 = split_matrix_by_frontiers(train_data[2]['input'], False)
+    # spg2 = split_grid_by_indices(train_data[2]['input'], False)
+    # for i, (key, sub_grid) in enumerate(spg2.items()):
+    #     assert spm1[i] == spg2[key]
+
     flags = initialize_flags()
     flags["use_fun1"] = [True]
     flags["use_fun2"] = [False]
@@ -152,7 +157,8 @@ def solve_individual2(task):
             # ！！ add prepare_diff(task)
             if result:
                 return result
-            print("-----------------------------------------单独处理失败，需进一步尝试联合处理。---------------------------------")
+            print(
+                "-----------------------------------------单独处理失败，需进一步尝试联合处理。---------------------------------")
             # if all failed
             task = preprocess_cut_background(task)
             task = preprocess_noise(task)
@@ -267,7 +273,7 @@ def is_proper_finding(task):
     for i, data_pair in enumerate(train_data):
         # data_pair = train_data[1]
         #! 上面已经初始化了
-        flagK= initialize_flags()
+        flagK = initialize_flags()
 
         I = input_grid = data_pair['input']
         O = output_grid = data_pair['output']
@@ -286,19 +292,19 @@ def is_proper_finding(task):
     height_ratios = [flagK["height_ratio"][0]
                      for flagK in findedflags if "height_ratio" in flagK and flagK["height_ratio"]]
     width_ratios = [flagK["width_ratio"][0]
-                   for flagK in findedflags if "width_ratio" in flagK and flagK["width_ratio"]]
+                    for flagK in findedflags if "width_ratio" in flagK and flagK["width_ratio"]]
     # all_in_out_fun = [flagK["in_out_fun"]
     #                   for flagK in findedflags if "in_out_fun" in flagK and flagK["in_out_fun"]]
     all_in_out_fun = {
         fun for flagK in findedflags if "in_out_fun" in flagK for fun in flagK["in_out_fun"]}
 
     # 38 7b7f7511
-    if len(set(height_ratios)) == 1 :
+    if len(set(height_ratios)) == 1:
         pass
     elif len(set(height_ratios)) == 2:
         if len(set(width_ratios)) == 2:
             if len(all_in_out_fun) == 4:
-            # if (0.5 in height_ratios and ((lefthalf and righthalf) in flag-i-k['in_out_fun']) and 0.5 in width_ratio and (tophalf and bottomhalf) in flagK['in_out_fun']:
+                # if (0.5 in height_ratios and ((lefthalf and righthalf) in flag-i-k['in_out_fun']) and 0.5 in width_ratio and (tophalf and bottomhalf) in flagK['in_out_fun']:
                 # if (lefthalf and righthalf) in flagK['in_out_fun']
                 for flagK in findedflags:
                     if 0.5 in height_ratios and 0.5 in width_ratios:
@@ -306,15 +312,13 @@ def is_proper_finding(task):
                         if lefthalf in in_out_fun and righthalf in in_out_fun:
                             for other_flagK in findedflags:
                                 if other_flagK != flagK:
-                                    other_in_out_fun = other_flagK.get("in_out_fun", [])
+                                    other_in_out_fun = other_flagK.get(
+                                        "in_out_fun", [])
                                     if tophalf in other_in_out_fun and bottomhalf in other_in_out_fun:
-                                        result = do_portrait_half(test_data[0]['input'])
+                                        result = do_portrait_half(
+                                            test_data[0]['input'])
                                         if result:
                                             return result
-
-
-
-
 
 
 def prepare_funlist_and_call_do_test(fun_process_list: List[List[Any]],

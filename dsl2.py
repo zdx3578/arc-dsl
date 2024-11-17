@@ -1,3 +1,4 @@
+from typing import List, Tuple, Set, FrozenSet
 from collections import Counter, defaultdict
 from dsl import *
 from typing import Dict, Any, List, Tuple, Callable, Optional
@@ -143,6 +144,100 @@ def get_partition_min_subgrid(I):
     return O
 
 
+def frontiers2(
+    grid: Grid
+) -> Objects:
+    """ set of frontiers """
+    h, w = len(grid), len(grid[0])
+    row_indices = tuple(i for i, r in enumerate(grid) if len(set(r)) == 1)
+    column_indices = tuple(j for j, c in enumerate(
+        dmirror(grid)) if len(set(c)) == 1)
+    hfrontiers = frozenset(
+        {frozenset({(grid[i][j], (i, j)) for j in range(w)}) for i in row_indices})
+    vfrontiers = frozenset(
+        {frozenset({(grid[i][j], (i, j)) for i in range(h)}) for j in column_indices})
+    return hfrontiers, vfrontiers
+
+##############################################################
+
+
+def extract_line_indices(frontier_lines):
+    """
+    从 hfrontiers 或 vfrontiers 中提取行或列的索引。
+
+    参数:
+    frontier_lines: frozenset，包含多个 frozenset，每个内部 frozenset 代表一条线。
+
+    返回:
+    line_indices: 列表，包含每条线的行索引或列索引。
+    """
+    line_indices = []
+    for line in frontier_lines:
+        # 提取该线上的所有坐标
+        coords = [coord for value, coord in line]
+        if coords:
+            # 如果是水平线，所有坐标的行索引相同
+            # 如果是垂直线，所有坐标的列索引相同
+            i_indices = {coord[0] for coord in coords}
+            j_indices = {coord[1] for coord in coords}
+            if len(i_indices) == 1:
+                # 水平线，提取行索引
+                line_indices.append(list(i_indices)[0])
+            elif len(j_indices) == 1:
+                # 垂直线，提取列索引
+                line_indices.append(list(j_indices)[0])
+    return line_indices
+
+
+def split_grid_by_indices(grid,  include_lines=False):
+    """
+    使用行索引和列索引来分割矩阵。
+
+    参数:
+    grid: 二维列表，表示矩阵
+    h_indices: 行索引列表，用于水平分割
+    v_indices: 列索引列表，用于垂直分割
+    include_lines: 布尔值，是否包含分割线，默认 False
+
+    返回:
+    sub_grids: 字典，包含分割后的子矩阵
+    """
+    hline, vline = frontiers2(grid)
+    h_indices = extract_line_indices(hline)
+    v_indices = extract_line_indices(vline)
+
+    h_indices = sorted(h_indices)
+    v_indices = sorted(v_indices)
+    h_splits = [0] + h_indices + [len(grid)]
+    v_splits = [0] + v_indices + [len(grid[0])]
+
+    sub_grids = {}
+    index = 0  # 子网格编号
+    for i in range(len(h_splits) - 1):
+        for j in range(len(v_splits) - 1):
+            if include_lines:
+                start_row = h_splits[i]
+                end_row = h_splits[i+1]
+                start_col = v_splits[j]
+                end_col = v_splits[j+1]
+            else:
+                start_row = h_splits[i] + (0 if i == 0 else 1)
+                end_row = h_splits[i+1]
+                start_col = v_splits[j] + (0 if j == 0 else 1)
+                end_col = v_splits[j+1]
+
+            # 检查子网格是否为空
+            if start_row >= end_row or start_col >= end_col:
+                continue
+
+            sub_grid = [row[start_col:end_col]
+                        for row in grid[start_row:end_row]]
+            key = f'grid_{index}'
+            sub_grids[key] = sub_grid
+            index += 1
+    return sub_grids
+
+
 def do_numb_color_upscale(I):
     x1 = numcolors(I)
     x2 = decrement(x1)
@@ -269,7 +364,7 @@ def is_objectComplete_change_color(task, flags, done=False):
         I = data_pair['input']
         O = data_pair['output']
 
-        diff1, diff2,_,_ = getIO_diff(I, O, flags)
+        diff1, diff2, _, _ = getIO_diff(I, O, flags)
         # same_obj = getIO_same_obj(I, O)
         same_fg = getIO_same_fg(I, O)
 
@@ -619,7 +714,7 @@ def do_neighbour_color(I, color):
     # x3 = ofcolor(I, FIVE)
     positions = frozenset(
         coord for inner_set in x1 for _, coord in inner_set)
-    x2=mapply(neighbors, positions)
+    x2 = mapply(neighbors, positions)
     O = fill(I, color, x2)
     return O
 
