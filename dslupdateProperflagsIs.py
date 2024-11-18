@@ -58,7 +58,7 @@ def update_proper_in_out_flags(input_grid: Grid, output_grid: Grid, flagK: Dict[
         transformed = safe_execute(fun, input_grid)
         if transformed == output_grid:
             flagK["in_out_fun"].append(fun)
-            continue
+            # continue
 
         # 反向操作
         transformed = safe_execute(fun, output_grid)

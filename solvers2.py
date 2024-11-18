@@ -66,9 +66,8 @@ def solve_individual2(task):
     # for i, (key, sub_grid) in enumerate(spg2.items()):
     #     assert spm1[i] == spg2[key]
 
+    #!! 两套 flags 一个是全局的，一个是每个训练数据对的
     flagsNtrain = [initialize_flags() for _ in range(len(train_data))]
-
-
     flags = initialize_flags()
     flags["use_fun1"] = [True]
     flags["use_fun2"] = [False]
@@ -141,7 +140,7 @@ def solve_individual2(task):
 
             proper_all_functions = proper_functions
             is_fun_flag = do_check_inputComplexOutput_proper_functions(
-                proper_all_functions, task, flags)
+                proper_all_functions, task, flags, flagsNtrain)
 
             fun_process_list = howtodo(is_fun_flag)
 
@@ -156,7 +155,7 @@ def solve_individual2(task):
                 if result:
                     return result
 
-            result = is_proper_finding(task)
+            result = is_proper_finding(task, flagsNtrain)
             # ！！ add prepare_diff(task)
             if result:
                 return result
@@ -172,7 +171,7 @@ def solve_individual2(task):
             pass
 
 
-def do_check_inputComplexOutput_proper_functions(proper_functions, task: Dict, flags: Dict[str, List[bool]]):
+def do_check_inputComplexOutput_proper_functions(proper_functions, task: Dict, flags: Dict[str, List[bool]], flagsNtrain):
 
     print('do_check_input___ComplexOutput___proper_functions')
 
@@ -208,10 +207,12 @@ def do_check_inputComplexOutput_proper_functions(proper_functions, task: Dict, f
 
         args = []
 
-        success = True
-        for data_pair in train_data:
+        # success = True
+        for i, data_pair in enumerate(train_data):
             input_grid = data_pair['input']
             output_grid = data_pair['output']
+
+            flagK = flagsNtrain[i]
 
             # fun(output_grid)
             if flags["out_in"] == True:
@@ -219,12 +220,14 @@ def do_check_inputComplexOutput_proper_functions(proper_functions, task: Dict, f
                 if transformed == input_grid:
                     if fun not in flags["out_in_fun"]:
                         flags["out_in_fun"].append(fun)
-                    continue
+                        flagK["out_in_fun"].append(fun)
+                    # continue
 
                 if transformed == output_grid:
                     if fun not in flags["out_out_fun"]:
                         flags["out_out_fun"].append(fun)
-                    continue
+                        flagK["out_out_fun"].append(fun)
+                    # continue
                 # if transformed == otherfun(input_grid):
 
             # fun(input_grid)
@@ -232,22 +235,24 @@ def do_check_inputComplexOutput_proper_functions(proper_functions, task: Dict, f
             if transformed == output_grid:
                 if fun not in flags["in_out_fun"]:
                     flags["in_out_fun"].append(fun)
-                continue
+                    flagK["in_out_fun"].append(fun)
+                # continue
 
             if transformed == input_grid:
                 if fun not in flags["in_in_fun"]:
                     flags["in_in_fun"].append(fun)
-                continue
+                    flagK["in_in_fun"].append(fun)
+                # continue
 
             # else:
             # print(f"failed : {fun.__name__}")
-            success = False
-            break
-        if success:
-            print(f"ok____ : {fun.__name__}")
-        else:
-            # print(f"failed : {fun.__name__}")
-            pass
+        #     success = False
+        #     break
+        # if success:
+        #     print(f"ok____ : {fun.__name__}")
+        # else:
+        #     # print(f"failed : {fun.__name__}")
+        #     pass
         flags["out_in"] = False
     print('do_check_input___ComplexOutput___proper_functions')
     return flags if flags else [False]
