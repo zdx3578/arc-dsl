@@ -14,7 +14,7 @@ def get_object_dimensions(obj: Object) -> Tuple[int, int]:
     obj: Object - 输入的对象。
 
     返回:
-    Tuple[int, int] - 对象的高度和宽度。
+    Tuple[int, int] - 对象的高度
     """
     indices = toindices(obj)
     if not indices:
@@ -109,15 +109,55 @@ def compare_flagK_dicts(flagK_list):
         # 使用 make_hashable 函数将值转换为可哈希类型
         values = [make_hashable(v[1]) for v in value_list]
         if len(set(values)) > 1:
-            differences[key] = value_list
+            # 处理值为列表的情况，去掉所有 flagK 中都存在的元素
+            if isinstance(value_list[0][1], list):
+                # 找出所有 flagK 中都存在的元素
+                common_elements = set(value_list[0][1])
+                for _, value in value_list[1:]:
+                    common_elements.intersection_update(value)
+
+                # 去掉所有 flagK 中都存在的元素
+                filtered_value_list = []
+                for idx, value in value_list:
+                    filtered_value = [
+                        v for v in value if v not in common_elements]
+                    filtered_value_list.append((idx, filtered_value))
+
+                differences[key] = filtered_value_list
+            else:
+                differences[key] = value_list
+
+    grouped_results = {'non_empty': [], 'empty': []}
+    common_values = defaultdict(set)
+    for key, value_list in differences.items():
+        non_empty_values = []
+        for idx, value in value_list:
+            if value:
+                grouped_results['non_empty'].append((idx, key, value))
+                non_empty_values.append(set(value))
+            else:
+                grouped_results['empty'].append((idx, key, value))
+        if non_empty_values:
+            common_values[key] = set.intersection(*non_empty_values)
 
     print("不同的键和值及对应的 flagK: ")
     for key, value_list in differences.items():
         print(f"键 '{key}' 的值不同:")
         for idx, value in value_list:
             print(f"  在 flagK[{idx}] 中，值为: {value}")
+    print("\n非空列表的 flagK：")
+    for idx, key, value in grouped_results['non_empty']:
+        print(f"  在 flagK[{idx}] 中，键 '{key}' 的值为: {value}")
 
-    return differences
+    print("\n空列表的 flagK：")
+    for idx, key, value in grouped_results['empty']:
+        print(f"  在 flagK[{idx}] 中，键 '{key}' 的值为空列表")
+
+    print("\n非空列表中的共同值：")
+    for key, common in common_values.items():
+        print(f"键 '{key}' 的共同值为: {common}")
+
+    return grouped_results, common_values
 
 
 

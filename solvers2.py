@@ -182,22 +182,26 @@ def do_check_inputComplexOutput_proper_functions(proper_functions, task: Dict, f
 
     # flags = flags
 
-    I = train_data[0]['input']
-    O = train_data[0]['output']
+    # if len(flagsN) != len(train_data):
+    #     raise ValueError("flagsN 的长度必须与 train_data 的长度一致。")
 
-    height_i, width_i = height(I), width(I)    # 输入对象的高度和宽度
-    height_o, width_o = height(O), width(O)    # 输出对象的高度和宽度
+    # I = train_data[0]['input']
+    # O = train_data[0]['output']
 
-    if height_o > height_i and width_o > width_i:
-        height_ratio = int(height_o / height_i)
-    elif height_o < height_i and width_o < width_i:
-        height_ratio = int(height_i / height_o)
-    else:
-        height_ratio = 0
+    # height_i, width_i = height(I), width(I)    # 输入对象的高度和宽度
+    # height_o, width_o = height(O), width(O)    # 输出对象的高度和宽度
+
+    # if height_o > height_i and width_o > width_i:
+    #     height_ratio = int(height_o / height_i)
+    # elif height_o < height_i and width_o < width_i:
+    #     height_ratio = int(height_i / height_o)
+    # else:
+    #     height_ratio = 0
 
     # get proper and  args
 
     for fun in proper_functions:
+        # for fun in [vmirror]:
 
         if "half" in fun.__name__ or "mirror" in fun.__name__:
             flags["out_in"] = True
@@ -209,39 +213,44 @@ def do_check_inputComplexOutput_proper_functions(proper_functions, task: Dict, f
 
         # success = True
         for i, data_pair in enumerate(train_data):
+            # data_pair = train_data[2]
             input_grid = data_pair['input']
             output_grid = data_pair['output']
 
-            flagK = flagsNtrain[i]
+            # flagK = flagsNtrain[i]
 
             # fun(output_grid)
             if flags["out_in"] == True:
                 transformed = safe_execute(fun, output_grid, *args)
                 if transformed == input_grid:
+                    flagsNtrain[i]["out_in_fun"].append(fun.__name__)
                     if fun not in flags["out_in_fun"]:
                         flags["out_in_fun"].append(fun)
-                        flagK["out_in_fun"].append(fun)
+
                     # continue
 
                 if transformed == output_grid:
+                    flagsNtrain[i]["out_out_fun"].append(fun.__name__)
                     if fun not in flags["out_out_fun"]:
                         flags["out_out_fun"].append(fun)
-                        flagK["out_out_fun"].append(fun)
+
                     # continue
                 # if transformed == otherfun(input_grid):
 
             # fun(input_grid)
             transformed = safe_execute(fun, input_grid, *args)
             if transformed == output_grid:
+                flagsNtrain[i]["in_out_fun"].append(fun.__name__)
                 if fun not in flags["in_out_fun"]:
                     flags["in_out_fun"].append(fun)
-                    flagK["in_out_fun"].append(fun)
+
                 # continue
 
             if transformed == input_grid:
+                flagsNtrain[i]["in_in_fun"].append(fun.__name__)
                 if fun not in flags["in_in_fun"]:
                     flags["in_in_fun"].append(fun)
-                    flagK["in_in_fun"].append(fun)
+
                 # continue
 
             # else:
@@ -258,7 +267,7 @@ def do_check_inputComplexOutput_proper_functions(proper_functions, task: Dict, f
     return flags if flags else [False]
 
 
-def is_proper_finding(task,flagsNtrain):
+def is_proper_finding(task, flagsNtrain):
     train_data = task['train']
     test_data = task['test']
     flags = initialize_flags()
@@ -272,7 +281,6 @@ def is_proper_finding(task,flagsNtrain):
     result = check_largest_objects_dimensions(train_data[1]['input'])
     if result:
         flags["can_partition"] = True
-
 
     # result = is_mirror_hole_get_args(task, flags)
     # if result:
@@ -345,8 +353,6 @@ def is_proper_finding(task,flagsNtrain):
     #     return
     # return
     compare_flagK_dicts(flagsNtrain)
-
-
 
 
 def prepare_funlist_and_call_do_test(fun_process_list: List[List[Any]],
@@ -443,7 +449,8 @@ def howtodo(flags):
                     flags["use_fun4"] = [True]
                     return [
                         [vmirror, []],          # hmirror 函数，无参数
-                        [hconcat, ['in', 'pin']],  # vconcat 函数，有参数 'pin' 和 'in'
+                        # vconcat 函数，有参数 'pin' 和 'in'
+                        [hconcat, ['in', 'pin']],
                         [hmirror, []],          # hmirror 函数，无参数
                         [vconcat, ['in', 'pin']]  # vconcat 函数，有参数 'pin' 和 'in'
                     ]
