@@ -126,9 +126,9 @@ def compare_flagK_dicts(flagK_list):
                 differences[key] = filtered_value_list
             else:
                 differences[key] = value_list
-
+    # group proper1 proper2
     grouped_results = {'non_empty': [], 'empty': []}
-    common_values = defaultdict(set)
+    proper2 = defaultdict(set)
     for key, value_list in differences.items():
         non_empty_values = []
         for idx, value in value_list:
@@ -138,29 +138,38 @@ def compare_flagK_dicts(flagK_list):
             else:
                 grouped_results['empty'].append((idx, key, value))
         if non_empty_values:
-            common_values[key] = set.intersection(*non_empty_values)
+            proper2[key] = set.intersection(*non_empty_values)
 
-    print("不同的键和值及对应的 flagK: ")
+    print("_____________________________________________不同的键和值及对应的 flagK: ")
     for key, value_list in differences.items():
-        print(f"键 '{key}' 的值不同:")
+        print(f"键 '{key}' (funname)的值不同:")
         for idx, value in value_list:
-            print(f"  在 flagK[{idx}] 中，值为: {value}")
-    print("\n非空列表的 flagK：")
+            # print(f"  在 flagK[{idx}] 中，值为: {value}")
+            if isinstance(value, list):
+                value_str = [v.__name__ if callable(v) else v for v in value]
+            else:
+                value_str = value.__name__ if callable(value) else value
+            print(f"  在 flagK[{idx}] 中，键 '{key}' 的值为: {value_str}")
+
+    print("\n_____________________________________________非空列表的 flagK：")
     for idx, key, value in grouped_results['non_empty']:
-        print(f"  在 flagK[{idx}] 中，键 '{key}' 的值为: {value}")
+        # print(f"  在 flagK[{idx}] 中，键 '{key}' (funname)的值为: {value}")
+        if isinstance(value, list):
+            value_str = [v.__name__ if callable(v) else v for v in value]
+        else:
+            value_str = value.__name__ if callable(value) else value
+        print(f"  在 flagK[{idx}] 中，键 '{key}' 的值为: {value_str}")
 
-    print("\n空列表的 flagK：")
+    print("\n_____________________________________________空列表的 flagK：")
     for idx, key, value in grouped_results['empty']:
-        print(f"  在 flagK[{idx}] 中，键 '{key}' 的值为空列表")
+        print(f"  在 flagK[{idx}] 中，键 '{key}' (funname)的值为空列表")
 
-    print("\n非空列表中的共同值：")
-    for key, common in common_values.items():
-        print(f"键 '{key}' 的共同值为: {common}")
+    print("\n_____________________________________________非空列表中的----------共同值：")
+    for key, common in proper2.items():
+        common_str = {v.__name__ if callable(v) else v for v in common}
+        print(f"键 '{key}' (funname)的共同值为: {common_str}")
 
-    return grouped_results, common_values
-
-
-
+    return grouped_results, proper2
 
 
 def concat_first_obj(I):
@@ -688,7 +697,8 @@ def get_first_object(I):
     O = subgrid(x2, I)
     return O
 
-def firstobj_is_outputhalf(I,O):
+
+def firstobj_is_outputhalf(I, O):
     x1 = objects(I, T, T, T)
     x2 = first(x1)
     x3 = subgrid(x2, I)
@@ -729,6 +739,7 @@ def replace2(grid, position, new_value):
     # 将新网格转换回不可变的元组结构
     return tuple(tuple(row) for row in new_grid)
 
+
 def top_half_left_quarter(I):
     x1 = tophalf(I)
     x2 = lefthalf(x1)
@@ -751,6 +762,7 @@ def bottom_half_right_quarter(I):
     x1 = bottomhalf(I)
     x2 = righthalf(x1)
     return x2
+
 
 def upper_third(grid: Grid) -> Grid:
     """ Upper third of grid """

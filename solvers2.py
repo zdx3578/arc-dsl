@@ -218,19 +218,23 @@ def do_check_inputComplexOutput_proper_functions(proper_functions, task: Dict, f
             output_grid = data_pair['output']
 
             # flagK = flagsNtrain[i]
+            numbcolor = palette(output_grid)
+            if len(numbcolor) == 1:
+                # compare_flagK_dicts will error when numbcolor is 1 use []
+                flagsNtrain[i]["output_allone_color"] = [next(iter(numbcolor))]
 
             # fun(output_grid)
             if flags["out_in"] == True:
                 transformed = safe_execute(fun, output_grid, *args)
                 if transformed == input_grid:
-                    flagsNtrain[i]["out_in_fun"].append(fun.__name__)
+                    flagsNtrain[i]["out_in_fun"].append(fun)
                     if fun not in flags["out_in_fun"]:
                         flags["out_in_fun"].append(fun)
 
                     # continue
 
                 if transformed == output_grid:
-                    flagsNtrain[i]["out_out_fun"].append(fun.__name__)
+                    flagsNtrain[i]["out_out_fun"].append(fun)
                     if fun not in flags["out_out_fun"]:
                         flags["out_out_fun"].append(fun)
 
@@ -240,14 +244,14 @@ def do_check_inputComplexOutput_proper_functions(proper_functions, task: Dict, f
             # fun(input_grid)
             transformed = safe_execute(fun, input_grid, *args)
             if transformed == output_grid:
-                flagsNtrain[i]["in_out_fun"].append(fun.__name__)
+                flagsNtrain[i]["in_out_fun"].append(fun)
                 if fun not in flags["in_out_fun"]:
                     flags["in_out_fun"].append(fun)
 
                 # continue
 
             if transformed == input_grid:
-                flagsNtrain[i]["in_in_fun"].append(fun.__name__)
+                flagsNtrain[i]["in_in_fun"].append(fun)
                 if fun not in flags["in_in_fun"]:
                     flags["in_in_fun"].append(fun)
 
@@ -352,7 +356,10 @@ def is_proper_finding(task, flagsNtrain):
     #         return
     #     return
     # return
-    compare_flagK_dicts(flagsNtrain)
+    grouped_results, proper2 = compare_flagK_dicts(flagsNtrain)
+    if grouped_results:
+        return
+
 
 
 def prepare_funlist_and_call_do_test(fun_process_list: List[List[Any]],
