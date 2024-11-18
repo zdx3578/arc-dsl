@@ -75,18 +75,74 @@ def check_largest_objects_dimensions(grid: Grid) -> bool:
 
     return tallest_height == height and widest_width == width and same_object
 
+
+def compare_flagK_dicts(flagK_list):
+    """
+    比较多个 flagK 字典，找出不同键的值的差异，记录每个值对应的 flagK。
+
+    参数:
+    flagK_list: 包含多个 flagK 字典的列表。
+
+    返回:
+    differences: 字典，键为有差异的键，值为列表，包含 (flagK_index, value) 元组。
+    """
+    from collections import defaultdict
+
+    # 创建一个字典，键为 flagK 中的键，值为每个 (flagK_index, value) 的列表
+    key_values = defaultdict(list)
+
+    for idx, flagK in enumerate(flagK_list):
+        for key, value in flagK.items():
+            key_values[key].append((idx, value))
+
+    # 找出值不同的键
+    differences = {}
+    for key, value_list in key_values.items():
+        # 提取值的集合，注意处理不可哈希类型
+        def make_hashable(v):
+            if isinstance(v, list):
+                return tuple(v)
+            elif isinstance(v, dict):
+                return tuple(sorted(v.items()))
+            else:
+                return v
+        # 使用 make_hashable 函数将值转换为可哈希类型
+        values = [make_hashable(v[1]) for v in value_list]
+        if len(set(values)) > 1:
+            differences[key] = value_list
+
+    print("不同的键和值及对应的 flagK: ")
+    for key, value_list in differences.items():
+        print(f"键 '{key}' 的值不同:")
+        for idx, value in value_list:
+            print(f"  在 flagK[{idx}] 中，值为: {value}")
+
+    return differences
+
+
+
+
+
 def concat_first_obj(I):
     x1 = objects(I, T, T, T)
     x2 = first(x1)
     x3 = subgrid(x2, I)
     O = hconcat(x3, x3)
     return O
-def find_concat_first_obj(task, flags):
-    #todo
-    return False
-def grid_is_concat(I):
-    lefthalf == right_half ## todo add to process logic
-    return
+# def find_concat_first_obj(task, flags):
+#     #todo
+#     return False
+# def grid_is_concat(I):
+#     lefthalf == right_half ## todo add to process logic
+#     return
+
+
+def underfill_corners(I: Grid, color: int) -> Grid:
+    x1 = objects(I, T, F, T)
+    x2 = mapply(corners, x1)
+    O = underfill(I, color, x2)
+    return O
+
 
 def preprocess_cut_background(task: Dict[str, Any]) -> None:
     """
@@ -104,13 +160,6 @@ def preprocess_cut_background(task: Dict[str, Any]) -> None:
         sample['input'] = cut_background(input_grid)
         # sample['output'] = cut_background(output_grid)
     return task
-
-
-def underfill_corners(I: Grid, color: int) -> Grid:
-    x1 = objects(I, T, F, T)
-    x2 = mapply(corners, x1)
-    O = underfill(I, color, x2)
-    return O
 
 
 def cut_background(grid: Grid) -> Grid:

@@ -66,6 +66,9 @@ def solve_individual2(task):
     # for i, (key, sub_grid) in enumerate(spg2.items()):
     #     assert spm1[i] == spg2[key]
 
+    flagsNtrain = [initialize_flags() for _ in range(len(train_data))]
+
+
     flags = initialize_flags()
     flags["use_fun1"] = [True]
     flags["use_fun2"] = [False]
@@ -250,7 +253,7 @@ def do_check_inputComplexOutput_proper_functions(proper_functions, task: Dict, f
     return flags if flags else [False]
 
 
-def is_proper_finding(task):
+def is_proper_finding(task,flagsNtrain):
     train_data = task['train']
     test_data = task['test']
     flags = initialize_flags()
@@ -265,7 +268,7 @@ def is_proper_finding(task):
     if result:
         flags["can_partition"] = True
 
-    findedflags = [{} for _ in range(len(train_data))]
+
     # result = is_mirror_hole_get_args(task, flags)
     # if result:
     #     flags["is_get_mirror_hole"] = result
@@ -274,7 +277,7 @@ def is_proper_finding(task):
     for i, data_pair in enumerate(train_data):
         # data_pair = train_data[1]
         #! 上面已经初始化了
-        flagK = initialize_flags()
+        flagK = flagsNtrain[i]
 
         I = input_grid = data_pair['input']
         O = output_grid = data_pair['output']
@@ -296,17 +299,17 @@ def is_proper_finding(task):
 
         #################################################################
 
-        findedflags[i] = flagK
+        # flagsNtrain[i] = flagK
 
     ################################################
     height_ratios = [flagK["height_ratio"][0]
-                     for flagK in findedflags if "height_ratio" in flagK and flagK["height_ratio"]]
+                     for flagK in flagsNtrain if "height_ratio" in flagK and flagK["height_ratio"]]
     width_ratios = [flagK["width_ratio"][0]
-                    for flagK in findedflags if "width_ratio" in flagK and flagK["width_ratio"]]
+                    for flagK in flagsNtrain if "width_ratio" in flagK and flagK["width_ratio"]]
     # all_in_out_fun = [flagK["in_out_fun"]
-    #                   for flagK in findedflags if "in_out_fun" in flagK and flagK["in_out_fun"]]
+    #                   for flagK in flagsNtrain if "in_out_fun" in flagK and flagK["in_out_fun"]]
     all_in_out_fun = {
-        fun for flagK in findedflags if "in_out_fun" in flagK for fun in flagK["in_out_fun"]}
+        fun for flagK in flagsNtrain if "in_out_fun" in flagK for fun in flagK["in_out_fun"]}
 
     # 38 7b7f7511
     if len(set(height_ratios)) == 1:
@@ -316,11 +319,11 @@ def is_proper_finding(task):
             if len(all_in_out_fun) == 4:
                 # if (0.5 in height_ratios and ((lefthalf and righthalf) in flag-i-k['in_out_fun']) and 0.5 in width_ratio and (tophalf and bottomhalf) in flagK['in_out_fun']:
                 # if (lefthalf and righthalf) in flagK['in_out_fun']
-                for flagK in findedflags:
+                for flagK in flagsNtrain:
                     if 0.5 in height_ratios and 0.5 in width_ratios:
                         in_out_fun = flagK.get("in_out_fun", [])
                         if lefthalf in in_out_fun and righthalf in in_out_fun:
-                            for other_flagK in findedflags:
+                            for other_flagK in flagsNtrain:
                                 if other_flagK != flagK:
                                     other_in_out_fun = other_flagK.get(
                                         "in_out_fun", [])
@@ -336,6 +339,9 @@ def is_proper_finding(task):
     #         return
     #     return
     # return
+    compare_flagK_dicts(flagsNtrain)
+
+
 
 
 def prepare_funlist_and_call_do_test(fun_process_list: List[List[Any]],
