@@ -171,6 +171,83 @@ def solve_individual2(task):
             pass
 
 
+def do_check_inputOutput_proper_flagsK_functions(proper_functions, task: Dict, flags: Dict[str, List[bool]], flagsNtrain):
+
+    print('do_check_input___FlagsK___proper_functions')
+
+    prepare_diff(task, flags)
+
+    train_data = task['train']
+    test_data = task['test']
+
+    for test_pair in test_data:
+        train_data.append({'input': test_pair['input'], 'output': None})  # 增加合并时将 output 设置为 None
+
+
+
+    for fun in proper_functions:
+        # for fun in [vmirror]:
+
+        if "half" in fun.__name__ or "mirror" in fun.__name__:
+            flags["out_in"] = True
+        args = []
+
+        for i, data_pair in enumerate(train_data):
+            input_grid = data_pair['input']
+            output_grid = data_pair.get('output')  # 使用 get 方法获取 output，默认为 None
+
+            if output_grid is None:
+                continue  # 如果没有 output，则跳过处理逻辑
+
+            # flagK = flagsNtrain[i]
+            numbcolor = palette(output_grid)
+            if len(numbcolor) == 1:
+                # compare_flagK_dicts will error when numbcolor is 1 use []
+                flagsNtrain[i]["output_allone_color"] = [next(iter(numbcolor))]
+
+            # fun(output_grid)
+            if flags["out_in"] == True:
+                transformed = safe_execute(fun, output_grid, *args)
+                if transformed == input_grid:
+                    flagsNtrain[i]["out_in_fun"].append(fun)
+                    if fun not in flags["out_in_fun"]:
+                        flags["out_in_fun"].append(fun)
+
+                    # continue
+
+                if transformed == output_grid:
+                    flagsNtrain[i]["out_out_fun"].append(fun)
+                    if fun not in flags["out_out_fun"]:
+                        flags["out_out_fun"].append(fun)
+
+                    # continue
+                # if transformed == otherfun(input_grid):
+
+            # fun(input_grid)
+            transformed = safe_execute(fun, input_grid, *args)
+            if transformed == output_grid:
+                flagsNtrain[i]["in_out_fun"].append(fun)
+                if fun not in flags["in_out_fun"]:
+                    flags["in_out_fun"].append(fun)
+
+                # continue
+
+            if transformed == input_grid:
+                flagsNtrain[i]["in_in_fun"].append(fun)
+                if fun not in flags["in_in_fun"]:
+                    flags["in_in_fun"].append(fun)
+
+                # continue
+
+        flags["out_in"] = False
+    print('do_check_input___FlagsK___proper_functions')
+    # return flags if flags else [False]
+
+
+
+
+
+
 def do_check_inputComplexOutput_proper_functions(proper_functions, task: Dict, flags: Dict[str, List[bool]], flagsNtrain):
 
     print('do_check_input___ComplexOutput___proper_functions')
@@ -356,9 +433,9 @@ def is_proper_finding(task, flagsNtrain):
     #         return
     #     return
     # return
-    grouped_results, proper2 = compare_flagK_dicts(flagsNtrain)
-    if grouped_results:
-        return
+    # grouped_results, proper2 = compare_flagK_dicts(flagsNtrain)
+    # if grouped_results:
+    #     return
 
 
 
