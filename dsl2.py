@@ -6,6 +6,159 @@ import logging
 import traceback
 
 
+def compare_flagK_dicts(flagK_list):
+    """
+    比较多个 flagK 字典，找出不同键的值的差异，记录每个值对应的 flagK。
+
+    参数:
+    flagK_list: 包含多个 flagK 字典的列表。
+
+    返回:
+    differences: 字典，键为有差异的键，值为列表，包含 (flagK_index, value) 元组。
+    """
+    from collections import defaultdict
+
+    # 创建一个字典，键为 flagK 中的键，值为每个 (flagK_index, value) 的列表
+    key_values = defaultdict(list)
+
+    for idx, flagK in enumerate(flagK_list):
+        for key, value in flagK.items():
+            key_values[key].append((idx, value))
+
+    # 找出值不同的键
+    differences = {}
+    for key, value_list in key_values.items():
+        # 提取值的集合，注意处理不可哈希类型
+        def make_hashable(v):
+            if isinstance(v, list):
+                return tuple(v)
+            elif isinstance(v, dict):
+                return tuple(sorted(v.items()))
+            else:
+                return v
+
+        # 使用 make_hashable 函数将值转换为可哈希类型
+        values = [make_hashable(v[1]) for v in value_list]
+
+        if len(set(values)) > 1:
+            # 处理值为列表的情况，去掉所有 flagK 中都存在的元素
+            if isinstance(value_list[0][1], list):
+                # 找出所有 flagK 中都存在的元素
+                common_elements = set(value_list[0][1])
+                for _, value in value_list[1:]:
+                    common_elements.intersection_update(value)
+
+                # 去掉所有 flagK 中都存在的元素
+                filtered_value_list = []
+                for idx, value in value_list:
+                    filtered_value = [ v for v in value if v not in common_elements]
+                    filtered_value_list.append((idx, filtered_value))
+
+                differences[key] = filtered_value_list
+            else:
+                differences[key] = value_list
+    # group proper1 proper2
+    grouped_results = {'non_empty': [], 'empty': []}
+    proper2 = defaultdict(lambda: defaultdict(list))
+    for key, value_list in differences.items():
+        non_empty_values = []
+        for idx, value in value_list:
+            if value:
+                grouped_results['non_empty'].append((idx, key, value))
+                non_empty_values.append((idx, set(value)))
+            else:
+                grouped_results['empty'].append((idx, key, value))
+        if non_empty_values:
+                    common_elements = set.intersection(*(v for _, v in non_empty_values))
+                    for idx, value_set in non_empty_values:
+                        for common in common_elements:
+                            if common in value_set:
+                                proper2[key][common].append(idx)
+
+    grouped_by_value = defaultdict(list)
+    for key, value_list in differences.items():
+        for idx, value in value_list:
+            value_str = tuple(v.__name__ if callable(v) else v for v in value) if isinstance(value, list) else (value.__name__ if callable(value) else value)
+            grouped_by_value[(key, value_str)].append(idx)
+
+
+    # 查找以 output 开头的键
+    output_keys = [key for key in grouped_by_value.keys() if key[0].startswith('output')]
+    output_proper_result = defaultdict(list)  # 修改：存储非 output 开头的键的结果
+    for output_key in output_keys:
+        output_indices = grouped_by_value[output_key]
+        # 查找非 output 开头的键和 proper2 中的键
+        other_keys = [key for key in grouped_by_value.keys() if not key[0].startswith('output')]  # 修改：查找非 output 开头的键
+        for other_key in other_keys:
+            other_indices = grouped_by_value[other_key]
+            # 检查值是否相等
+            if set(output_indices) == set(other_indices):  # 修改：检查值是否相等
+                combined_value = (other_indices, other_key)
+                output_proper_result[output_key+ ('flagK, data-i -- j -- k',) + tuple(output_indices)].append((other_key, combined_value))  # 修改：将结果存储到 output_proper_result 中
+
+        # 验证和检查 proper2 的内容
+        for key, common_dict in proper2.items():
+            for common, sub_dict in common_dict.items():
+                # for idx in sub_dict:  # 修改：直接遍历 sub_dict 的键
+                    # indices = sub_dict  # 获取对应的值
+                if isinstance(indices, list):  # 修改：检查 indices 是否为列表
+                    if set(output_indices) == set(sub_dict):  # 修改：检查 proper2 的内容
+                        combined_value = (sub_dict, key)  # 修改：合并 sub_dict 和 key
+                        output_proper_result[output_key + ('flagK, data-i',) + tuple(output_indices)].append((common, combined_value))  # 修改：将结果存储到 output_proper_result 中
+
+
+
+    print("_____________________________________________不同的键和值及对应的 flagK: _________________________")
+    for key, value_list in differences.items():
+        print(f"键 '{key}' (funname)的值不同:")
+        for idx, value in value_list:
+            # print(f"  在 flagK[{idx}] 中，值为: {value}")
+            if isinstance(value, list):
+                value_str = [v.__name__ if callable(v) else v for v in value]
+            else:
+                value_str = value.__name__ if callable(value) else value
+            print(f"  在 flagK[{idx}] 中，键 '{key}' 的值为: {value_str}")
+
+    print("\n_____________________________________________非空列表的 flagK：_______________________________")
+    for idx, key, value in grouped_results['non_empty']:
+        # print(f"  在 flagK[{idx}] 中，键 '{key}' (funname)的值为: {value}")
+        if isinstance(value, list):
+            value_str = [v.__name__ if callable(v) else v for v in value]
+        else:
+            value_str = value.__name__ if callable(value) else value
+        print(f"  在 flagK[{idx}] 中，键 '{key}' 的值为: {value_str}")
+
+    print("\n\n\n\n")
+    print("\n_____________________________________________空列表的 flagK：_________________________________")
+    for idx, key, value in grouped_results['empty']:
+        print(f"  在 flagK[{idx}] 中，键 '{key}' (funname)的值为空列表")
+    print("\n\n")
+
+    print("\n_____________________________________________非空列表中的----------共同值：____________________")
+    # print("\n非空列表中的----------共同值：____________________")
+    for key, common_dict in proper2.items():
+        for common, indices in common_dict.items():
+            common_str = common.__name__ if callable(common) else common
+            print(f"键 '{key}' (funname)的共同值 '{common_str}' 在以下 flagK 中：")
+            for idx in indices:
+                print(f"  在 flagK[{idx}] 中")
+
+    print("\n_____________________________________________分组 ： 不同的键和值及对应的 flagK: _________________________")
+    for (key, value_str), indices in grouped_by_value.items():
+        print(f"键 '{key}' 的值为: {value_str}")
+        for idx in indices:
+            print(f"  在 flagK[{idx}] 中")
+        # print("\n\n")
+
+    print("\n\n____________________________________________output_proper_result 关系对应查找：____________________")  # 修改：打印 output_proper_result
+    for key, value_list in output_proper_result.items():
+        print(f"键 '{key}' 的值：")
+        for value, idx in value_list:
+            print(f"  在 flagK[{idx}] 中，值为: {value}")
+
+    return grouped_results, proper2
+
+
 def get_object_dimensions(obj: Object) -> Tuple[int, int]:
     """
     获取对象的高度和宽度。
@@ -75,101 +228,6 @@ def check_largest_objects_dimensions(grid: Grid) -> bool:
 
     return tallest_height == height and widest_width == width and same_object
 
-
-def compare_flagK_dicts(flagK_list):
-    """
-    比较多个 flagK 字典，找出不同键的值的差异，记录每个值对应的 flagK。
-
-    参数:
-    flagK_list: 包含多个 flagK 字典的列表。
-
-    返回:
-    differences: 字典，键为有差异的键，值为列表，包含 (flagK_index, value) 元组。
-    """
-    from collections import defaultdict
-
-    # 创建一个字典，键为 flagK 中的键，值为每个 (flagK_index, value) 的列表
-    key_values = defaultdict(list)
-
-    for idx, flagK in enumerate(flagK_list):
-        for key, value in flagK.items():
-            key_values[key].append((idx, value))
-
-    # 找出值不同的键
-    differences = {}
-    for key, value_list in key_values.items():
-        # 提取值的集合，注意处理不可哈希类型
-        def make_hashable(v):
-            if isinstance(v, list):
-                return tuple(v)
-            elif isinstance(v, dict):
-                return tuple(sorted(v.items()))
-            else:
-                return v
-        # 使用 make_hashable 函数将值转换为可哈希类型
-        values = [make_hashable(v[1]) for v in value_list]
-        if len(set(values)) > 1:
-            # 处理值为列表的情况，去掉所有 flagK 中都存在的元素
-            if isinstance(value_list[0][1], list):
-                # 找出所有 flagK 中都存在的元素
-                common_elements = set(value_list[0][1])
-                for _, value in value_list[1:]:
-                    common_elements.intersection_update(value)
-
-                # 去掉所有 flagK 中都存在的元素
-                filtered_value_list = []
-                for idx, value in value_list:
-                    filtered_value = [
-                        v for v in value if v not in common_elements]
-                    filtered_value_list.append((idx, filtered_value))
-
-                differences[key] = filtered_value_list
-            else:
-                differences[key] = value_list
-    # group proper1 proper2
-    grouped_results = {'non_empty': [], 'empty': []}
-    proper2 = defaultdict(set)
-    for key, value_list in differences.items():
-        non_empty_values = []
-        for idx, value in value_list:
-            if value:
-                grouped_results['non_empty'].append((idx, key, value))
-                non_empty_values.append(set(value))
-            else:
-                grouped_results['empty'].append((idx, key, value))
-        if non_empty_values:
-            proper2[key] = set.intersection(*non_empty_values)
-
-    print("_____________________________________________不同的键和值及对应的 flagK: ")
-    for key, value_list in differences.items():
-        print(f"键 '{key}' (funname)的值不同:")
-        for idx, value in value_list:
-            # print(f"  在 flagK[{idx}] 中，值为: {value}")
-            if isinstance(value, list):
-                value_str = [v.__name__ if callable(v) else v for v in value]
-            else:
-                value_str = value.__name__ if callable(value) else value
-            print(f"  在 flagK[{idx}] 中，键 '{key}' 的值为: {value_str}")
-
-    print("\n_____________________________________________非空列表的 flagK：")
-    for idx, key, value in grouped_results['non_empty']:
-        # print(f"  在 flagK[{idx}] 中，键 '{key}' (funname)的值为: {value}")
-        if isinstance(value, list):
-            value_str = [v.__name__ if callable(v) else v for v in value]
-        else:
-            value_str = value.__name__ if callable(value) else value
-        print(f"  在 flagK[{idx}] 中，键 '{key}' 的值为: {value_str}")
-
-    print("\n_____________________________________________空列表的 flagK：")
-    for idx, key, value in grouped_results['empty']:
-        print(f"  在 flagK[{idx}] 中，键 '{key}' (funname)的值为空列表")
-
-    print("\n_____________________________________________非空列表中的----------共同值：")
-    for key, common in proper2.items():
-        common_str = {v.__name__ if callable(v) else v for v in common}
-        print(f"键 '{key}' (funname)的共同值为: {common_str}")
-
-    return grouped_results, proper2
 
 
 def concat_first_obj(I):
