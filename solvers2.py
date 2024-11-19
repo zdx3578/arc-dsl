@@ -159,6 +159,10 @@ def solve_individual2(task):
             # ！！ add prepare_diff(task)
             if result:
                 return result
+
+
+            result = do_check_inputOutput_proper_flagsK_functions(proper_all_functions, task, flags)
+
             print(
                 "-----------------------------------------单独处理失败，需进一步尝试联合处理。---------------------------------")
             # if all failed
@@ -171,7 +175,7 @@ def solve_individual2(task):
             pass
 
 
-def do_check_inputOutput_proper_flagsK_functions(proper_functions, task: Dict, flags: Dict[str, List[bool]], flagsNtrain):
+def do_check_inputOutput_proper_flagsK_functions(proper_functions, task: Dict, flags: Dict[str, List[bool]]):
 
     print('do_check_input___FlagsK___proper_functions')
 
@@ -180,10 +184,9 @@ def do_check_inputOutput_proper_flagsK_functions(proper_functions, task: Dict, f
     train_data = task['train']
     test_data = task['test']
 
-    for test_pair in test_data:
-        train_data.append({'input': test_pair['input'], 'output': None})  # 增加合并时将 output 设置为 None
-
-
+    # for test_pair in test_data:
+    train_data.append({'input': test_data[0]['input'], 'output': None})  # 增加合并时将 output 设置为 None
+    flagsNTtrain = [initialize_flags() for _ in range(len(train_data))]
 
     for fun in proper_functions:
         # for fun in [vmirror]:
@@ -196,45 +199,54 @@ def do_check_inputOutput_proper_flagsK_functions(proper_functions, task: Dict, f
             input_grid = data_pair['input']
             output_grid = data_pair.get('output')  # 使用 get 方法获取 output，默认为 None
 
-            # flagK = flagsNtrain[i]
-            numbcolor = palette(output_grid)
-            if len(numbcolor) == 1:
-                # compare_flagK_dicts will error when numbcolor is 1 use []
-                flagsNtrain[i]["output_allone_color"] = [next(iter(numbcolor))]
-
             if output_grid is None:
                 continue  # 如果没有 output，则跳过处理逻辑
             else:
+                numbcolor = palette(output_grid)
+                if len(numbcolor) == 1:
+                    # compare_flagK_dicts will error when numbcolor is 1 use []
+                    flagsNTtrain[i]["output_allone_color"] = [next(iter(numbcolor))]
+
+
+
                 # fun(output_grid)
                 if flags["out_in"] == True:
                     transformed = safe_execute(fun, output_grid, *args)
                     if transformed == input_grid:
-                        flagsNtrain[i]["out_in_fun"].append(fun)
+                        flagsNTtrain[i]["out_in_fun"].append(fun)
                         if fun not in flags["out_in_fun"]:
                             flags["out_in_fun"].append(fun)
 
                     if transformed == output_grid:
-                        flagsNtrain[i]["out_out_fun"].append(fun)
+                        flagsNTtrain[i]["out_out_fun"].append(fun)
                         if fun not in flags["out_out_fun"]:
                             flags["out_out_fun"].append(fun)
 
                 # fun(input_grid)
                 transformed = safe_execute(fun, input_grid, *args)
                 if transformed == output_grid:
-                    flagsNtrain[i]["in_out_fun"].append(fun)
+                    flagsNTtrain[i]["in_out_fun"].append(fun)
                     if fun not in flags["in_out_fun"]:
                         flags["in_out_fun"].append(fun)
 
 
             transformed = safe_execute(fun, input_grid, *args)
             if transformed == input_grid:
-                flagsNtrain[i]["in_in_fun"].append(fun)
+                flagsNTtrain[i]["in_in_fun"].append(fun)
                 if fun not in flags["in_in_fun"]:
                     flags["in_in_fun"].append(fun)
 
         flags["out_in"] = False
     print('do_check_input___FlagsK___proper_functions')
     # return flags if flags else [False]
+
+    flagsNTtrain_part1 = flagsNTtrain[:-1]
+    flagsNTtrain_part2 = flagsNTtrain[-1:]
+
+    grouped_results, proper2 = compare_flagK_dicts(flagsNTtrain_part1)
+
+    
+
 
 
 

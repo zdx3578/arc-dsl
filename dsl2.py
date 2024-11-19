@@ -21,6 +21,8 @@ def compare_flagK_dicts(flagK_list):
     # 创建一个字典，键为 flagK 中的键，值为每个 (flagK_index, value) 的列表
     key_values = defaultdict(list)
 
+
+
     for idx, flagK in enumerate(flagK_list):
         for key, value in flagK.items():
             key_values[key].append((idx, value))
