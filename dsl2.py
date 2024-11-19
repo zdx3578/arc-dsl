@@ -93,18 +93,19 @@ def compare_flagK_dicts(flagK_list):
             other_indices = grouped_by_value[other_key]
             # 检查值是否相等
             if set(output_indices) == set(other_indices):  # 修改：检查值是否相等
-                combined_value = (other_indices, other_key)
-                output_proper_result[output_key+ ('flagK, data-i -- j -- k',) + tuple(output_indices)].append((other_key, combined_value))  # 修改：将结果存储到 output_proper_result 中
+                # combined_value = (other_indices, other_key)
+                output_proper_result[output_key+ ('--in flagK --',) + tuple(output_indices)].append((other_key, other_indices))  # 修改：将结果存储到 output_proper_result 中
 
         # 验证和检查 proper2 的内容
         for key, common_dict in proper2.items():
-            for common, sub_dict in common_dict.items():
+            for key2, sub_dict in common_dict.items():
                 # for idx in sub_dict:  # 修改：直接遍历 sub_dict 的键
                     # indices = sub_dict  # 获取对应的值
-                if isinstance(indices, list):  # 修改：检查 indices 是否为列表
+                key2_str = tuple(v.__name__ if callable(v) else v for v in key2) if isinstance(key2, list) else (key2.__name__ if callable(key2) else key2)
+                if isinstance(sub_dict, list):  # 修改：检查 indices 是否为列表
                     if set(output_indices) == set(sub_dict):  # 修改：检查 proper2 的内容
                         combined_value = (sub_dict, key)  # 修改：合并 sub_dict 和 key
-                        output_proper_result[output_key + ('flagK, data-i',) + tuple(output_indices)].append((common, combined_value))  # 修改：将结果存储到 output_proper_result 中
+                        output_proper_result[output_key + ('-- in flagK -- ',) + tuple(output_indices)].append((key2_str, combined_value))  # 修改：将结果存储到 output_proper_result 中
 
 
 
@@ -152,9 +153,9 @@ def compare_flagK_dicts(flagK_list):
 
     print("\n\n____________________________________________output_proper_result 关系对应查找：____________________")  # 修改：打印 output_proper_result
     for key, value_list in output_proper_result.items():
-        print(f"键 '{key}' 的值：")
+        print(f"键 ---- '{key}' ---- ：")
         for value, idx in value_list:
-            print(f"  在 flagK[{idx}] 中，值为: {value}")
+            print(f" ---- 在 flagK[ ---- {idx} ---- ] 中，值为----: {value}")
 
     return grouped_results, proper2
 
