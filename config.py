@@ -135,6 +135,8 @@ def initialize_flags() -> Dict[str, List[bool]]:
 
         'height_ratio': [],
         'width_ratio': [],
+        "height_o": [],
+        "width_o": [],
         'output_allone_color': [],
         "position_same_contained": [],
         "diff_position_same": [],

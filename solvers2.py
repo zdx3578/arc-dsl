@@ -39,14 +39,6 @@ def solve_arc_task(task):
                for test_input in test_data]
     return results
 
-
-def solve_individual3(task):
-
-    result = is_proper_finding(task)
-
-    return result
-
-
 def solve_individual2(task):
     """
     尝试单独处理每个输入输出对，根据标志变量确定操作。
@@ -162,7 +154,8 @@ def solve_individual2(task):
 
 
             result = do_check_inputOutput_proper_flagsK_functions(proper_all_functions, task, flags)
-
+            if result:
+                return result
             print(
                 "-----------------------------------------单独处理失败，需进一步尝试联合处理。---------------------------------")
             # if all failed
@@ -178,11 +171,12 @@ def solve_individual2(task):
 def do_check_inputOutput_proper_flagsK_functions(proper_functions, task: Dict, flags: Dict[str, List[bool]]):
 
     print('do_check_input___FlagsK___proper_functions')
-
+    from copy import deepcopy
     prepare_diff(task, flags)
+    task0 = deepcopy(task)
+    train_data = task0['train']
+    test_data = task0['test']
 
-    train_data = task['train']
-    test_data = task['test']
 
     # for test_pair in test_data:
     train_data.append({'input': test_data[0]['input'], 'output': None})  # 增加合并时将 output 设置为 None
@@ -196,12 +190,24 @@ def do_check_inputOutput_proper_flagsK_functions(proper_functions, task: Dict, f
         args = []
 
         for i, data_pair in enumerate(train_data):
-            input_grid = data_pair['input']
-            output_grid = data_pair.get('output')  # 使用 get 方法获取 output，默认为 None
+            I = input_grid = data_pair['input']
+            O = output_grid = data_pair.get('output')  # 使用 get 方法获取 output，默认为 None
 
-            if output_grid is None:
-                continue  # 如果没有 output，则跳过处理逻辑
-            else:
+
+
+
+            if output_grid is not None:
+                height_i, width_i = height(I), width(I)    # 输入对象的高度和宽度
+                height_o, width_o = height(O), width(O)    # 输出对象的高度和宽度
+
+                height_ratio = height_o / height_i
+                width_ratio = width_o / width_i
+
+                flags["height_ratio"].append(height_ratio)
+                flags["width_ratio"].append(width_ratio)
+                flags["height_o"].append(height_o)
+                flags["width_o"].append(width_o)
+
                 numbcolor = palette(output_grid)
                 if len(numbcolor) == 1:
                     # compare_flagK_dicts will error when numbcolor is 1 use []
@@ -229,7 +235,6 @@ def do_check_inputOutput_proper_flagsK_functions(proper_functions, task: Dict, f
                     if fun not in flags["in_out_fun"]:
                         flags["in_out_fun"].append(fun)
 
-
             transformed = safe_execute(fun, input_grid, *args)
             if transformed == input_grid:
                 flagsNTtrain[i]["in_in_fun"].append(fun)
@@ -243,13 +248,61 @@ def do_check_inputOutput_proper_flagsK_functions(proper_functions, task: Dict, f
     flagsNTtrain_part1 = flagsNTtrain[:-1]
     flagsNTtrain_part2 = flagsNTtrain[-1:]
 
-    grouped_results, proper2 = compare_flagK_dicts(flagsNTtrain_part1)
+    proper2, output_proper_result, output_proper_result_reversed = compare_flagK_dicts(flagsNTtrain_part1)
+    matches = match_test_flagK(flagsNTtrain_part2, output_proper_result)
+    if matches and all_equal(match[0][0] for match in matches):
+        # todo = matches[0][0][0]
 
-    
+        tmp =  all(flags["height_o"])
+        result  = canvas( matches[0][0][1][0],( all_equal(flags["height_o"]), all_equal(flags["width_o"])  ))
+        # result = todo(test_data[0]['input'])
+        if result:
+            return result
+
+
+    return
 
 
 
 
+def match_test_flagK(test_flagK_list, output_proper_result):
+    """
+    根据 output_proper_result 循环匹配 test 的 flagK。
+
+    参数:
+    test_flagK_list: 测试数据的 flagK 列表。
+    output_proper_result: 存储匹配结果的字典。
+
+    返回:
+    匹配结果的列表。
+    """
+    matches = []
+    for test_flagK in test_flagK_list:
+        for key, value_list in output_proper_result.items():
+            for value in value_list:
+                key_to_match, sub_key_to_match = value[0]
+                if key_to_match in test_flagK:
+                    if (  (sub_key_to_match == [] ) and (test_flagK[key_to_match] == () )  ) or sub_key_to_match in test_flagK[key_to_match]:  # 修改：处理空元组的情况
+                        matches.append((key, value))
+    return matches
+
+
+def all_equal(iterable):
+    """
+    判断 iterable 中的所有元素是否都相等。
+
+    参数:
+    iterable: 可迭代对象。
+
+    返回:
+    如果所有元素都相等，返回 True；否则返回 False。
+    """
+    iterator = iter(iterable)
+    try:
+        first = next(iterator)
+    except StopIteration:
+        return True
+    return all(first == rest for rest in iterator)
 
 
 
@@ -427,8 +480,7 @@ def is_proper_finding(task, flagsNtrain):
                                     other_in_out_fun = other_flagK.get(
                                         "in_out_fun", [])
                                     if tophalf in other_in_out_fun and bottomhalf in other_in_out_fun:
-                                        result = do_portrait_half(
-                                            test_data[0]['input'])
+                                        result = do_portrait_half(test_data[0]['input'])
                                         if result:
                                             return result
     #                                 return
