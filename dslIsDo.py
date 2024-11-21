@@ -66,6 +66,20 @@ def get_most_colors_part(grid: Grid) -> Grid:
     O = argmax(subgrids, numcolors)
     return O
 
+def do_not_mirror_part(I: Grid, O: Grid) -> bool:
+    if is_half_mirror(I):
+        return False
+    # x1 = vsplit(I, THREE)
+    # x2 = fork(equality, dmirror, identity)
+    # x3 = compose(flip, x2)
+    # O = extract(x1, x3)
+    # return O
+def is_not_mirror_part(I: Grid, O: Grid) -> bool:
+    if O == half_not_mirror(I):
+        return True
+    if O == third_not_mirror(I):
+        return True
+    return False
 
 # def is_output_most_input_color(I, O) -> bool:
 #     """

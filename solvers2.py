@@ -153,9 +153,11 @@ def solve_individual2(task):
                 return result
 
 
-            result = do_check_inputOutput_proper_flagsK_functions(proper_all_functions, task, flags)
+            result = do_check_inputOutput_proper_flagsK_functions(proper_small_functions, task, flags)
             if result:
                 return result
+
+            # do_check_Part_InputOutput_proper_flagsK_functions(proper_all_functions, task, flags)
             print(
                 "-----------------------------------------单独处理失败，需进一步尝试联合处理。---------------------------------")
             # if all failed
@@ -166,6 +168,53 @@ def solve_individual2(task):
             logging.error("捕获到异常：%s", e)
             logging.error("详细错误信息：\n%s", traceback.format_exc())
             pass
+
+# def do_check_Part_InputOutput_proper_flagsK_functions(proper_functions, task: Dict, flags: Dict[str, List[bool]]):
+#     print('do_check_Part_InputOutput_proper_flagsK_functions')
+#     from copy import deepcopy
+
+#     task0 = deepcopy(task)
+#     train_data = task0['train']
+#     test_data = task0['test']
+
+#     # for test_pair in test_data:
+#     train_data.append({'input': test_data[0]['input'], 'output': None})  # 增加合并时将 output 设置为 None
+#     flagsNTtrain = [initialize_flags() for _ in range(len(train_data))]
+
+#     for fun in proper_functions:
+#         # for fun in [vmirror]:
+#         flags["out_in"] = True
+#         *args, = []
+#         for i, data_pair in enumerate(train_data):
+#             I = input_grid = data_pair['input']
+#             O = output_grid = data_pair.get('output')  # 使用 get 方法获取 output，默认为 None
+
+#             if output_grid is not None:
+#                 height_i, width_i = height(I), width(I)    # 输入对象的高度和宽度
+#                 height_o, width_o = height(O), width(O)    # 输出对象的高度和宽度
+
+#                 height_ratio = height_o / height_i
+#                 width_ratio = width_o / width_i
+
+#                 flags["height_ratio"].append(height_ratio)
+#                 flags["width_ratio"].append(width_ratio)
+#                 flags["height_o"].append(height_o)
+#                 flags["width_o"].append(width_o)
+
+#             if height_ratio == 0.5 and width_ratio == 1 :
+#                 #half_part
+#                 pass
+#             elif height_ratio == 0.3333333333333333 and width_ratio == 1:
+#                 part_input = [upper_third(I), middle_third(I), lower_third(I)]
+#                 part_names = ["upper_third", "middle_third", "lower_third"]
+
+#                 for part, part_name in zip(part_input, part_names):
+#                     transformed = safe_execute(fun, part, *args)
+#                     if transformed == part:
+#                         flagsNTtrain[i][f"{part_name}_in_in_fun"].append(fun)
+
+#     return
+
 
 
 def do_check_inputOutput_proper_flagsK_functions(proper_functions, task: Dict, flags: Dict[str, List[bool]]):
@@ -185,8 +234,8 @@ def do_check_inputOutput_proper_flagsK_functions(proper_functions, task: Dict, f
     for fun in proper_functions:
         # for fun in [vmirror]:
 
-        if "half" in fun.__name__ or "mirror" in fun.__name__:
-            flags["out_in"] = True
+        # if "half" in fun.__name__ or "mirror" in fun.__name__:
+        flags["out_in"] = True
         args = []
 
         for i, data_pair in enumerate(train_data):
@@ -213,33 +262,61 @@ def do_check_inputOutput_proper_flagsK_functions(proper_functions, task: Dict, f
                     # compare_flagK_dicts will error when numbcolor is 1 use []
                     flagsNTtrain[i]["output_allone_color"] = [next(iter(numbcolor))]
 
-
+                #subgrid check
+                result =  is_subgrid_grid(O, I)
+                if result:
+                    flagsNTtrain[i]["out_is_in_subgrid"].append(result)
 
                 # fun(output_grid)
                 if flags["out_in"] == True:
                     transformed = safe_execute(fun, output_grid, *args)
                     if transformed == input_grid:
                         flagsNTtrain[i]["out_in_fun"].append(fun)
-                        if fun not in flags["out_in_fun"]:
-                            flags["out_in_fun"].append(fun)
+                        # if fun not in flags["out_in_fun"]:
+                        #     flags["out_in_fun"].append(fun)
 
                     if transformed == output_grid:
                         flagsNTtrain[i]["out_out_fun"].append(fun)
-                        if fun not in flags["out_out_fun"]:
-                            flags["out_out_fun"].append(fun)
+                        # if fun not in flags["out_out_fun"]:
+                        #     flags["out_out_fun"].append(fun)
 
                 # fun(input_grid)
                 transformed = safe_execute(fun, input_grid, *args)
                 if transformed == output_grid:
                     flagsNTtrain[i]["in_out_fun"].append(fun)
-                    if fun not in flags["in_out_fun"]:
-                        flags["in_out_fun"].append(fun)
+                    flagsNTtrain[i]["out_is_in_fun"].append(fun)
+                    # if fun not in flags["in_out_fun"]:
+                    #     flags["in_out_fun"].append(fun)
 
             transformed = safe_execute(fun, input_grid, *args)
             if transformed == input_grid:
                 flagsNTtrain[i]["in_in_fun"].append(fun)
-                if fun not in flags["in_in_fun"]:
-                    flags["in_in_fun"].append(fun)
+                # if fun not in flags["in_in_fun"]:
+                #     flags["in_in_fun"].append(fun)
+
+
+            if height_ratio == 0.5 and width_ratio == 1 :
+                #half_part
+                pass
+            elif height_ratio == 0.3333333333333333 and width_ratio == 1:
+                part_input = [upper_third(I), middle_third(I), lower_third(I)]
+                part_names = ["upper_third", "middle_third", "lower_third"]
+                for part, part_name in zip(part_input, part_names):
+                    transformed = safe_execute(fun, part, *args)
+                    if transformed == part:
+                        flagsNTtrain[i][f"{part_name}_in_in_fun"].append(fun.__name__)
+                        flagsNTtrain[i]["third_in_in_fun"].append(fun.__name__)
+                        flagsNTtrain[i]["all_third_in_in_fun"].append(f"{part_name}+{fun.__name__}")
+                # flagsNTtrain[i]["spset_third_in_in_fun"] = list(    set(flagsNTtrain[i]["third_in_in_fun"]) - set(part_names))
+                    elif transformed != part:
+                        # flagsNTtrain[i][f"{part_name}_in_in_fun"].append(fun.__name__)
+                        flagsNTtrain[i]["spset_third_in_in_fun"].append(fun.__name__)
+                        # flagsNTtrain[i]["all_third_in_in_fun"].append(f"{part_name}+{fun.__name__}")
+
+
+
+            # if flagsNTtrain[i]["height_ratio"] or flagsNTtrain[i]["width_ratio"] == 0.333:
+            #     part_input
 
         flags["out_in"] = False
     print('do_check_input___FlagsK___proper_functions')
@@ -251,13 +328,12 @@ def do_check_inputOutput_proper_flagsK_functions(proper_functions, task: Dict, f
     proper2, output_proper_result, output_proper_result_reversed = compare_flagK_dicts(flagsNTtrain_part1)
     matches = match_test_flagK(flagsNTtrain_part2, output_proper_result)
     if matches and all_equal(match[0][0] for match in matches):
-        # todo = matches[0][0][0]
+        if matches[0][0][0] == "output_allone_color":
+            result  = canvas( matches[0][0][1][0],( all_equal(flags["height_o"]), all_equal(flags["width_o"])  ))
+            if result:
+                return result
 
-        tmp =  all(flags["height_o"])
-        result  = canvas( matches[0][0][1][0],( all_equal(flags["height_o"]), all_equal(flags["width_o"])  ))
-        # result = todo(test_data[0]['input'])
-        if result:
-            return result
+    ## 47 some part proper select
 
 
     return
@@ -352,24 +428,24 @@ def do_check_inputComplexOutput_proper_functions(proper_functions, task: Dict, f
             input_grid = data_pair['input']
             output_grid = data_pair['output']
 
-            # flagK = flagsNtrain[i]
-            numbcolor = palette(output_grid)
-            if len(numbcolor) == 1:
-                # compare_flagK_dicts will error when numbcolor is 1 use []
-                flagsNtrain[i]["output_allone_color"] = [next(iter(numbcolor))]
+            # ##flagK = flagsNtrain[i]
+            # numbcolor = palette(output_grid)
+            # if len(numbcolor) == 1:
+            #     # compare_flagK_dicts will error when numbcolor is 1 use []
+            #     flagsNtrain[i]["output_allone_color"] = [next(iter(numbcolor))]
 
             # fun(output_grid)
             if flags["out_in"] == True:
                 transformed = safe_execute(fun, output_grid, *args)
                 if transformed == input_grid:
-                    flagsNtrain[i]["out_in_fun"].append(fun)
+                    # flagsNtrain[i]["out_in_fun"].append(fun)
                     if fun not in flags["out_in_fun"]:
                         flags["out_in_fun"].append(fun)
 
                     # continue
 
                 if transformed == output_grid:
-                    flagsNtrain[i]["out_out_fun"].append(fun)
+                    # flagsNtrain[i]["out_out_fun"].append(fun)
                     if fun not in flags["out_out_fun"]:
                         flags["out_out_fun"].append(fun)
 
@@ -379,14 +455,14 @@ def do_check_inputComplexOutput_proper_functions(proper_functions, task: Dict, f
             # fun(input_grid)
             transformed = safe_execute(fun, input_grid, *args)
             if transformed == output_grid:
-                flagsNtrain[i]["in_out_fun"].append(fun)
+                # flagsNtrain[i]["in_out_fun"].append(fun)
                 if fun not in flags["in_out_fun"]:
                     flags["in_out_fun"].append(fun)
 
                 # continue
 
             if transformed == input_grid:
-                flagsNtrain[i]["in_in_fun"].append(fun)
+                # flagsNtrain[i]["in_in_fun"].append(fun)
                 if fun not in flags["in_in_fun"]:
                     flags["in_in_fun"].append(fun)
 

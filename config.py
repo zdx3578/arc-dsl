@@ -15,6 +15,24 @@ from dslIsDo import *
 #     tophalf
 # ]
 
+proper_small_functions = [
+    # out is what input 正方形
+    # ! ! 每个任务都可能是一个 几个 独立的 高级 抽象 的is proper判断
+    # 模式判断  patter，高级 复杂 抽象 patter；语言中的单词
+    vmirror,
+    hmirror,
+    cmirror,
+    dmirror,
+    rot90,
+    rot180,
+    rot270,
+    upper_third, middle_third, lower_third, left_third, center_third, right_third,
+    top_half_left_quarter, top_half_right_quarter, bottom_half_left_quarter, bottom_half_right_quarter,
+    bottomhalf,
+    lefthalf,
+    tophalf,
+    righthalf,]
+
 proper_functions = [
     # out is what input 正方形
     # ! ! 每个任务都可能是一个 几个 独立的 高级 抽象 的is proper判断
@@ -41,7 +59,7 @@ proper_functions = [
     do_numb_color_upscale,
     box_cut,
     get_partition_min_subgrid,
-    is_subgrid_grid,
+    # is_subgrid_grid,
     get_most_colors_part,
 
     firstobj_is_outputhalf,
@@ -125,8 +143,8 @@ def initialize_flags() -> Dict[str, List[bool]]:
         # "is_output_most_input_color": [],
 
         'is_subgrid': [],
-        "out_is_in_subgrid": [False],
-        "in_is_out_subgrid": [False],
+        "out_is_in_subgrid": [],
+        "in_is_out_subgrid": [],
 
         "out_is_in_third": [],
         "is_in_third_left": [],
@@ -140,7 +158,7 @@ def initialize_flags() -> Dict[str, List[bool]]:
         'output_allone_color': [],
         "position_same_contained": [],
         "diff_position_same": [],
-        "diff_in_same_contained": False,
+        "diff_in_same_contained": [],
         "diff_in_same_fg": [],
         "is_in_box_change_color": [],
         "is_in_box_change_shape": [],
@@ -182,16 +200,24 @@ def initialize_flags() -> Dict[str, List[bool]]:
 
         # 控制每个函数是否执行
         "use_fun1": [True],
-        "use_fun2": [False],
-        "use_fun3": [False],  # 默认不执行
-        "use_fun4": [False],
+        "use_fun2": [],
+        "use_fun3": [],  # 默认不执行
+        "use_fun4": [],
         # 执行顺序 (可以根据条件动态修改)
-        "order": [1, 2, 4],
+        "order": [1, 2],
         # process in to out
         "in_out_fun": [],
+        "out_is_in_fun": [],
         "out_in_fun": [],
         "out_out_fun": [],
-        "in_in_fun": []
+        "in_in_fun": [],
+        "upper_third_in_in_fun": [],
+        "lower_third_in_in_fun": [],
+        "middle_third_in_in_fun": [],
+        "third_in_in_fun": [],
+        "spset_third_in_in_fun": [],
+        "all_third_in_in_fun": [],
+
 
     }
 
