@@ -221,7 +221,7 @@ def do_check_inputOutput_proper_flagsK_functions(proper_functions, task: Dict, f
 
     print('do_check_input___FlagsK___proper_functions')
     from copy import deepcopy
-    prepare_diff(task, flags)
+    # prepare_diff(task, flags)
     task0 = deepcopy(task)
     train_data = task0['train']
     test_data = task0['test']
@@ -230,6 +230,7 @@ def do_check_inputOutput_proper_flagsK_functions(proper_functions, task: Dict, f
     # for test_pair in test_data:
     train_data.append({'input': test_data[0]['input'], 'output': None})  # 增加合并时将 output 设置为 None
     flagsNTtrain = [initialize_flags() for _ in range(len(train_data))]
+    getIO_diff_task_flagslist(task, flagsNTtrain)
 
     for fun in proper_functions:
         # for fun in [vmirror]:
@@ -264,7 +265,9 @@ def do_check_inputOutput_proper_flagsK_functions(proper_functions, task: Dict, f
 
                 #subgrid check
                 result =  is_subgrid_grid(O, I)
-                if result:
+                # if result:
+                #     flagsNTtrain[i]["out_is_in_subgrid"].append(result)
+                if result and result not in flagsNTtrain[i]["out_is_in_subgrid"]:
                     flagsNTtrain[i]["out_is_in_subgrid"].append(result)
 
                 # fun(output_grid)
@@ -305,12 +308,13 @@ def do_check_inputOutput_proper_flagsK_functions(proper_functions, task: Dict, f
                     transformed = safe_execute(fun, part, *args)
                     if transformed == part:
                         flagsNTtrain[i][f"{part_name}_in_in_fun"].append(fun.__name__)
-                        flagsNTtrain[i]["third_in_in_fun"].append(fun.__name__)
-                        flagsNTtrain[i]["all_third_in_in_fun"].append(f"{part_name}+{fun.__name__}")
+                        # flagsNTtrain[i]["third_in_in_fun"].append(fun.__name__)
+                        # flagsNTtrain[i]["all_third_in_in_fun"].append(f"{part_name}+{fun.__name__}")
                 # flagsNTtrain[i]["spset_third_in_in_fun"] = list(    set(flagsNTtrain[i]["third_in_in_fun"]) - set(part_names))
                     elif transformed != part:
+                        pass
                         # flagsNTtrain[i][f"{part_name}_in_in_fun"].append(fun.__name__)
-                        flagsNTtrain[i]["spset_third_in_in_fun"].append(fun.__name__)
+                        # flagsNTtrain[i]["spset_third_in_in_fun"].append(fun.__name__)
                         # flagsNTtrain[i]["all_third_in_in_fun"].append(f"{part_name}+{fun.__name__}")
 
 
@@ -325,7 +329,7 @@ def do_check_inputOutput_proper_flagsK_functions(proper_functions, task: Dict, f
     flagsNTtrain_part1 = flagsNTtrain[:-1]
     flagsNTtrain_part2 = flagsNTtrain[-1:]
 
-    proper2, output_proper_result, output_proper_result_reversed = compare_flagK_dicts(flagsNTtrain_part1)
+    proper2, output_proper_result, output_proper_result_reversed , non_empty_values = compare_flagK_dicts(flagsNTtrain_part1)
     matches = match_test_flagK(flagsNTtrain_part2, output_proper_result)
     if matches and all_equal(match[0][0] for match in matches):
         if matches[0][0][0] == "output_allone_color":
@@ -334,6 +338,20 @@ def do_check_inputOutput_proper_flagsK_functions(proper_functions, task: Dict, f
                 return result
 
     ## 47 some part proper select
+    for key,value in flagsNTtrain_part2[0].items():
+        # if value:
+        if 'third_in_in_fun' in key:
+            if value:
+                pass
+            else:
+                new_str = key.replace('_in_in_fun', '')
+                if new_str :
+                    # solver = getattr(solvers_module, f'solve_{key}')
+                    result = globals()[new_str](test_data[0]['input'])
+                    if result:
+                        return result
+
+    # 48 42a50994
 
 
     return

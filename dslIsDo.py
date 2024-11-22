@@ -20,11 +20,12 @@ def is_underfill_corners(task, flags) -> bool:
         # for value, coord in diff2:
         #     merged_diffs["diff2"][value].append(coord)
         # colorset = set(merged_diffs["diff2"])
-        if len(colorset) == 1:
-            color = next(iter(colorset))
-            # flags["out_train_i_diff_color_is"].append(color)
-            if underfill_corners(I, color) == O:
-                flags["is_underfill_corners_color"].append(color)
+        with safe_context():
+            if len(colorset) == 1:
+                color = next(iter(colorset))
+                # flags["out_train_i_diff_color_is"].append(color)
+                if underfill_corners(I, color) == O:
+                    flags["is_underfill_corners_color"].append(color)
 
     all_values_equal = len(set(flags["is_underfill_corners_color"])) == 1
     if all_values_equal:

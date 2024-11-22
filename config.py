@@ -123,6 +123,13 @@ is_do_mapping = {
 
 # 初始化标志变量的函数
 
+def mini_init_flags() -> Dict[str, List[bool]]:
+    """
+    几乎每个任务都是一个独立的操作单元的标志
+    """
+    return {
+        "is_mirror": [],
+    }
 
 def initialize_flags() -> Dict[str, List[bool]]:
     """

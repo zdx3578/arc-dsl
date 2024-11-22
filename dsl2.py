@@ -5,6 +5,15 @@ from typing import Dict, Any, List, Tuple, Callable, Optional
 import logging
 import traceback
 
+@contextmanager
+def safe_context():
+    try:
+        yield
+    except Exception as e:
+        print(f"___________safe_context___An error occurred: {e}")
+        # logging.error("捕获到异常：%s", e)
+        # logging.error("详细错误信息：\n%s", traceback.format_exc())
+
 
 def compare_flagK_dicts(flagK_list):
     """
@@ -124,6 +133,12 @@ def compare_flagK_dicts(flagK_list):
                         output_proper_result[output_key + ('in flagK ',) + tuple(output_indices)].append((combined_value2, sub_dict))  # 修改：将结果存储到 output_proper_result 中
                         output_proper_result_reversed[(combined_value, tuple(sub_dict) )].append((output_key + ('in flagK ',) + tuple(output_indices)))
 
+    ###############
+    ####flagsK 除了横向比较处理，还需要纵向处理，也就是一个flagk 自己内部处理比较IO；
+
+
+
+
     print("\n_______________________________ ____________非空的________共同值:")
     for key, common_values in common_non_empty_values.items():
         print(f"键 '{key}' 的非空共同值为: {common_values}")
@@ -184,9 +199,36 @@ def compare_flagK_dicts(flagK_list):
         print(f" ，值为 : {value_list}")
         print("\n")
 
+    ###############
+    ####flagsK 除了横向比较处理，还需要纵向处理，也就是一个flagk 自己内部处理比较IO；
+
+    non_empty_values = []
+
+    for flag in flagK_list:
+        non_empty_flag = {}
+        for key, value in flag.items():
+            if value:  # 如果值非空
+                non_empty_flag[key] = value
+        non_empty_values.append(non_empty_flag)
+
+    # 输出提取的非空值
+    print("\n________________________________________________________________")
+    for idx, non_empty_flag in enumerate(non_empty_values):
+        print(f"在 flagK[{idx}] 中，非空的键值对为:")
+        for key, value in non_empty_flag.items():
+            print(f"  键 '{key}' : 值 {value}")
+        print("\n")
+    print("\n________________________________________________________________")
+    for idx, non_empty_flag in enumerate(non_empty_values):
+        print(f"在 flagK[{idx}] 中，'third' 非空的键值对为:")
+        for key, value in non_empty_flag.items():
+            if 'third' in key or 'out' in key:
+                print(f"  键 '{key}' : 值 {value}")
+        print("\n")
 
 
-    return proper2, output_proper_result, output_proper_result_reversed
+
+    return proper2, output_proper_result, output_proper_result_reversed, non_empty_values
 
 
 
@@ -593,36 +635,37 @@ def is_objectComplete_change_color(task, flags, done=False):
         # same_obj = getIO_same_obj(I, O)
         same_fg = getIO_same_fg(I, O)
 
-        if toindices(diff1) == toindices(diff2):
-            flags["diff_position_same"] = True
-            # contain_object = contains_object(diff1, same_obj)
-            fg_outof_diff = contains_object(diff1, same_fg)
-            if fg_outof_diff:
-                flags["diff_in_same_fg"] = True
-                fg_outof_diff_complete = complementofobject(fg_outof_diff)
-                if toindices(fg_outof_diff_complete) == toindices(diff2):
-                    same_fg_color = list(next(iter(same_fg)))[0][0]
-                    tocolor = list(diff2)[0][0]
-                    flags["diff_in_same_contained"] = [tocolor, same_fg_color]
-                    if fill(I, tocolor, delta(ofcolor(I, same_fg_color))) == O:
-                        print("input  same output: ", {i})
-                        if done:
-                            pass
+        with safe_context():
+            if toindices(diff1) == toindices(diff2):
+                flags["diff_position_same"] = True
+                # contain_object = contains_object(diff1, same_obj)
+                fg_outof_diff = contains_object(diff1, same_fg)
+                if fg_outof_diff:
+                    flags["diff_in_same_fg"] = True
+                    fg_outof_diff_complete = complementofobject(fg_outof_diff)
+                    if toindices(fg_outof_diff_complete) == toindices(diff2):
+                        same_fg_color = list(next(iter(same_fg)))[0][0]
+                        tocolor = list(diff2)[0][0]
+                        flags["diff_in_same_contained"] = [tocolor, same_fg_color]
+                        if fill(I, tocolor, delta(ofcolor(I, same_fg_color))) == O:
+                            print("input  same output: ", {i})
+                            if done:
+                                pass
+                            else:
+                                return True
                         else:
-                            return True
+                            print("input no same output")
+                            return False
                     else:
-                        print("input no same output")
+                        print("fg_box_diff_complete not same diff ")
                         return False
                 else:
-                    print("fg_box_diff_complete not same diff ")
+                    print("not contain object")
                     return False
             else:
-                print("not contain object")
+                print("toindices not same")
+                flags["diff_position_same"] = False
                 return False
-        else:
-            print("toindices not same")
-            flags["diff_position_same"] = False
-            return False
     # change what ；change where
 
     if done:
@@ -914,16 +957,44 @@ def getIO_same_obj(I, O):
     #     display_diff_matrices([obj])
     return same_objects
 
+def getIO_diff_task_flagslist(task, flags_list):
+    train_data = task['train']
+    test_data = task['test']
+
+    for i, data_pair in enumerate(train_data):
+        I = data_pair['input']
+        O = data_pair['output']
+
+        flags = flags_list[i]
+
+        diff1, diff2, _, _ = getIO_diff(I, O, flags)
+
+    return
 
 def getIO_diff(I: Grid, O: Grid, flags: Optional[Dict[str, bool]] = None):
     # 调用 objects 函数两次
-    oi = objects(I, False, True, False)
-    oo = objects(O, False, True, False)
+    # 全部验证是否出错
+    # oi = objects(I, False, True, False)
+    # oo = objects(O, False, True, False)
+    oi = objects(I, True, True, True)
+    oo = objects(O, True, True, True)
 
-    # same_objects = oi.intersection(oo)
+    same_objects = oi.intersection(oo)
 
     oi_unique = oi - oo  # 获取在 oi 中但不在 oo 中的元素
     oo_unique = oo - oi  # 获取在 oo 中但不在 oi 中的元素
+
+    # with safe_context():
+
+    if len(oo_unique) == 0:
+        if oo == same_objects :
+            flags["out_is_IOintersec_obj"] = [True]
+
+        if all(len(diff1) == 1 for diff1 in oi_unique):
+            flags["diff1_unique_all_is_single"] = [True]
+
+        return oi_unique, None, None, None
+
 
     # 将它们分别赋给 diff1 和 diff2
     diff1, diff2 = next(iter(oi_unique)), next(iter(oo_unique))
@@ -971,6 +1042,7 @@ def getIO_diff(I: Grid, O: Grid, flags: Optional[Dict[str, bool]] = None):
 
     # print("比较结果:不同 diff 集合的坐标是否一致:")
     # display_diff_matrices(diff1_unique, diff2_unique)
+
     return diff1_unique, diff2_unique, diff_output_colorset, diff_output_color
 
 
