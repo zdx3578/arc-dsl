@@ -6,6 +6,7 @@ from config import *
 from dslIsDo import *
 from oldfun import *
 from dslupdateProperflagsIs import *
+from solvers import *
 
 
 def solve_arc_task(task):
@@ -91,7 +92,7 @@ def solve_individual2(task):
         except Exception as e:
             # 捕获异常并打印错误信息
             logging.error("捕获到异常：%s", e)
-            # logging.error("详细错误信息：\n%s", traceback.format_exc())
+            logging.error("详细错误信息：\n%s", traceback.format_exc())
             pass
 
         ###############################
@@ -309,7 +310,7 @@ def do_check_inputOutput_proper_flagsK_functions(proper_functions, task: Dict, f
                     if transformed == part:
                         flagsNTtrain[i][f"{part_name}_in_in_fun"].append(fun.__name__)
                         # flagsNTtrain[i]["third_in_in_fun"].append(fun.__name__)
-                        # flagsNTtrain[i]["all_third_in_in_fun"].append(f"{part_name}+{fun.__name__}")
+                        flagsNTtrain[i]["all_third_in_in_fun"].append(f"{part_name}+{fun.__name__}")
                 # flagsNTtrain[i]["spset_third_in_in_fun"] = list(    set(flagsNTtrain[i]["third_in_in_fun"]) - set(part_names))
                     elif transformed != part:
                         pass
@@ -338,20 +339,27 @@ def do_check_inputOutput_proper_flagsK_functions(proper_functions, task: Dict, f
                 return result
 
     ## 47 some part proper select
-    for key,value in flagsNTtrain_part2[0].items():
-        # if value:
-        if 'third_in_in_fun' in key:
-            if value:
-                pass
-            else:
-                new_str = key.replace('_in_in_fun', '')
-                if new_str :
-                    # solver = getattr(solvers_module, f'solve_{key}')
-                    result = globals()[new_str](test_data[0]['input'])
-                    if result:
-                        return result
+    if flagsNTtrain_part2[0]['all_third_in_in_fun']:
+        for key,value in flagsNTtrain_part2[0].items():
+            # if value:
+            if 'third_in_in_fun' in key:
+                if value:
+                    pass
+                else:
+                    new_str = key.replace('_in_in_fun', '')
+                    if new_str :
+                        # solver = getattr(solvers_module, f'solve_{key}')
+                        result = globals()[new_str](test_data[0]['input'])
+                        if result:
+                            return result
 
     # 48 42a50994
+    if all(flag['out_is_IOintersec_obj'] for flag in flagsNTtrain_part1):
+        if all(flag['diff1_unique_all_is_single'] for flag in flagsNTtrain_part1):
+            result = solve_42a50994(test_data[0]['input'])
+            if result:
+                return result
+
 
 
     return

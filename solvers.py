@@ -2,29 +2,29 @@ from dsl import *
 from constants import *
 
 
-def preEstimate(I, O):
-    # 获取输入 I 和输出 O 的形状
-    shape_I = (len(I), len(I[0]) if I else 0)
-    shape_O = (len(O), len(O[0]) if O else 0)
-    
-    print(f"Shape of I: {shape_I}")
-    print(f"Shape of O: {shape_O}")
-    
-    # 判断形状是否一致
-    if shape_I == shape_O:
-        print("The shapes of I and O are the same.")
-        'IsameO'
-    else:
-        print("The shapes of I and O are different.")
-        'IdiffO'
-    return {
-        "shape_I": shape_I,
-        "shape_O": shape_O,
-        "same_shape": shape_I == shape_O
-    }
+# def preEstimate(I, O):
+#     # 获取输入 I 和输出 O 的形状
+#     shape_I = (len(I), len(I[0]) if I else 0)
+#     shape_O = (len(O), len(O[0]) if O else 0)
 
-def preISestimate(I, O):
-    return
+#     print(f"Shape of I: {shape_I}")
+#     print(f"Shape of O: {shape_O}")
+
+#     # 判断形状是否一致
+#     if shape_I == shape_O:
+#         print("The shapes of I and O are the same.")
+#         'IsameO'
+#     else:
+#         print("The shapes of I and O are different.")
+#         'IdiffO'
+#     return {
+#         "shape_I": shape_I,
+#         "shape_O": shape_O,
+#         "same_shape": shape_I == shape_O
+#     }
+
+# def preISestimate(I, O):
+#     return
 
 
 # 67a3c6ac

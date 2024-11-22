@@ -233,7 +233,7 @@ def do_check_inputOutput_proper_1_arg_functions(proper_1arg_functions, task: Dic
     test_data = task['test']
     print('do_check_inputOutput_proper_1___arg___functions')
 
-    flags.get("ok_fun", [])
+    flags.setdefault("ok_fun", [])
 
     I = train_data[0]['input']
     O = train_data[0]['output']
@@ -308,7 +308,7 @@ def do_check_inputOutput_proper_1_arg_functions(proper_1arg_functions, task: Dic
             #             args = [(arg1, arg2), (height_o, width_o)]
             #             fun = funget
             # fun(output_grid)
-            if flags["out_in"] == True:
+            if flags.get("out_in") == True:
                 transformed = safe_execute(fun, output_grid, *args)
                 if transformed == input_grid:
                     # out-input-proper_flags
@@ -341,7 +341,7 @@ def do_check_inputOutput_proper_1functions(proper_functions, task: Dict, flags: 
     train_data = task['train']
     # test_data = task['test']
     print('do_check_inputOutput___proper___functions')
-    flags.get("ok_fun", [])
+    flags.setdefault("ok_fun", [])
     for fun in proper_functions:
 
         # if "concat" in fun.__name__:
@@ -381,7 +381,7 @@ def do_check_inputOutput_proper_1functions(proper_functions, task: Dict, flags: 
             #     if transformed == input_grid:
             #         # out-input-proper_flags
             #         continue
-            if flags["out_in"] == True:
+            if flags.get("out_in") == True:
                 transformed = safe_execute(fun, output_grid)
                 if transformed == input_grid:
                     # out-input-proper_flags
