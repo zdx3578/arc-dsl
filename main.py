@@ -1,4 +1,5 @@
 from solvers2 import *
+# import solvers_is_judge
 import solvers
 import tests
 import dsl
@@ -130,9 +131,9 @@ def test_solvers_correctness(data, solvers_module):
     print()
     for i, key in enumerate(solvers, start=1):
 
-        key = '42a50994'
+        # key = '42a50994'
 
-        # key = '7b7f7511'
+        key = '6f8cd79b'
 
         print(i, key)
         task = {}
@@ -143,11 +144,11 @@ def test_solvers_correctness(data, solvers_module):
             # preparetask(task)
             if n_correct % 46 == 0:
                 print()
-            solve_arc_task(task)
+            # solve_arc_task(task)
 
-            # for ex in task['train']:
-            #     # prepare_diff(ex['input'],ex['output'])
-            #     assert solver(ex['input']) == ex['output']
+            for ex in task['train']:
+                # prepare_diff(ex['input'],ex['output'])
+                assert solver(ex['input']) == ex['output']
             n_correct += 1
             print()
             # print()

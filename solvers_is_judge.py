@@ -70,12 +70,19 @@ def solve_67a3c6ac(I):
 
 
 # 第 11 个函数  6f8cd79b
-def solve_6f8cd79b(I):
+def solve_6f8cd79b00(I):
     x1 = asindices(I)
     x2 = apply(initset, x1)
     x3 = rbind(bordering, I)
     x4 = mfilter(x2, x3)
     O = fill(I, EIGHT, x4)
+    return O
+
+def is_fill_box_color(I,color=8):
+    # x1 = asindices(I)
+    # # x0 = outbox(x1)
+    # x2 = box(x1)
+    O = fill(I, color, box(asindices(I)))
     return O
 
 
