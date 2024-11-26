@@ -11,7 +11,12 @@ def fill_box_color(I):
     O = fill(I, color, x2)
     # print("-------------Output from fill:", O)
     return O
-
+def get_box(I):
+    # print("------------- input is", I)
+    # color = 8
+    x1 = asindices(I)
+    # print("-------------Output from asindices:", x1)
+    return box(x1)
 
 # # def is_fill_box_color(I,color=8):
 # def fill_box_color(I):
