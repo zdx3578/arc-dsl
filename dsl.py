@@ -655,6 +655,7 @@ def asindices(
     grid: Grid
 ) -> Indices:
     """ indices of all grid cells """
+    # print('asindices,asindices,asindices')
     return frozenset((i, j) for i in range(len(grid)) for j in range(len(grid[0])))
 
 
