@@ -26,6 +26,8 @@ def get_data(train=True):
         "training" if train else "evaluation"}'
     data = {}
     for fn in os.listdir(path):
+        if not fn.endswith('.json'):
+            continue  # 只处理 JSON 文件
         with open(f'{path}/{fn}') as f:
             data[fn.rstrip('.json')] = json.load(f)
 
@@ -133,7 +135,7 @@ def test_solvers_correctness(data, solvers_module):
 
         # key = '42a50994'
 
-        key = '6f8cd79b'
+        key = '00d62c1b'
 
         print(i, key)
         task = {}
