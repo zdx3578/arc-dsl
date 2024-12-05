@@ -543,54 +543,6 @@ def get_empty_box(I):
     return False
 
 
-def is_valid_empty_box(obj: Object, grid: Grid) -> bool:
-    """
-    判断对象是否是一个空心矩阵框，并且高度和宽度大于 2，并且小于输入网格的高度和宽度。
-
-    参数:
-    obj: Object - 输入的对象。
-    grid: Grid - 输入的网格。
-
-    返回:
-    bool - 如果对象是一个空心矩阵框，并且高度和宽度大于 2，并且小于输入网格的高度和宽度，返回 True；否则返回 False。
-    """
-    # 确保 obj 的格式正确
-    if not (isinstance(obj, frozenset) and all(isinstance(item, tuple) and len(item) == 2 for item in obj)):
-        return False
-
-    # 获取对象的高度和宽度
-    obj_height, obj_width = get_object_dimensions(obj)
-    grid_height, grid_width = len(grid), len(grid[0])
-
-    # 检查对象的高度和宽度是否大于 2，并且小于输入网格的高度和宽度
-    if not (obj_height > 2 and obj_width > 2 and obj_height < grid_height and obj_width < grid_width):
-        return False
-
-    # 获取对象的边框
-    obj_box = box(obj)
-
-    # 获取对象的内部
-    obj_interior = toindices(obj) - obj_box
-
-    # 检查对象的内部是否为空，并且对象的边框与 obj_box 相同
-    return len(obj_interior) == 0 and obj_box == toindices(obj)
-
-
-def is_box(obj: Object) -> bool:
-    """
-    判断对象是否是一个矩阵框。
-
-    参数:
-    obj: Object - 输入的对象。
-
-    返回:
-    bool - 如果对象是一个矩阵框，返回 True；否则返回 False。
-    """
-    # 获取对象的边框
-    obj_box = box(obj)
-
-    # 检查对象是否与其边框相同
-    return obj == obj_box
 
 
 def get_max_object(I):

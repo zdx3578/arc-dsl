@@ -99,7 +99,7 @@ if __name__ == "__main__":
     # 提取函数
     functions = extract_functions_from_dsl(dsl_file)
     original_function_count = len(functions)
-    print(f"from dslcopy import * \n \n#原本函数的总个数: {original_function_count}\n")
+    print(f"from dsl import * \nfrom arc_types import * \n\n#原本函数的总个数: {original_function_count}\n")
 
     if not functions:
         print("在指定的 dsl.py 文件中未找到函数。请检查文件内容。")

@@ -495,7 +495,7 @@ def solve_f25fbde4(I):
 def solve_44d8ac46(I):
     x1 = objects(I, T, F, T)
     x2 = apply(delta, x1)
-    x3 = mfilter(x2, square)
+    x3 = mfilter(x2, is_square)
     O = fill(I, TWO, x3)
     return O
 
@@ -1105,7 +1105,7 @@ def solve_d23f8c26(I):
 # d5d6de2d
 def solve_d5d6de2d(I):
     x1 = objects(I, T, F, T)
-    x2 = sfilter(x1, square)
+    x2 = sfilter(x1, is_square)
     x3 = difference(x1, x2)
     x4 = compose(backdrop, inbox)
     x5 = mapply(x4, x3)
@@ -1938,7 +1938,7 @@ def solve_b2862040(I):
 # 868de0fa
 def solve_868de0fa(I):
     x1 = objects(I, T, F, F)
-    x2 = sfilter(x1, square)
+    x2 = sfilter(x1, is_square)
     x3 = compose(even, height)
     x4 = sfilter(x2, x3)
     x5 = difference(x2, x4)
@@ -2193,7 +2193,7 @@ def solve_80af3007(I):
 def solve_83302e8f(I):
     x1 = objects(I, T, F, F)
     x2 = colorfilter(x1, ZERO)
-    x3 = sfilter(x2, square)
+    x3 = sfilter(x2, is_square)
     x4 = difference(x2, x3)
     x5 = merge(x3)
     x6 = recolor(THREE, x5)
@@ -2598,7 +2598,7 @@ def solve_77fdfe62(I):
 def solve_c0f76784(I):
     x1 = objects(I, T, F, F)
     x2 = colorfilter(x1, ZERO)
-    x3 = sfilter(x2, square)
+    x3 = sfilter(x2, is_square)
     x4 = sizefilter(x3, ONE)
     x5 = merge(x4)
     x6 = argmax(x3, size)

@@ -135,7 +135,7 @@ def test_solvers_correctness(data, solvers_module):
 
         # key = '42a50994'
 
-        key = '00d62c1b'
+        key = '810b9b61'
 
         print(i, key)
         task = {}
