@@ -74,11 +74,12 @@ def print_classified_functions(classified_functions):
     total_functions = 0
     for key, funcs in classified_functions.items():
         param_types, return_type = key
-        print(f"#输入类型: {param_types}, 返回类型: {return_type}")
+        print(f"\n\n#输入类型: {param_types}, 返回类型: {return_type}")
+        print(f"#分类下的函数个数: {len(funcs)}")
         print("#函数列表:")
         for func in funcs:
             print(f"  - {func}")
-        print(f"#分类下的函数个数: {len(funcs)}\n")
+
         total_functions += len(funcs)
     return total_functions
 
@@ -90,7 +91,7 @@ def generate_type_mapping(types):
 
 if __name__ == "__main__":
     if len(sys.argv) < 2:
-        print("用法: python dslToBk.py <dsl.py 的路径>")
+        print("用法: python filename.py <dsl.py 的路径>")
         sys.exit(1)
 
     dsl_file = sys.argv[1]
@@ -98,7 +99,7 @@ if __name__ == "__main__":
     # 提取函数
     functions = extract_functions_from_dsl(dsl_file)
     original_function_count = len(functions)
-    print(f"原本函数的总个数: {original_function_count}\n")
+    print(f"from dslcopy import * \n \n#原本函数的总个数: {original_function_count}\n")
 
     if not functions:
         print("在指定的 dsl.py 文件中未找到函数。请检查文件内容。")
@@ -108,7 +109,7 @@ if __name__ == "__main__":
         # 生成类型映射
         type_mapping = generate_type_mapping(types)
         # 可选：打印类型映射，便于验证
-        print("自动生成的类型映射:")
+        print("#自动生成的类型映射:")
         for py_type, prolog_type in type_mapping.items():
             print(f"  '{py_type}': '{prolog_type}'")
         print()
@@ -117,4 +118,4 @@ if __name__ == "__main__":
         classified_functions = classify_functions(functions, type_mapping)
         # 打印分类结果
         classified_function_count = print_classified_functions(classified_functions)
-        print(f"分类后输出的函数总个数: {classified_function_count}")
+        print(f"#分类后输出的函数总个数: {classified_function_count}")
