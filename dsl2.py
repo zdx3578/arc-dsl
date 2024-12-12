@@ -683,6 +683,7 @@ def complementofobject(obj: Object) -> Object:
     return complement_obj
 
 
+## ref dsl shift
 # def move(obj: Object, direction: Tuple[int, int]) -> Object:
 #     """
 #     移动对象到指定方向。
@@ -697,63 +698,61 @@ def complementofobject(obj: Object) -> Object:
 #     dx, dy = direction
 #     moved_obj = frozenset({(value, (i + dx, j + dy)) for value, (i, j) in obj})
 #     return moved_obj
+# def move_down(I, obj: Object) -> Object:
+#     """
+#     向下移动对象。
+
+#     参数:
+#     obj: Object - 要移动的对象。
+
+#     返回:
+#     Object - 移动后的对象。
+#     """
+#     return move(I, obj, (1, 0))
 
 
-def move_down(I, obj: Object) -> Object:
-    """
-    向下移动对象。
-
-    参数:
-    obj: Object - 要移动的对象。
-
-    返回:
-    Object - 移动后的对象。
-    """
-    return move(I, obj, (1, 0))
+# def move_down_1obj(input):
+#     obj = first(objects(input, T, T, T))
+#     return move_down(input, obj)
 
 
-def move_down_1obj(input):
-    obj = first(objects(input, T, T, T))
-    return move_down(input, obj)
+# def move_right(I, obj: Object) -> Object:
+#     """
+#     向右移动对象。
+
+#     参数:
+#     obj: Object - 要移动的对象。
+
+#     返回:
+#     Object - 移动后的对象。
+#     """
+#     return move(I, obj, (0, 1))
 
 
-def move_right(I, obj: Object) -> Object:
-    """
-    向右移动对象。
+# def move_up(I, obj: Object) -> Object:
+#     """
+#     向上移动对象。
 
-    参数:
-    obj: Object - 要移动的对象。
+#     参数:
+#     obj: Object - 要移动的对象。
 
-    返回:
-    Object - 移动后的对象。
-    """
-    return move(I, obj, (0, 1))
-
-
-def move_up(I, obj: Object) -> Object:
-    """
-    向上移动对象。
-
-    参数:
-    obj: Object - 要移动的对象。
-
-    返回:
-    Object - 移动后的对象。
-    """
-    return move(I, obj, (-1, 0))
+#     返回:
+#     Object - 移动后的对象。
+#     """
+#     return move(I, obj, (-1, 0))
 
 
-def move_left(I, obj: Object) -> Object:
-    """
-    向左移动对象。
+# def move_left(I, obj: Object) -> Object:
+#     """
+#     向左移动对象。
 
-    参数:
-    obj: Object - 要移动的对象。
+#     参数:
+#     obj: Object - 要移动的对象。
 
-    返回:
-    Object - 移动后的对象。
-    """
-    return move(I, obj, (0, -1))
+#     返回:
+#     Object - 移动后的对象。
+#     """
+#     return move(I, obj, (0, -1))
 
 
 def object_to_rectangle(obj: Object) -> Grid:

@@ -78,7 +78,7 @@ def solve_6f8cd79b00(I):
     O = fill(I, EIGHT, x4)
     return O
 
-def is_fill_box_color(I,color=8):
+def is_fill_I_box_color(I,color=8):
     # x1 = asindices(I)
     # # x0 = outbox(x1)
     # x2 = box(x1)
@@ -87,14 +87,14 @@ def is_fill_box_color(I,color=8):
 
 
 # 第 12 个函数  c3f564a4
-def solve_c3f564a4(I):
+def solve_c3f564a40(I):
     x1 = asindices(I)
     x2 = dmirror(I)
     x3 = invert(NINE)
     x4 = papply(pair, I, x2)
     x5 = lbind(apply, maximum)
     x6 = apply(x5, x4)
-    x7 = ofcolor(x6, ZERO)
+    x7 = color_indices(x6, ZERO)
     x8 = difference(x1, x7)
     x9 = toobject(x8, x6)
     x10 = interval(x3, NINE, ONE)
@@ -104,6 +104,15 @@ def solve_c3f564a4(I):
     x14 = mapply(x13, x12)
     O = paint(x6, x14)
     return O
+
+def solve_c3f564a4(I):
+    x1 = objects(I, T, T, F)
+    x2 = hline(I)
+    x3 = vline(I)
+    # x4 = toindices(x3)
+    return
+
+
 
 
 # 第 13 个函数  a64e4611
@@ -146,7 +155,7 @@ def solve_a64e4611(I):
     x36 = matcher(x35, EIGHT)
     x37 = sfilter(x1, x36)
     x38 = fill(I, THREE, x37)
-    x39 = ofcolor(x38, ZERO)
+    x39 = color_indices(x38, ZERO)
     x40 = rbind(bordering, x38)
     x41 = compose(x40, initset)
     x42 = lbind(contained, THREE)
@@ -164,7 +173,7 @@ def solve_e21d9049(I):
     x1 = asindices(I)
     x2 = leastcolor(I)
     x3 = objects(I, T, F, T)
-    x4 = ofcolor(I, x2)
+    x4 = color_indices(I, x2)
     x5 = merge(x3)
     x6 = shape(x5)
     x7 = neighbors(ORIGIN)
@@ -540,7 +549,7 @@ def solve_9f236235(I):
 # 第 33 个函数  63613498
 def solve_63613498(I):
     x1 = crop(I, ORIGIN, THREE_BY_THREE)
-    x2 = ofcolor(x1, ZERO)
+    x2 = color_indices(x1, ZERO)
     x3 = asindices(x1)
     x4 = difference(x3, x2)
     x5 = normalize(x4)
@@ -767,9 +776,9 @@ def solve_6855a6e4(I):
     x19 = subgrid(x15, x6)
     x20 = hmirror(x18)
     x21 = hmirror(x19)
-    x22 = ofcolor(x20, FIVE)
+    x22 = color_indices(x20, FIVE)
     x23 = recolor(FIVE, x22)
-    x24 = ofcolor(x21, FIVE)
+    x24 = color_indices(x21, FIVE)
     x25 = recolor(FIVE, x24)
     x26 = height(x23)
     x27 = height(x25)
@@ -879,15 +888,15 @@ def solve_54d82841(I):
 # 第 50 个函数  e179c5f4
 def solve_e179c5f4(I):
     x1 = height(I)
-    x2 = ofcolor(I, ONE)
+    x2 = color_indices(I, ONE)
     x3 = first(x2)
     x4 = shoot(x3, UP_RIGHT)
     x5 = fill(I, ONE, x4)
-    x6 = ofcolor(x5, ONE)
+    x6 = color_indices(x5, ONE)
     x7 = urcorner(x6)
     x8 = shoot(x7, NEG_UNITY)
     x9 = fill(x5, ONE, x8)
-    x10 = ofcolor(x9, ONE)
+    x10 = color_indices(x9, ONE)
     x11 = subgrid(x10, x9)
     x12 = height(x11)
     x13 = width(x11)
@@ -949,7 +958,7 @@ def solve_eb281b96(I):
 def solve_c9f8e694(I):
     x1 = height(I)
     x2 = width(I)
-    x3 = ofcolor(I, ZERO)
+    x3 = color_indices(I, ZERO)
     x4 = astuple(x1, ONE)
     x5 = crop(I, ORIGIN, x4)
     x6 = hupscale(x5, x2)
@@ -961,17 +970,17 @@ def solve_c9f8e694(I):
 def solve_7df24a62(I):
     x1 = height(I)
     x2 = width(I)
-    x3 = ofcolor(I, ONE)
-    x4 = ofcolor(I, FOUR)
+    x3 = color_indices(I, ONE)
+    x4 = color_indices(I, FOUR)
     x5 = ulcorner(x3)
     x6 = subgrid(x3, I)
     x7 = rot90(x6)
     x8 = rot180(x6)
     x9 = rot270(x6)
     x10 = matcher(size, ZERO)
-    x11 = rbind(ofcolor, ONE)
+    x11 = rbind(color_indices, ONE)
     x12 = compose(normalize, x11)
-    x13 = rbind(ofcolor, FOUR)
+    x13 = rbind(color_indices, FOUR)
     x14 = rbind(shift, x5)
     x15 = compose(x14, x13)
     x16 = lbind(subtract, x1)
@@ -1087,7 +1096,7 @@ solve_8be77c9e = solve_4c4377d9
 def solve_ff805c23(I):
     x1 = hmirror(I)
     x2 = vmirror(I)
-    x3 = ofcolor(I, ONE)
+    x3 = color_indices(I, ONE)
     x4 = subgrid(x3, x1)
     x5 = subgrid(x3, x2)
     x6 = palette(x4)
@@ -1107,7 +1116,7 @@ def solve_2dee498d(I):
 def solve_995c5fa3(I):
     x1 = hsplit(I, THREE)
     x2 = astuple(TWO, ONE)
-    x3 = rbind(ofcolor, ZERO)
+    x3 = rbind(color_indices, ZERO)
     x4 = compose(ulcorner, x3)
     x5 = compose(size, x3)
     x6 = matcher(x5, ZERO)
@@ -1138,8 +1147,8 @@ def solve_cf98881b(I):
     x3 = remove(x2, x1)
     x4 = first(x3)
     x5 = last(x3)
-    x6 = ofcolor(x4, NINE)
-    x7 = ofcolor(x2, FOUR)
+    x6 = color_indices(x4, NINE)
+    x7 = color_indices(x2, FOUR)
     x8 = fill(x5, NINE, x6)
     O = fill(x8, FOUR, x7)
     return O
@@ -1205,7 +1214,7 @@ def solve_bc1d5164(I):
     x6 = astuple(TWO, FOUR)
     x7 = crop(I, x6, THREE_BY_THREE)
     x8 = canvas(ZERO, THREE_BY_THREE)
-    x9 = rbind(ofcolor, x1)
+    x9 = rbind(color_indices, x1)
     x10 = astuple(x2, x3)
     x11 = astuple(x5, x7)
     x12 = combine(x10, x11)
@@ -1219,7 +1228,7 @@ def solve_10fcaaa3(I):
     x1 = leastcolor(I)
     x2 = hconcat(I, I)
     x3 = vconcat(x2, x2)
-    x4 = ofcolor(x3, x1)
+    x4 = color_indices(x3, x1)
     x5 = mapply(ineighbors, x4)
     O = underfill(x3, EIGHT, x5)
     return O
@@ -1256,7 +1265,7 @@ def solve_2c608aff(I):
     x2 = objects(I, T, F, T)
     x3 = argmax(x2, size)
     x4 = toindices(x3)
-    x5 = ofcolor(I, x1)
+    x5 = color_indices(I, x1)
     x6 = prapply(connect, x4, x5)
     x7 = fork(either, vline, hline)
     x8 = mfilter(x6, x7)
@@ -1317,7 +1326,7 @@ def solve_67a423a3(I):
 def solve_25d487eb(I):
     x1 = leastcolor(I)
     x2 = objects(I, T, F, T)
-    x3 = ofcolor(I, x1)
+    x3 = color_indices(I, x1)
     x4 = center(x3)
     x5 = merge(x2)
     x6 = center(x5)
@@ -1331,12 +1340,12 @@ def solve_25d487eb(I):
 def solve_b782dc8a(I):
     x1 = leastcolor(I)
     x2 = objects(I, T, F, F)
-    x3 = ofcolor(I, x1)
+    x3 = color_indices(I, x1)
     x4 = first(x3)
     x5 = dneighbors(x4)
     x6 = toobject(x5, I)
     x7 = mostcolor(x6)
-    x8 = ofcolor(I, x7)
+    x8 = color_indices(I, x7)
     x9 = colorfilter(x2, ZERO)
     x10 = rbind(adjacent, x8)
     x11 = mfilter(x9, x10)
@@ -1388,7 +1397,7 @@ def solve_de1cd16c(I):
 # 第 76 个函数  c909285e
 def solve_c909285e(I):
     x1 = leastcolor(I)
-    x2 = ofcolor(I, x1)
+    x2 = color_indices(I, x1)
     O = subgrid(x2, I)
     return O
 
@@ -1396,7 +1405,7 @@ def solve_c909285e(I):
 # 第 77 个函数  5c2c9af4
 def solve_5c2c9af4(I):
     x1 = leastcolor(I)
-    x2 = ofcolor(I, x1)
+    x2 = color_indices(I, x1)
     x3 = center(x2)
     x4 = ulcorner(x2)
     x5 = subtract(x3, x4)
@@ -1416,10 +1425,10 @@ def solve_5c2c9af4(I):
 # 第 78 个函数  3345333e
 def solve_3345333e(I):
     x1 = leastcolor(I)
-    x2 = ofcolor(I, x1)
+    x2 = color_indices(I, x1)
     x3 = cover(I, x2)
     x4 = leastcolor(x3)
-    x5 = ofcolor(x3, x4)
+    x5 = color_indices(x3, x4)
     x6 = neighbors(ORIGIN)
     x7 = mapply(neighbors, x6)
     x8 = vmirror(x5)
@@ -1435,7 +1444,7 @@ def solve_3345333e(I):
 # 第 79 个函数  31aa019c
 def solve_31aa019c(I):
     x1 = leastcolor(I)
-    x2 = ofcolor(I, x1)
+    x2 = color_indices(I, x1)
     x3 = first(x2)
     x4 = neighbors(x3)
     x5 = astuple(TEN, TEN)
@@ -1449,7 +1458,7 @@ def solve_31aa019c(I):
 # 第 80 个函数  890034e9
 def solve_890034e9(I):
     x1 = leastcolor(I)
-    x2 = ofcolor(I, x1)
+    x2 = color_indices(I, x1)
     x3 = inbox(x2)
     x4 = recolor(ZERO, x3)
     x5 = occurrences(I, x4)
@@ -1464,7 +1473,7 @@ def solve_890034e9(I):
 # 第 81 个函数  f5b8619d
 def solve_f5b8619d(I):
     x1 = leastcolor(I)
-    x2 = ofcolor(I, x1)
+    x2 = color_indices(I, x1)
     x3 = mapply(vfrontier, x2)
     x4 = underfill(I, EIGHT, x3)
     x5 = hconcat(x4, x4)
@@ -1475,8 +1484,8 @@ def solve_f5b8619d(I):
 # 第 82 个函数  e8dc4411
 def solve_e8dc4411(I):
     x1 = leastcolor(I)
-    x2 = ofcolor(I, ZERO)
-    x3 = ofcolor(I, x1)
+    x2 = color_indices(I, ZERO)
+    x3 = color_indices(I, x1)
     x4 = position(x2, x3)
     x5 = fork(connect, ulcorner, lrcorner)
     x6 = x5(x2)
@@ -1500,7 +1509,7 @@ def solve_e8dc4411(I):
 # 第 83 个函数  6cdd2623
 def solve_6cdd2623(I):
     x1 = leastcolor(I)
-    x2 = ofcolor(I, x1)
+    x2 = color_indices(I, x1)
     x3 = prapply(connect, x2, x2)
     x4 = fgpartition(I)
     x5 = merge(x4)
@@ -1518,7 +1527,7 @@ def solve_6cdd2623(I):
 # 第 84 个函数  7f4411dc
 def solve_7f4411dc(I):
     x1 = leastcolor(I)
-    x2 = ofcolor(I, x1)
+    x2 = color_indices(I, x1)
     x3 = rbind(difference, x2)
     x4 = rbind(greater, TWO)
     x5 = chain(x4, size, x3)
@@ -1531,7 +1540,7 @@ def solve_7f4411dc(I):
 # 第 85 个函数  7e0986d6
 def solve_7e0986d6(I):
     x1 = leastcolor(I)
-    x2 = ofcolor(I, x1)
+    x2 = color_indices(I, x1)
     x3 = replace(I, x1, ZERO)
     x4 = leastcolor(x3)
     x5 = rbind(colorcount, x4)
@@ -1546,7 +1555,7 @@ def solve_7e0986d6(I):
 # 第 86 个函数  b8cdaf2b
 def solve_b8cdaf2b(I):
     x1 = leastcolor(I)
-    x2 = ofcolor(I, x1)
+    x2 = color_indices(I, x1)
     x3 = shift(x2, UP)
     x4 = ulcorner(x3)
     x5 = urcorner(x3)
@@ -1571,7 +1580,7 @@ def solve_0962bcdd(I):
     x1 = leastcolor(I)
     x2 = replace(I, ZERO, x1)
     x3 = leastcolor(x2)
-    x4 = ofcolor(I, x3)
+    x4 = color_indices(I, x3)
     x5 = mapply(dneighbors, x4)
     x6 = fill(I, x3, x5)
     x7 = objects(x6, F, T, T)
@@ -1587,7 +1596,7 @@ def solve_0962bcdd(I):
 def solve_4093f84a(I):
     x1 = leastcolor(I)
     x2 = replace(I, x1, FIVE)
-    x3 = ofcolor(I, FIVE)
+    x3 = color_indices(I, FIVE)
     x4 = portrait(x3)
     x5 = branch(x4, identity, dmirror)
     x6 = x5(x2)
@@ -1642,8 +1651,8 @@ def solve_29c11459(I):
 def solve_dae9d2b5(I):
     x1 = lefthalf(I)
     x2 = righthalf(I)
-    x3 = ofcolor(x1, FOUR)
-    x4 = ofcolor(x2, THREE)
+    x3 = color_indices(x1, FOUR)
+    x4 = color_indices(x2, THREE)
     x5 = combine(x3, x4)
     O = fill(x1, SIX, x5)
     return O
@@ -1653,8 +1662,8 @@ def solve_dae9d2b5(I):
 def solve_1b2d62fb(I):
     x1 = lefthalf(I)
     x2 = righthalf(I)
-    x3 = ofcolor(x1, ZERO)
-    x4 = ofcolor(x2, ZERO)
+    x3 = color_indices(x1, ZERO)
+    x4 = color_indices(x2, ZERO)
     x5 = intersection(x3, x4)
     x6 = replace(x1, NINE, ZERO)
     O = fill(x6, EIGHT, x5)
@@ -1665,8 +1674,8 @@ def solve_1b2d62fb(I):
 def solve_f2829549(I):
     x1 = lefthalf(I)
     x2 = righthalf(I)
-    x3 = ofcolor(x1, ZERO)
-    x4 = ofcolor(x2, ZERO)
+    x3 = color_indices(x1, ZERO)
+    x4 = color_indices(x2, ZERO)
     x5 = intersection(x3, x4)
     x6 = shape(x1)
     x7 = canvas(ZERO, x6)
@@ -1682,7 +1691,7 @@ def solve_75b8110e(I):
     x4 = bottomhalf(x1)
     x5 = tophalf(x2)
     x6 = bottomhalf(x2)
-    x7 = rbind(ofcolor, ZERO)
+    x7 = rbind(color_indices, ZERO)
     x8 = fork(difference, asindices, x7)
     x9 = fork(toobject, x8, identity)
     x10 = x9(x5)
@@ -1810,7 +1819,7 @@ def solve_c3e719e8(I):
     x1 = mostcolor(I)
     x2 = hconcat(I, I)
     x3 = upscale(I, THREE)
-    x4 = ofcolor(x3, x1)
+    x4 = color_indices(x3, x1)
     x5 = asindices(x3)
     x6 = difference(x5, x4)
     x7 = hconcat(x2, I)
@@ -1904,7 +1913,7 @@ def solve_a87f7484(I):
     x5 = x4(I)
     x6 = decrement(x1)
     x7 = hsplit(x5, x6)
-    x8 = rbind(ofcolor, ZERO)
+    x8 = rbind(color_indices, ZERO)
     x9 = apply(x8, x7)
     x10 = leastcommon(x9)
     x11 = matcher(x8, x10)
@@ -1929,7 +1938,7 @@ def solve_95990924(I):
 
 
 # 第 109 个函数  810b9b61
-def solve_810b9b61(I):
+def solve_810b9b610(I):
     x1 = objects(I, T, T, T)
     x2 = apply(toindices, x1)
     x3 = fork(either, vline, hline)
@@ -1940,6 +1949,16 @@ def solve_810b9b61(I):
     O = fill(I, THREE, x7)
     return O
 
+def fill_box_obj(I):
+    x1 = objects(I, T, T, T)
+    x2 = apply(toindices, x1)
+    # x3 = fork(either, vline, hline)
+    # x4 = sfilter(x2, x3)
+    # x5 = difference(x2, x4)
+    x6 = fork(equality, identity, box)
+    x7 = mfilter(x2, x6)
+    O = fill(I, THREE, x7)
+    return O
 
 # 第 110 个函数  ce22a75a
 def solve_ce22a75a(I):
@@ -2026,7 +2045,7 @@ def solve_6ecd11f4(I):
     x7 = width(x5)
     x8 = divide(x6, x7)
     x9 = downscale(x4, x8)
-    x10 = ofcolor(x9, ZERO)
+    x10 = color_indices(x9, ZERO)
     O = fill(x5, ZERO, x10)
     return O
 
@@ -2247,7 +2266,7 @@ def solve_8731374e(I):
     x14 = merge(x13)
     x15 = rot270(x14)
     x16 = leastcolor(x15)
-    x17 = ofcolor(x15, x16)
+    x17 = color_indices(x15, x16)
     x18 = fork(combine, vfrontier, hfrontier)
     x19 = mapply(x18, x17)
     O = fill(x15, x16, x19)
@@ -2373,7 +2392,7 @@ def solve_264363fd(I):
     x17 = initset(x16)
     x18 = cover(I, x2)
     x19 = mostcolor(x18)
-    x20 = ofcolor(x18, x19)
+    x20 = color_indices(x18, x19)
     x21 = occurrences(x18, x17)
     x22 = objects(x18, F, F, T)
     x23 = rbind(occurrences, x17)
@@ -2408,7 +2427,7 @@ def solve_09629e4f(I):
     x3 = normalize(x2)
     x4 = upscale(x3, FOUR)
     x5 = paint(I, x4)
-    x6 = ofcolor(I, FIVE)
+    x6 = color_indices(I, FIVE)
     O = fill(x5, FIVE, x6)
     return O
 
@@ -2724,7 +2743,7 @@ def solve_56dc2b01(I):
     x1 = objects(I, T, F, T)
     x2 = colorfilter(x1, THREE)
     x3 = first(x2)
-    x4 = ofcolor(I, TWO)
+    x4 = color_indices(I, TWO)
     x5 = gravitate(x3, x4)
     x6 = first(x5)
     x7 = equality(x6, ZERO)
@@ -2772,7 +2791,7 @@ def solve_e73095fd(I):
     x5 = lbind(mapply, dneighbors)
     x6 = chain(x5, corners, outbox)
     x7 = fork(difference, x6, outbox)
-    x8 = ofcolor(I, FIVE)
+    x8 = color_indices(I, FIVE)
     x9 = rbind(intersection, x8)
     x10 = matcher(size, ZERO)
     x11 = chain(x10, x9, x7)
@@ -2805,7 +2824,7 @@ def solve_543a7ed5(I):
 def solve_9edfc990(I):
     x1 = objects(I, T, F, F)
     x2 = colorfilter(x1, ZERO)
-    x3 = ofcolor(I, ONE)
+    x3 = color_indices(I, ONE)
     x4 = rbind(adjacent, x3)
     x5 = mfilter(x2, x4)
     x6 = recolor(ONE, x5)
@@ -3426,7 +3445,7 @@ def solve_aba27056(I):
     x12 = fill(I, FOUR, x5)
     x13 = fill(x12, FOUR, x11)
     x14 = corners(x4)
-    x15 = ofcolor(x13, ZERO)
+    x15 = color_indices(x13, ZERO)
     x16 = rbind(toobject, x13)
     x17 = rbind(colorcount, ZERO)
     x18 = chain(x17, x16, dneighbors)
@@ -3781,7 +3800,7 @@ def solve_57aa92db(I):
 # 第 211 个函数  6b9890af
 def solve_6b9890af(I):
     x1 = objects(I, T, T, T)
-    x2 = ofcolor(I, TWO)
+    x2 = color_indices(I, TWO)
     x3 = argmin(x1, size)
     x4 = subgrid(x2, I)
     x5 = width(x4)
@@ -3796,7 +3815,7 @@ def solve_6b9890af(I):
 # 第 212 个函数  db93a21d
 def solve_db93a21d(I):
     x1 = objects(I, T, T, T)
-    x2 = ofcolor(I, NINE)
+    x2 = color_indices(I, NINE)
     x3 = colorfilter(x1, NINE)
     x4 = rbind(shoot, DOWN)
     x5 = mapply(x4, x2)
@@ -3821,7 +3840,7 @@ def solve_db93a21d(I):
 # 第 213 个函数  f9012d9b
 def solve_f9012d9b(I):
     x1 = objects(I, T, F, F)
-    x2 = ofcolor(I, ZERO)
+    x2 = color_indices(I, ZERO)
     x3 = lbind(contained, ZERO)
     x4 = chain(flip, x3, palette)
     x5 = mfilter(x1, x4)
@@ -3848,7 +3867,7 @@ def solve_f9012d9b(I):
 # 第 214 个函数  1caeab9d
 def solve_1caeab9d(I):
     x1 = objects(I, T, T, T)
-    x2 = ofcolor(I, ONE)
+    x2 = color_indices(I, ONE)
     x3 = lowermost(x2)
     x4 = lbind(subtract, x3)
     x5 = chain(toivec, x4, lowermost)
@@ -3863,7 +3882,7 @@ def solve_1caeab9d(I):
 # 第 215 个函数  178fcbfb
 def solve_178fcbfb(I):
     x1 = objects(I, T, F, T)
-    x2 = ofcolor(I, TWO)
+    x2 = color_indices(I, TWO)
     x3 = mapply(vfrontier, x2)
     x4 = fill(I, TWO, x3)
     x5 = colorfilter(x1, TWO)
@@ -3878,7 +3897,7 @@ def solve_178fcbfb(I):
 # 第 216 个函数  673ef223
 def solve_673ef223(I):
     x1 = objects(I, T, F, T)
-    x2 = ofcolor(I, EIGHT)
+    x2 = color_indices(I, EIGHT)
     x3 = replace(I, EIGHT, FOUR)
     x4 = colorfilter(x1, TWO)
     x5 = argmin(x1, uppermost)
@@ -3901,7 +3920,7 @@ def solve_673ef223(I):
 # 第 217 个函数  d89b689b
 def solve_d89b689b(I):
     x1 = objects(I, T, F, T)
-    x2 = ofcolor(I, EIGHT)
+    x2 = color_indices(I, EIGHT)
     x3 = sizefilter(x1, ONE)
     x4 = apply(initset, x2)
     x5 = lbind(argmin, x4)
@@ -3918,7 +3937,7 @@ def solve_d89b689b(I):
 # 第 218 个函数  d43fd935
 def solve_d43fd935(I):
     x1 = objects(I, T, F, T)
-    x2 = ofcolor(I, THREE)
+    x2 = color_indices(I, THREE)
     x3 = sizefilter(x1, ONE)
     x4 = rbind(vmatching, x2)
     x5 = rbind(hmatching, x2)
@@ -3936,7 +3955,7 @@ def solve_d43fd935(I):
 # 第 219 个函数  8a004b2b
 def solve_8a004b2b(I):
     x1 = objects(I, F, T, T)
-    x2 = ofcolor(I, FOUR)
+    x2 = color_indices(I, FOUR)
     x3 = subgrid(x2, I)
     x4 = argmax(x1, lowermost)
     x5 = normalize(x4)
@@ -3956,7 +3975,7 @@ def solve_8a004b2b(I):
 # 第 220 个函数  4938f0c2
 def solve_4938f0c2(I):
     x1 = objects(I, T, T, T)
-    x2 = ofcolor(I, TWO)
+    x2 = color_indices(I, TWO)
     x3 = vmirror(x2)
     x4 = height(x2)
     x5 = width(x2)
@@ -3966,7 +3985,7 @@ def solve_4938f0c2(I):
     x9 = add(x6, TWO_BY_ZERO)
     x10 = shift(x3, x8)
     x11 = fill(I, TWO, x10)
-    x12 = ofcolor(x11, TWO)
+    x12 = color_indices(x11, TWO)
     x13 = hmirror(x12)
     x14 = shift(x13, x9)
     x15 = fill(x11, TWO, x14)
@@ -4240,7 +4259,7 @@ def solve_f8a8fe49(I):
     x5 = portrait(x4)
     x6 = branch(x5, hsplit, vsplit)
     x7 = branch(x5, vmirror, hmirror)
-    x8 = ofcolor(I, TWO)
+    x8 = color_indices(I, TWO)
     x9 = subgrid(x8, I)
     x10 = trim(x9)
     x11 = x7(x10)
@@ -4393,8 +4412,8 @@ def solve_d07ae81c(I):
     x5 = apply(color, x4)
     x6 = first(x5)
     x7 = last(x5)
-    x8 = ofcolor(I, x6)
-    x9 = ofcolor(I, x7)
+    x8 = color_indices(I, x6)
+    x9 = color_indices(I, x7)
     x10 = rbind(shoot, UNITY)
     x11 = rbind(shoot, NEG_UNITY)
     x12 = rbind(shoot, DOWN_LEFT)
@@ -4658,7 +4677,7 @@ def solve_ba97ae07(I):
     x2 = totuple(x1)
     x3 = apply(color, x2)
     x4 = mostcommon(x3)
-    x5 = ofcolor(I, x4)
+    x5 = color_indices(I, x4)
     x6 = backdrop(x5)
     O = fill(I, x4, x6)
     return O
@@ -4745,7 +4764,7 @@ def solve_a3325580(I):
 
 # 第 267 个函数  6cf79266
 def solve_6cf79266(I):
-    x1 = ofcolor(I, ZERO)
+    x1 = color_indices(I, ZERO)
     x2 = astuple(ZERO, ORIGIN)
     x3 = initset(x2)
     x4 = upscale(x3, THREE)
@@ -4765,11 +4784,11 @@ def solve_6cf79266(I):
 
 # 第 268 个函数  4612dd53
 def solve_4612dd53(I):
-    x1 = ofcolor(I, ONE)
+    x1 = color_indices(I, ONE)
     x2 = box(x1)
     x3 = fill(I, TWO, x2)
     x4 = subgrid(x1, x3)
-    x5 = ofcolor(x4, ONE)
+    x5 = color_indices(x4, ONE)
     x6 = mapply(vfrontier, x5)
     x7 = mapply(hfrontier, x5)
     x8 = size(x6)
@@ -4777,7 +4796,7 @@ def solve_4612dd53(I):
     x10 = greater(x8, x9)
     x11 = branch(x10, x7, x6)
     x12 = fill(x4, TWO, x11)
-    x13 = ofcolor(x12, TWO)
+    x13 = color_indices(x12, TWO)
     x14 = ulcorner(x1)
     x15 = shift(x13, x14)
     O = underfill(I, TWO, x15)
@@ -4786,7 +4805,7 @@ def solve_4612dd53(I):
 
 # 第 269 个函数  d06dbe63
 def solve_d06dbe63(I):
-    x1 = ofcolor(I, EIGHT)
+    x1 = color_indices(I, EIGHT)
     x2 = center(x1)
     x3 = connect(ORIGIN, DOWN)
     x4 = connect(ORIGIN, ZERO_BY_TWO)
@@ -4801,7 +4820,7 @@ def solve_d06dbe63(I):
     x13 = mapply(x12, x11)
     x14 = fill(I, FIVE, x13)
     x15 = rot180(x14)
-    x16 = ofcolor(x15, EIGHT)
+    x16 = color_indices(x15, EIGHT)
     x17 = center(x16)
     x18 = subtract(x17, x6)
     x19 = shift(x13, x18)
@@ -4814,7 +4833,7 @@ def solve_d06dbe63(I):
 
 # 第 270 个函数  363442ee
 def solve_363442ee(I):
-    x1 = ofcolor(I, ONE)
+    x1 = color_indices(I, ONE)
     x2 = crop(I, ORIGIN, THREE_BY_THREE)
     x3 = asobject(x2)
     x4 = lbind(shift, x3)
@@ -4826,7 +4845,7 @@ def solve_363442ee(I):
 
 # 第 271 个函数  32597951
 def solve_32597951(I):
-    x1 = ofcolor(I, EIGHT)
+    x1 = color_indices(I, EIGHT)
     x2 = delta(x1)
     O = fill(I, THREE, x2)
     return O
@@ -4834,7 +4853,7 @@ def solve_32597951(I):
 
 # 第 272 个函数  d4f3cd78
 def solve_d4f3cd78(I):
-    x1 = ofcolor(I, FIVE)
+    x1 = color_indices(I, FIVE)
     x2 = delta(x1)
     x3 = fill(I, EIGHT, x2)
     x4 = box(x1)
@@ -4848,7 +4867,7 @@ def solve_d4f3cd78(I):
 
 # 第 273 个函数  6d0160f0
 def solve_6d0160f0(I):
-    x1 = ofcolor(I, FOUR)
+    x1 = color_indices(I, FOUR)
     x2 = first(x1)
     x3 = first(x2)
     x4 = last(x2)
@@ -4873,7 +4892,7 @@ def solve_6d0160f0(I):
     x23 = paint(I, x22)
     x24 = crop(I, x13, THREE_BY_THREE)
     x25 = replace(x24, FIVE, ZERO)
-    x26 = ofcolor(x25, FOUR)
+    x26 = color_indices(x25, FOUR)
     x27 = first(x26)
     x28 = asindices(x25)
     x29 = toobject(x28, x25)
@@ -4885,7 +4904,7 @@ def solve_6d0160f0(I):
 
 # 第 274 个函数  e9614598
 def solve_e9614598(I):
-    x1 = ofcolor(I, ONE)
+    x1 = color_indices(I, ONE)
     x2 = fork(add, first, last)
     x3 = x2(x1)
     x4 = halve(x3)
@@ -4897,11 +4916,11 @@ def solve_e9614598(I):
 
 # 第 275 个函数  5168d44c
 def solve_5168d44c(I):
-    x1 = ofcolor(I, THREE)
+    x1 = color_indices(I, THREE)
     x2 = height(x1)
     x3 = equality(x2, ONE)
     x4 = branch(x3, ZERO_BY_TWO, TWO_BY_ZERO)
-    x5 = ofcolor(I, TWO)
+    x5 = color_indices(I, TWO)
     x6 = recolor(TWO, x5)
     O = move(I, x6, x4)
     return O
@@ -4909,7 +4928,7 @@ def solve_5168d44c(I):
 
 # 第 276 个函数  a85d4709
 def solve_a85d4709(I):
-    x1 = ofcolor(I, FIVE)
+    x1 = color_indices(I, FIVE)
     x2 = lbind(matcher, last)
     x3 = lbind(sfilter, x1)
     x4 = lbind(mapply, hfrontier)
@@ -4925,7 +4944,7 @@ def solve_a85d4709(I):
 
 # 第 277 个函数  db3e9e38
 def solve_db3e9e38(I):
-    x1 = ofcolor(I, SEVEN)
+    x1 = color_indices(I, SEVEN)
     x2 = lrcorner(x1)
     x3 = shoot(x2, UP_RIGHT)
     x4 = shoot(x2, NEG_UNITY)
@@ -4943,7 +4962,7 @@ def solve_db3e9e38(I):
 
 # 第 278 个函数  4258a5f9
 def solve_4258a5f9(I):
-    x1 = ofcolor(I, FIVE)
+    x1 = color_indices(I, FIVE)
     x2 = mapply(neighbors, x1)
     O = fill(I, ONE, x2)
     return O
@@ -4951,8 +4970,8 @@ def solve_4258a5f9(I):
 
 # 第 279 个函数  bdad9b1f
 def solve_bdad9b1f(I):
-    x1 = ofcolor(I, TWO)
-    x2 = ofcolor(I, EIGHT)
+    x1 = color_indices(I, TWO)
+    x2 = color_indices(I, EIGHT)
     x3 = center(x1)
     x4 = center(x2)
     x5 = hfrontier(x3)
@@ -4966,8 +4985,8 @@ def solve_bdad9b1f(I):
 
 # 第 280 个函数  d4a91cb9
 def solve_d4a91cb9(I):
-    x1 = ofcolor(I, EIGHT)
-    x2 = ofcolor(I, TWO)
+    x1 = color_indices(I, EIGHT)
+    x2 = color_indices(I, TWO)
     x3 = first(x1)
     x4 = first(x2)
     x5 = last(x3)
@@ -4982,8 +5001,8 @@ def solve_d4a91cb9(I):
 
 # 第 281 个函数  dc433765
 def solve_dc433765(I):
-    x1 = ofcolor(I, THREE)
-    x2 = ofcolor(I, FOUR)
+    x1 = color_indices(I, THREE)
+    x2 = color_indices(I, FOUR)
     x3 = first(x1)
     x4 = first(x2)
     x5 = subtract(x4, x3)
@@ -4995,8 +5014,8 @@ def solve_dc433765(I):
 
 # 第 282 个函数  b0c4d837
 def solve_b0c4d837(I):
-    x1 = ofcolor(I, FIVE)
-    x2 = ofcolor(I, EIGHT)
+    x1 = color_indices(I, FIVE)
+    x2 = color_indices(I, EIGHT)
     x3 = height(x1)
     x4 = decrement(x3)
     x5 = height(x2)
@@ -5020,8 +5039,8 @@ def solve_b0c4d837(I):
 
 # 第 283 个函数  5c0a986e
 def solve_5c0a986e(I):
-    x1 = ofcolor(I, TWO)
-    x2 = ofcolor(I, ONE)
+    x1 = color_indices(I, TWO)
+    x2 = color_indices(I, ONE)
     x3 = lrcorner(x1)
     x4 = ulcorner(x2)
     x5 = shoot(x3, UNITY)
@@ -5033,8 +5052,8 @@ def solve_5c0a986e(I):
 
 # 第 284 个函数  0ca9ddb6
 def solve_0ca9ddb6(I):
-    x1 = ofcolor(I, ONE)
-    x2 = ofcolor(I, TWO)
+    x1 = color_indices(I, ONE)
+    x2 = color_indices(I, TWO)
     x3 = mapply(dneighbors, x1)
     x4 = mapply(ineighbors, x2)
     x5 = fill(I, SEVEN, x3)
@@ -5044,9 +5063,9 @@ def solve_0ca9ddb6(I):
 
 # 第 285 个函数  913fb3ed
 def solve_913fb3ed(I):
-    x1 = ofcolor(I, THREE)
-    x2 = ofcolor(I, EIGHT)
-    x3 = ofcolor(I, TWO)
+    x1 = color_indices(I, THREE)
+    x2 = color_indices(I, EIGHT)
+    x3 = color_indices(I, TWO)
     x4 = mapply(neighbors, x1)
     x5 = mapply(neighbors, x2)
     x6 = mapply(neighbors, x3)
@@ -5058,9 +5077,9 @@ def solve_913fb3ed(I):
 
 # 第 286 个函数  8d510a79
 def solve_8d510a79(I):
-    x1 = ofcolor(I, ONE)
-    x2 = ofcolor(I, TWO)
-    x3 = ofcolor(I, FIVE)
+    x1 = color_indices(I, ONE)
+    x2 = color_indices(I, TWO)
+    x3 = color_indices(I, FIVE)
     x4 = uppermost(x3)
     x5 = chain(toivec, decrement, double)
     x6 = lbind(greater, x4)
@@ -5081,8 +5100,8 @@ def solve_8d510a79(I):
 
 # 第 287 个函数  d9f24cd1
 def solve_d9f24cd1(I):
-    x1 = ofcolor(I, TWO)
-    x2 = ofcolor(I, FIVE)
+    x1 = color_indices(I, TWO)
+    x2 = color_indices(I, FIVE)
     x3 = prapply(connect, x1, x2)
     x4 = mfilter(x3, vline)
     x5 = underfill(I, TWO, x4)
@@ -5104,8 +5123,8 @@ def solve_d9f24cd1(I):
 
 # 第 288 个函数  ef135b50
 def solve_ef135b50(I):
-    x1 = ofcolor(I, TWO)
-    x2 = ofcolor(I, ZERO)
+    x1 = color_indices(I, TWO)
+    x2 = color_indices(I, ZERO)
     x3 = product(x1, x1)
     x4 = power(first, TWO)
     x5 = compose(first, last)
@@ -5124,8 +5143,8 @@ def solve_ef135b50(I):
 
 # 第 289 个函数  a1570a43
 def solve_a1570a43(I):
-    x1 = ofcolor(I, TWO)
-    x2 = ofcolor(I, THREE)
+    x1 = color_indices(I, TWO)
+    x2 = color_indices(I, THREE)
     x3 = recolor(TWO, x1)
     x4 = ulcorner(x2)
     x5 = ulcorner(x1)
@@ -5137,8 +5156,8 @@ def solve_a1570a43(I):
 
 # 第 290 个函数  760b3cac
 def solve_760b3cac(I):
-    x1 = ofcolor(I, FOUR)
-    x2 = ofcolor(I, EIGHT)
+    x1 = color_indices(I, FOUR)
+    x2 = color_indices(I, EIGHT)
     x3 = ulcorner(x1)
     x4 = index(I, x3)
     x5 = equality(x4, FOUR)
@@ -5153,8 +5172,8 @@ def solve_760b3cac(I):
 
 # 第 291 个函数  a2fd1cf0
 def solve_a2fd1cf0(I):
-    x1 = ofcolor(I, TWO)
-    x2 = ofcolor(I, THREE)
+    x1 = color_indices(I, TWO)
+    x2 = color_indices(I, THREE)
     x3 = uppermost(x1)
     x4 = leftmost(x1)
     x5 = uppermost(x2)
@@ -5178,8 +5197,8 @@ def solve_a2fd1cf0(I):
 
 # 第 292 个函数  2dd70a9a
 def solve_2dd70a9a(I):
-    x1 = ofcolor(I, TWO)
-    x2 = ofcolor(I, THREE)
+    x1 = color_indices(I, TWO)
+    x2 = color_indices(I, THREE)
     x3 = vline(x1)
     x4 = vline(x2)
     x5 = center(x1)
@@ -5211,7 +5230,7 @@ def solve_2dd70a9a(I):
     x31 = combine(x27, x28)
     x32 = combine(x29, x30)
     x33 = branch(x3, x31, x32)
-    x34 = ofcolor(x26, ONE)
+    x34 = color_indices(x26, ONE)
     x35 = initset(x15)
     x36 = rbind(manhattan, x35)
     x37 = compose(x36, initset)
@@ -5230,10 +5249,10 @@ def solve_2dd70a9a(I):
 
 # 第 293 个函数  a48eeaf7
 def solve_a48eeaf7(I):
-    x1 = ofcolor(I, TWO)
+    x1 = color_indices(I, TWO)
     x2 = outbox(x1)
     x3 = apply(initset, x2)
-    x4 = ofcolor(I, FIVE)
+    x4 = color_indices(I, FIVE)
     x5 = lbind(argmin, x3)
     x6 = lbind(lbind, manhattan)
     x7 = compose(x6, initset)
@@ -5246,7 +5265,7 @@ def solve_a48eeaf7(I):
 
 # 第 294 个函数  f15e1fac
 def solve_f15e1fac(I):
-    x1 = ofcolor(I, TWO)
+    x1 = color_indices(I, TWO)
     x2 = portrait(x1)
     x3 = branch(x2, identity, dmirror)
     x4 = x3(I)
@@ -5254,13 +5273,13 @@ def solve_f15e1fac(I):
     x6 = equality(x5, ZERO)
     x7 = branch(x6, identity, vmirror)
     x8 = x7(x4)
-    x9 = ofcolor(x8, EIGHT)
+    x9 = color_indices(x8, EIGHT)
     x10 = uppermost(x9)
     x11 = equality(x10, ZERO)
     x12 = branch(x11, identity, hmirror)
     x13 = x12(x8)
-    x14 = ofcolor(x13, EIGHT)
-    x15 = ofcolor(x13, TWO)
+    x14 = color_indices(x13, EIGHT)
+    x15 = color_indices(x13, TWO)
     x16 = rbind(shoot, DOWN)
     x17 = mapply(x16, x14)
     x18 = height(x13)
@@ -5296,7 +5315,7 @@ def solve_f15e1fac(I):
 
 # 第 295 个函数  af902bf9
 def solve_af902bf9(I):
-    x1 = ofcolor(I, FOUR)
+    x1 = color_indices(I, FOUR)
     x2 = prapply(connect, x1, x1)
     x3 = fork(either, vline, hline)
     x4 = mfilter(x2, x3)
@@ -5311,7 +5330,7 @@ def solve_af902bf9(I):
 
 # 第 296 个函数  50846271
 def solve_50846271(I):
-    x1 = ofcolor(I, TWO)
+    x1 = color_indices(I, TWO)
     x2 = prapply(connect, x1, x1)
     x3 = lbind(greater, SIX)
     x4 = compose(x3, size)
@@ -5355,7 +5374,7 @@ def solve_50846271(I):
 
 # 第 297 个函数  253bf280
 def solve_253bf280(I):
-    x1 = ofcolor(I, EIGHT)
+    x1 = color_indices(I, EIGHT)
     x2 = prapply(connect, x1, x1)
     x3 = rbind(greater, ONE)
     x4 = compose(x3, size)
@@ -5369,7 +5388,7 @@ def solve_253bf280(I):
 
 # 第 298 个函数  dbc1a6ce
 def solve_dbc1a6ce(I):
-    x1 = ofcolor(I, ONE)
+    x1 = color_indices(I, ONE)
     x2 = product(x1, x1)
     x3 = fork(connect, first, last)
     x4 = apply(x3, x2)
@@ -5383,7 +5402,7 @@ solve_ded97339 = solve_dbc1a6ce
 
 # 第 299 个函数  2281f1f4
 def solve_2281f1f4(I):
-    x1 = ofcolor(I, FIVE)
+    x1 = color_indices(I, FIVE)
     x2 = product(x1, x1)
     x3 = power(first, TWO)
     x4 = power(last, TWO)
@@ -5397,7 +5416,7 @@ def solve_2281f1f4(I):
 
 # 第 300 个函数  e5062a87
 def solve_e5062a87(I):
-    x1 = ofcolor(I, TWO)
+    x1 = color_indices(I, TWO)
     x2 = recolor(ZERO, x1)
     x3 = normalize(x2)
     x4 = occurrences(I, x2)
@@ -5420,7 +5439,7 @@ def solve_e5062a87(I):
 
 # 第 301 个函数  dc0a314f
 def solve_dc0a314f(I):
-    x1 = ofcolor(I, THREE)
+    x1 = color_indices(I, THREE)
     x2 = replace(I, THREE, ZERO)
     x3 = dmirror(x2)
     x4 = papply(pair, x2, x3)
@@ -5435,10 +5454,10 @@ def solve_dc0a314f(I):
 
 # 第 302 个函数  1f0c79e5
 def solve_1f0c79e5(I):
-    x1 = ofcolor(I, TWO)
+    x1 = color_indices(I, TWO)
     x2 = replace(I, TWO, ZERO)
     x3 = leastcolor(x2)
-    x4 = ofcolor(x2, x3)
+    x4 = color_indices(x2, x3)
     x5 = combine(x1, x4)
     x6 = recolor(x3, x5)
     x7 = compose(decrement, double)
@@ -5456,7 +5475,7 @@ def solve_1f0c79e5(I):
 
 # 第 303 个函数  b60334d2
 def solve_b60334d2(I):
-    x1 = ofcolor(I, FIVE)
+    x1 = color_indices(I, FIVE)
     x2 = replace(I, FIVE, ZERO)
     x3 = mapply(dneighbors, x1)
     x4 = mapply(ineighbors, x1)
@@ -5467,7 +5486,7 @@ def solve_b60334d2(I):
 
 # 第 304 个函数  a9f96cdd
 def solve_a9f96cdd(I):
-    x1 = ofcolor(I, TWO)
+    x1 = color_indices(I, TWO)
     x2 = replace(I, TWO, ZERO)
     x3 = shift(x1, NEG_UNITY)
     x4 = fill(x2, THREE, x3)
@@ -5482,7 +5501,7 @@ def solve_a9f96cdd(I):
 
 # 第 305 个函数  d364b489
 def solve_d364b489(I):
-    x1 = ofcolor(I, ONE)
+    x1 = color_indices(I, ONE)
     x2 = shift(x1, DOWN)
     x3 = fill(I, EIGHT, x2)
     x4 = shift(x1, UP)
@@ -5496,7 +5515,7 @@ def solve_d364b489(I):
 
 # 第 306 个函数  a699fb00
 def solve_a699fb00(I):
-    x1 = ofcolor(I, ONE)
+    x1 = color_indices(I, ONE)
     x2 = shift(x1, RIGHT)
     x3 = shift(x1, LEFT)
     x4 = intersection(x2, x3)
@@ -5506,7 +5525,7 @@ def solve_a699fb00(I):
 
 # 第 307 个函数  794b24be
 def solve_794b24be(I):
-    x1 = ofcolor(I, ONE)
+    x1 = color_indices(I, ONE)
     x2 = size(x1)
     x3 = decrement(x2)
     x4 = canvas(ZERO, THREE_BY_THREE)
@@ -5521,9 +5540,9 @@ def solve_794b24be(I):
 
 # 第 308 个函数  7c008303
 def solve_7c008303(I):
-    x1 = ofcolor(I, THREE)
+    x1 = color_indices(I, THREE)
     x2 = subgrid(x1, I)
-    x3 = ofcolor(x2, ZERO)
+    x3 = color_indices(x2, ZERO)
     x4 = replace(I, THREE, ZERO)
     x5 = replace(x4, EIGHT, ZERO)
     x6 = compress(x5)
@@ -5534,7 +5553,7 @@ def solve_7c008303(I):
 
 # 第 309 个函数  77fdfe62
 def solve_77fdfe62(I):
-    x1 = ofcolor(I, EIGHT)
+    x1 = color_indices(I, EIGHT)
     x2 = subgrid(x1, I)
     x3 = replace(I, EIGHT, ZERO)
     x4 = replace(x3, ONE, ZERO)
@@ -5542,14 +5561,14 @@ def solve_77fdfe62(I):
     x6 = width(x2)
     x7 = halve(x6)
     x8 = upscale(x5, x7)
-    x9 = ofcolor(x2, ZERO)
+    x9 = color_indices(x2, ZERO)
     O = fill(x8, ZERO, x9)
     return O
 
 
 # 第 310 个函数  928ad970
 def solve_928ad970(I):
-    x1 = ofcolor(I, FIVE)
+    x1 = color_indices(I, FIVE)
     x2 = subgrid(x1, I)
     x3 = trim(x2)
     x4 = leastcolor(x3)
@@ -5560,7 +5579,7 @@ def solve_928ad970(I):
 
 # 第 311 个函数  a65b410d
 def solve_a65b410d(I):
-    x1 = ofcolor(I, TWO)
+    x1 = color_indices(I, TWO)
     x2 = urcorner(x1)
     x3 = shoot(x2, UP_RIGHT)
     x4 = shoot(x2, DOWN_LEFT)
@@ -5624,7 +5643,7 @@ def solve_ec883f72(I):
 def solve_f1cefba8(I):
     x1 = palette(I)
     x2 = objects(I, F, F, T)
-    x3 = ofcolor(I, ZERO)
+    x3 = color_indices(I, ZERO)
     x4 = first(x2)
     x5 = ulcorner(x4)
     x6 = subgrid(x4, I)
@@ -5636,9 +5655,9 @@ def solve_f1cefba8(I):
     x12 = leastcolor(x11)
     x13 = remove(ZERO, x1)
     x14 = other(x13, x12)
-    x15 = ofcolor(x11, x12)
+    x15 = color_indices(x11, x12)
     x16 = shift(x15, x5)
-    x17 = ofcolor(I, x12)
+    x17 = color_indices(I, x12)
     x18 = uppermost(x17)
     x19 = lowermost(x17)
     x20 = matcher(first, x18)
@@ -5743,7 +5762,7 @@ def solve_d4469b4b(I):
 def solve_d631b094(I):
     x1 = palette(I)
     x2 = other(x1, ZERO)
-    x3 = ofcolor(I, x2)
+    x3 = color_indices(I, x2)
     x4 = size(x3)
     x5 = astuple(ONE, x4)
     O = canvas(x2, x5)
@@ -5754,7 +5773,7 @@ def solve_d631b094(I):
 def solve_22168020(I):
     x1 = palette(I)
     x2 = remove(ZERO, x1)
-    x3 = lbind(ofcolor, I)
+    x3 = lbind(color_indices, I)
     x4 = lbind(prapply, connect)
     x5 = fork(x4, x3, x3)
     x6 = compose(merge, x5)
@@ -5788,7 +5807,7 @@ def solve_40853293(I):
 def solve_06df4c85(I):
     x1 = partition(I)
     x2 = mostcolor(I)
-    x3 = ofcolor(I, x2)
+    x3 = color_indices(I, x2)
     x4 = colorfilter(x1, ZERO)
     x5 = argmax(x1, size)
     x6 = difference(x1, x4)
@@ -5860,7 +5879,7 @@ def solve_b190f7f5(I):
     x9 = upscale(x5, x6)
     x10 = x8(x4)
     x11 = x8(x10)
-    x12 = ofcolor(x11, ZERO)
+    x12 = color_indices(x11, ZERO)
     O = fill(x9, ZERO, x12)
     return O
 
@@ -5924,7 +5943,7 @@ def solve_ba26e723(I):
     x3 = compose(x2, x1)
     x4 = fork(equality, identity, x3)
     x5 = compose(x4, last)
-    x6 = ofcolor(I, FOUR)
+    x6 = color_indices(I, FOUR)
     x7 = sfilter(x6, x5)
     O = fill(I, SIX, x7)
     return O
@@ -6080,7 +6099,7 @@ def solve_855e0971(I):
     x11 = compose(flip, x10)
     x12 = partition(x8)
     x13 = sfilter(x12, x11)
-    x14 = rbind(ofcolor, ZERO)
+    x14 = rbind(color_indices, ZERO)
     x15 = lbind(mapply, vfrontier)
     x16 = chain(x15, x14, x9)
     x17 = fork(shift, x16, ulcorner)
@@ -6094,8 +6113,8 @@ def solve_855e0971(I):
 # 第 341 个函数  1b60fb0c
 def solve_1b60fb0c(I):
     x1 = rot90(I)
-    x2 = ofcolor(I, ONE)
-    x3 = ofcolor(x1, ONE)
+    x2 = color_indices(I, ONE)
+    x3 = color_indices(x1, ONE)
     x4 = neighbors(ORIGIN)
     x5 = mapply(neighbors, x4)
     x6 = lbind(shift, x3)
@@ -6310,11 +6329,11 @@ def solve_99fa7670(I):
 # 第 351 个函数  e48d4e1a
 def solve_e48d4e1a(I):
     x1 = shape(I)
-    x2 = ofcolor(I, FIVE)
+    x2 = color_indices(I, FIVE)
     x3 = fill(I, ZERO, x2)
     x4 = leastcolor(x3)
     x5 = size(x2)
-    x6 = ofcolor(I, x4)
+    x6 = color_indices(I, x4)
     x7 = rbind(toobject, I)
     x8 = rbind(colorcount, x4)
     x9 = chain(x8, x7, dneighbors)
@@ -6332,11 +6351,11 @@ def solve_e48d4e1a(I):
 # 第 352 个函数  a3df8b1e
 def solve_a3df8b1e(I):
     x1 = shape(I)
-    x2 = ofcolor(I, ONE)
+    x2 = color_indices(I, ONE)
     x3 = first(x2)
     x4 = shoot(x3, UP_RIGHT)
     x5 = fill(I, ONE, x4)
-    x6 = ofcolor(x5, ONE)
+    x6 = color_indices(x5, ONE)
     x7 = urcorner(x6)
     x8 = shoot(x7, NEG_UNITY)
     x9 = fill(x5, ONE, x8)
@@ -6394,8 +6413,8 @@ def solve_3428a4f5(I):
     x1 = tophalf(I)
     x2 = bottomhalf(I)
     x3 = astuple(SIX, FIVE)
-    x4 = ofcolor(x1, TWO)
-    x5 = ofcolor(x2, TWO)
+    x4 = color_indices(x1, TWO)
+    x5 = color_indices(x2, TWO)
     x6 = combine(x4, x5)
     x7 = intersection(x4, x5)
     x8 = difference(x6, x7)
@@ -6409,8 +6428,8 @@ def solve_6430c8c4(I):
     x1 = tophalf(I)
     x2 = bottomhalf(I)
     x3 = astuple(FOUR, FOUR)
-    x4 = ofcolor(x1, ZERO)
-    x5 = ofcolor(x2, ZERO)
+    x4 = color_indices(x1, ZERO)
+    x5 = color_indices(x2, ZERO)
     x6 = intersection(x4, x5)
     x7 = canvas(ZERO, x3)
     O = fill(x7, THREE, x6)
@@ -6437,9 +6456,9 @@ def solve_a68b268e(I):
     x4 = righthalf(x1)
     x5 = lefthalf(x2)
     x6 = righthalf(x2)
-    x7 = ofcolor(x4, FOUR)
-    x8 = ofcolor(x3, SEVEN)
-    x9 = ofcolor(x5, EIGHT)
+    x7 = color_indices(x4, FOUR)
+    x8 = color_indices(x3, SEVEN)
+    x9 = color_indices(x5, EIGHT)
     x10 = fill(x6, EIGHT, x9)
     x11 = fill(x10, FOUR, x7)
     O = fill(x11, SEVEN, x8)
@@ -6460,8 +6479,8 @@ def solve_e98196ab(I):
 def solve_94f9d214(I):
     x1 = tophalf(I)
     x2 = bottomhalf(I)
-    x3 = ofcolor(x1, ZERO)
-    x4 = ofcolor(x2, ZERO)
+    x3 = color_indices(x1, ZERO)
+    x4 = color_indices(x2, ZERO)
     x5 = astuple(FOUR, FOUR)
     x6 = canvas(ZERO, x5)
     x7 = intersection(x3, x4)
@@ -6473,8 +6492,8 @@ def solve_94f9d214(I):
 def solve_99b1bc43(I):
     x1 = tophalf(I)
     x2 = bottomhalf(I)
-    x3 = ofcolor(x1, ZERO)
-    x4 = ofcolor(x2, ZERO)
+    x3 = color_indices(x1, ZERO)
+    x4 = color_indices(x2, ZERO)
     x5 = combine(x3, x4)
     x6 = intersection(x3, x4)
     x7 = difference(x5, x6)
@@ -6488,8 +6507,8 @@ def solve_99b1bc43(I):
 def solve_ce4f8723(I):
     x1 = tophalf(I)
     x2 = bottomhalf(I)
-    x3 = ofcolor(x1, ZERO)
-    x4 = ofcolor(x2, ZERO)
+    x3 = color_indices(x1, ZERO)
+    x4 = color_indices(x2, ZERO)
     x5 = intersection(x3, x4)
     x6 = astuple(FOUR, FOUR)
     x7 = canvas(THREE, x6)
@@ -6502,8 +6521,8 @@ def solve_fafffa47(I):
     x1 = tophalf(I)
     x2 = bottomhalf(I)
     x3 = shape(x2)
-    x4 = ofcolor(x1, ZERO)
-    x5 = ofcolor(x2, ZERO)
+    x4 = color_indices(x1, ZERO)
+    x5 = color_indices(x2, ZERO)
     x6 = intersection(x4, x5)
     x7 = canvas(ZERO, x3)
     O = fill(x7, TWO, x6)
@@ -6517,8 +6536,8 @@ def solve_cce03e0d(I):
     x3 = hconcat(x2, I)
     x4 = vconcat(x3, x3)
     x5 = vconcat(x4, x3)
-    x6 = ofcolor(x1, ZERO)
-    x7 = ofcolor(x1, ONE)
+    x6 = color_indices(x1, ZERO)
+    x7 = color_indices(x1, ONE)
     x8 = combine(x6, x7)
     O = fill(x5, ZERO, x8)
     return O
@@ -6618,7 +6637,7 @@ def solve_0520fde7(I):
 # 第 373 个函数  9ecd008a
 def solve_9ecd008a(I):
     x1 = vmirror(I)
-    x2 = ofcolor(I, ZERO)
+    x2 = color_indices(I, ZERO)
     O = subgrid(x2, x1)
     return O
 
@@ -6626,7 +6645,7 @@ def solve_9ecd008a(I):
 # 第 374 个函数  d406998b
 def solve_d406998b(I):
     x1 = vmirror(I)
-    x2 = ofcolor(x1, FIVE)
+    x2 = color_indices(x1, FIVE)
     x3 = compose(even, last)
     x4 = sfilter(x2, x3)
     x5 = fill(x1, THREE, x4)
@@ -6797,8 +6816,8 @@ def solve_6a1e5592(I):
     x8 = compose(toindices, normalize)
     x9 = apply(x8, x5)
     x10 = asindices(x4)
-    x11 = ofcolor(x4, ZERO)
-    x12 = ofcolor(x4, TWO)
+    x11 = color_indices(x4, ZERO)
+    x12 = color_indices(x4, TWO)
     x13 = rbind(multiply, TEN)
     x14 = rbind(multiply, FIVE)
     x15 = rbind(intersection, x12)
@@ -6856,7 +6875,7 @@ def solve_bbc9ae5d(I):
     x4 = vupscale(I, x3)
     x5 = rbind(shoot, UNITY)
     x6 = other(x2, ZERO)
-    x7 = ofcolor(x4, x6)
+    x7 = color_indices(x4, x6)
     x8 = mapply(x5, x7)
     O = fill(x4, x6, x8)
     return O

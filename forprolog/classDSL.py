@@ -77,8 +77,10 @@ def print_classified_functions(classified_functions):
         print(f"\n\n#输入类型: {param_types}, 返回类型: {return_type}")
         print(f"#分类下的函数个数: {len(funcs)}")
         print("#函数列表:")
+        print(f"[")
         for func in funcs:
-            print(f"  - {func}")
+            print(f"  {func},")
+        print(f"]")
 
         total_functions += len(funcs)
     return total_functions
@@ -111,7 +113,7 @@ if __name__ == "__main__":
         # 可选：打印类型映射，便于验证
         print("#自动生成的类型映射:")
         for py_type, prolog_type in type_mapping.items():
-            print(f"  '{py_type}': '{prolog_type}'")
+            print(f"'{py_type}': '{prolog_type}'")
         print()
 
         # 分类函数

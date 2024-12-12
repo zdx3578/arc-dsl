@@ -54,7 +54,7 @@ proper_functions = [
     # get_first_object,
     get_max_object,
     get_min_object,
-    move_down_1obj,
+    # move_down_1obj,
     get_mirror_hole,
     do_numb_color_upscale,
     box_cut,

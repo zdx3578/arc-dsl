@@ -40,6 +40,9 @@ def solve_arc_task(task):
                for test_input in test_data]
     return results
 
+
+
+
 def solve_individual2(task):
     """
     尝试单独处理每个输入输出对，根据标志变量确定操作。
@@ -152,8 +155,12 @@ def solve_individual2(task):
             # ！！ add prepare_diff(task)
             if result:
                 return result
+        except Exception as e:
+            logging.error("捕获到异常：%s", e)
+            logging.error("详细错误信息：\n%s", traceback.format_exc())
+            pass
 
-
+        try:
             result = do_check_inputOutput_proper_flagsK_functions(proper_small_functions, task, flags)
             if result:
                 return result

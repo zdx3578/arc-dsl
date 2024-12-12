@@ -666,6 +666,7 @@ def ofcolor(
     """ indices of all grid cells with value """
     return frozenset((i, j) for i, r in enumerate(grid) for j, v in enumerate(r) if v == value)
 
+color_indices = ofcolor
 
 def ulcorner(
     patch: Patch
@@ -883,6 +884,72 @@ def hline(
 ) -> Boolean:
     """ whether the piece forms a horizontal line """
     return width(patch) == len(patch) and height(patch) == 1
+
+def sorted_frozenset(fset: frozenset) -> list:
+    """
+    对 frozenset 中的元组进行排序。
+
+    - 第一种形式：frozenset({(int, int), ...})
+    - 第二种形式：frozenset({(int, Any), ...})
+
+    该函数首先按元组的第一个元素排序，如果第一个元素相同，则按第二个元素排序。
+
+    参数:
+    - fset (frozenset): 要排序的 frozenset，其中每个元素都是长度为2的元组。
+
+    返回:
+    - list: 排序后的元组列表。
+    """
+    return sorted(fset, key=lambda x: (x[0], x[1]))
+
+def is_positive_diagonal(
+    patch: Patch
+) -> Boolean:
+    """判断 patch 是否形成从左上到右下的正对角线"""
+    if len(patch) == 0:
+        return False
+
+    # 检查高度和宽度是否等于 patch 的长度
+    if height(patch) != len(patch) or width(patch) != len(patch):
+        return False
+
+    # 将 patch 中的点按行排序
+    sorted_points = sorted(patch)
+
+    # 获取起始点的坐标
+    start_i, start_j = sorted_points[0]
+
+    # 检查是否所有点都在从左上到右下的对角线上
+    for i, j in sorted_points:
+        if j != start_j + (i - start_i):
+            return False
+
+    return True
+
+
+def is_negative_diagonal(
+    patch: Patch
+) -> Boolean:
+    """判断 patch 是否形成从右上到左下的负对角线"""
+    if len(patch) == 0:
+        return False
+
+    # 检查高度和宽度是否等于 patch 的长度
+    if height(patch) != len(patch) or width(patch) != len(patch):
+        return False
+
+    # 将 patch 中的点按行排序
+    sorted_points = sorted(patch)
+
+    # 获取起始点的坐标
+    start_i, start_j = sorted_points[0]
+
+    # 检查是否所有点都在从右上到左下的对角线上
+    for i, j in sorted_points:
+        if j != start_j - (i - start_i):
+            return False
+
+    return True
 
 
 def hmatching(
@@ -1502,11 +1569,19 @@ def outbox(
 def box(
     patch: Patch
 ) -> Indices:
-    """ outline of patch """
+    """Outline of patch, ensuring it's at least 2x2 and forms a rectangle or square."""
     if len(patch) == 0:
-        return patch
+        return frozenset()
+
     ai, aj = ulcorner(patch)
     bi, bj = lrcorner(patch)
+
+    height_patch = abs(bi - ai) + 1
+    width_patch = abs(bj - aj) + 1
+
+    # 检查是否至少为2x2
+    if height_patch < 2 or width_patch < 2:
+        return frozenset()
     si, sj = min(ai, bi), min(aj, bj)
     ei, ej = max(ai, bi), max(aj, bj)
     vlines = {(i, sj) for i in range(si, ei + 1)} | {(i, ej) for i in range(si, ei + 1)}
