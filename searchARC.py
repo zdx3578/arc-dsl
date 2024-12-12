@@ -313,10 +313,11 @@ class Controller:
         self.search_algorithm = search_algorithm
         self.difference_analyzer = difference_analyzer
 
-    def run(self, start_state, goal_state):
-        difference = self.difference_analyzer.analyze(start_state, goal_state)
+    def run(self, task):
+
+        difference = self.difference_analyzer.analyze(task)
         # Decide search direction based on difference
-        path = self.search_algorithm.search(start_state, goal_state, direction='forward')
+        path = self.search_algorithm.search(task, direction='forward')
         if path:
             print("Found path:", path)
         else:
@@ -337,28 +338,70 @@ class ConfigManager:
     def get_search_algorithm(self):
         return self.config.get('search_algorithm', 'BFS')
 
+import solvers_is_judge as solvers
+
+def get_data(train=True):
+    # /home/zdx/github/VSAHDC/arc-agi/data
+    path = f'/Users/zhangdexiang/github/arc-agi/data/{
+        "training" if train else "evaluation"}'
+    data = {}
+    for fn in os.listdir(path):
+        if not fn.endswith('.json'):
+            continue  # 只处理 JSON 文件
+        with open(f'{path}/{fn}') as f:
+            data[fn.rstrip('.json')] = json.load(f)
+
+    def ast(g): return tuple(tuple(r) for r in g)
+    return {
+        'train': {k: [{
+            'input': ast(e['input']),
+            'output': ast(e['output']),
+        } for e in v['train']] for k, v in data.items()},
+        'test': {k: [{
+            'input': ast(e['input']),
+            'output': ast(e['output']),
+        } for e in v['test']] for k, v in data.items()}
+    }
+
 if __name__ == '__main__':
-    # Sample data loading
-    start_grid = [[0, 0], [0, 1]]  # Initial grid state
-    goal_grid = [[0, 1], [0, 1]]   # Goal grid state
-    start_state = GridState(start_grid)
-    goal_state = GridState(goal_grid)
+    data = get_data(train=True)
 
-    # Configuration management
-    config_manager = ConfigManager('config.py')
-    proper_functions = config_manager.get_proper_functions()
-    operator_layer = OperatorLayer.from_config(proper_functions)
+    with open('solvers.py', 'r', encoding='utf-8') as file:
+        code = file.read()
+    pattern = r"def solve_([a-fA-F0-9]+)\(I\):"
+    import re
+    # 获取所有匹配的函数名
+    solvers = re.findall(pattern, code)
 
-    # Search algorithm selection
-    search_algorithm_name = config_manager.get_search_algorithm()
-    if search_algorithm_name == 'BFS':
-        search_algorithm = BFS(operator_layer)
+    for i, key in enumerate(solvers, start=1):
 
-    # Difference analyzer
-    difference_analyzer = DifferenceAnalyzer()
+        # key = 'c3f564a4'
 
-    # Controller
-    controller = Controller(operator_layer, search_algorithm, difference_analyzer)
+        print(i, key)
+        task = {}
+        task['train'] = data['train'][key]
+        task['test'] = data['test'][key]
 
-    # Run the search
-    controller.run(start_state, goal_state)
+
+
+        # Configuration management
+        config_manager = ConfigManager('config.py')
+        proper_functions = config_manager.get_proper_functions()
+        operator_layer = OperatorLayer.from_config(proper_functions)
+
+        # Search algorithm selection
+        search_algorithm_name = config_manager.get_search_algorithm()
+        if search_algorithm_name == 'BFS':
+            search_algorithm = BFS(operator_layer)
+
+        # Difference analyzer
+        difference_analyzer = DifferenceAnalyzer()
+
+        # Controller
+        controller = Controller(operator_layer, search_algorithm, difference_analyzer)
+
+        # Run the search
+        controller.run(task)
+
+
+        assert solution == task['test'][0]['output']
