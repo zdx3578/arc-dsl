@@ -10,7 +10,7 @@ import logging
 import traceback
 import heapq
 from collections import deque
-from searchARC_search import *  # 从 searchARC-search.py 中导入所有内容
+from searchStrategy import *  # 从 searchARC-search.py 中导入所有内容
 
 
 class State:
