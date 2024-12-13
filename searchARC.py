@@ -26,9 +26,9 @@ class State:
         return hash((self.type, self._data_hash()))
 
     def _data_hash(self):
-        if self.type == 'grid':
+        if isinstance(self.data, list):
             return tuple(map(tuple, self.data))
-        elif self.type == 'object':
+        elif isinstance(self.data, set) or isinstance(self.data, frozenset):
             return frozenset(self.data)
         else:
             return hash(self.data)
@@ -184,7 +184,8 @@ class DSLFunctionRegistry:
     def get_functions(self, input_types, output_type=None):
         matching_functions = []
         for key, functions in self.classified_functions.items():
-            key_input_types, key_output_type = eval(key)
+            key_str = str(key)  # 确保 key 是字符串类型
+            key_input_types, key_output_type = eval(key_str)
             # **动态匹配输入类型**
             if tuple(input_types) == key_input_types:
                 matching_functions.extend(functions)
@@ -192,14 +193,15 @@ class DSLFunctionRegistry:
 
     def call_function(self, func_name, *args):
         # 动态导入 DSL 文件中的函数并调用
-        module_name = 'dsl_module'  # 替换为实际的 DSL 模块名
+        module_name = 'dsl'  # 替换为实际的 DSL 模块名
         module = __import__(module_name)
         func = getattr(module, func_name)
         return func(*args)
     def get_output_type(self, function_name):
         for key, functions in self.classified_functions.items():
+            key_str = str(key)  # 确保 key 是字符串类型
             if function_name in functions:
-                _, output_type = eval(key)
+                _, output_type = eval(key_str)
                 return output_type
         return None
 

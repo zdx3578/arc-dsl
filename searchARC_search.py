@@ -1,4 +1,9 @@
 from searchARC import *
+# import searchARC
+
+
+from searchARC import *
+# import searchARC
 
 
 class SearchStrategy:
@@ -10,7 +15,8 @@ class SearchStrategy:
         # 从 DSL 注册表中加载操作符
         operators = []
         for key, functions in self.dsl_registry.classified_functions.items():
-            input_types, output_type = eval(key)
+            key_str = str(key)  # 确保 key 是字符串类型
+            input_types, output_type = eval(key_str)
             for func_name in functions:
                 op = Operator(func_name, func_name, applicable_types=input_types, dsl_registry=self.dsl_registry)
                 operators.append(op)
@@ -23,14 +29,14 @@ class SearchStrategy:
             elif direction == 'backward':
                 return self.a_star_search(task, reverse=True)
             elif direction == 'bidirectional':
-                return self.bidirectional_a_star_search(task, self.heuristic, self.get_neighbors_forward, self.get_neighbors_backward)
+                return self.bidirectional_a_star_search(task, self.heuristic)
         else:
             raise ValueError("未实现的搜索策略")
 
     def bidirectional_a_star_search(self, task, heuristic):
         for pair in task['train']:
-            start_state = State(pair['input'], 'grid')  # 包含类型信息**
-            goal_state = State(pair['output'], 'grid')  # 包含类型信息**
+            start_state = State(pair['input'], 'grid')  # 包含类型信息
+            goal_state = State(pair['output'], 'grid')  # 包含类型信息
 
             open_set_start = []
             open_set_goal = []
@@ -102,33 +108,16 @@ class SearchStrategy:
 
         return path_start + path_goal
 
-    def get_neighbors_forward(self, state):
-        neighbors = []
-        for op in self.operators:
-            next_state = op.apply(state)
-            if next_state:
-                neighbors.append(next_state)
-        return neighbors
-
-    def get_neighbors_backward(self, state):
-        neighbors = []
-        for op in self.operators:
-            next_state = op.invert(state)
-            if next_state:
-                neighbors.append(next_state)
-        return neighbors
-
     def get_neighbors(self, state, reverse=False):
         neighbors = []
         for op in self.operators:
             if state.get_type() in op.applicable_types:
                 if reverse and op.inverse_function_name:
-                    new_states = op.invert(state)  # 使用反向函数**
+                    new_states = op.invert(state)  # 使用反向函数
                 else:
-                    new_states = op.apply(state)  # 使用正向函数**
+                    new_states = op.apply(state)  # 使用正向函数
                 neighbors.extend(new_states)
         return neighbors
-
 
     def heuristic(self, state, goal_state):
         return compute_difference(state.data, goal_state.data)
