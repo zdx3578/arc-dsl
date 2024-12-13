@@ -12,11 +12,61 @@ import heapq
 from collections import deque
 from searchStrategy import *  # 从 searchARC-search.py 中导入所有内容
 
+import re
+
+class TypeExtractor:
+    def __init__(self, file_path):
+        """
+        初始化时一次性读取文件内容，并解析出所有的类型定义。
+        :param file_path: 类型定义文件路径
+        """
+        self.type_definitions = self._load_types(file_path)
+
+    def _load_types(self, file_path):
+        """
+        从文件中加载所有的类型定义。
+        :param file_path: 类型定义文件路径
+        :return: 类型定义的字典 {类型名称: 类型定义字符串}
+        """
+        type_definitions = {}
+        with open(file_path, 'r', encoding='utf-8') as file:
+            lines = file.readlines()
+            for line in lines:
+                stripped_line = line.strip()
+                # 匹配类型定义：等号前是类型名称，等号后是定义
+                match = re.match(r'^([A-Za-z_][A-Za-z0-9_]*)\s*=\s*(.+)$', stripped_line)
+                if match:
+                    type_name, type_definition = match.groups()
+                    type_definitions[type_name] = type_definition
+        return type_definitions
+
+    def extract_types(self, keyword):
+        """
+        根据关键字查找包含该关键字的类型。
+        :param keyword: 查找的关键字
+        :return: 包含关键字的类型名称列表
+        """
+        keyword_lower = keyword.lower()
+        matched_types = [
+            name for name, definition in self.type_definitions.items()
+            if keyword_lower in name.lower() or keyword_lower in definition.lower()
+        ]
+        return matched_types
+
+
+# 示例使用
+arc_types_path = 'arc_types.py'  # 替换为实际路径
+
+# 初始化时一次性加载文件内容
+type_extractor = TypeExtractor(arc_types_path)
+
+# 查找包含 'grid' 的类型
+# types = type_extractor.extract_types(type)
 
 class State:
     def __init__(self, data, type, parent=None, action=None):
         self.data = data
-        self.type = type
+        self.types  = type_extractor.extract_types(type)  # 修改：支持多个类型
         self.parent = parent      # 新增：记录父状态
         self.action = action      # 新增：记录产生该状态的操作符
         self.hash = self.compute_hash()
@@ -25,7 +75,7 @@ class State:
         """
         计算状态的哈希值，用于重复检测。
         """
-        return hash((self.type, self._data_hash()))
+        return hash((tuple(sorted(self.types)), self._data_hash()))  # 修改：使用多个类型
 
     def _data_hash(self):
         if isinstance(self.data, list):
@@ -39,10 +89,10 @@ class State:
         return self.hash
 
     def __eq__(self, other):
-        return self.type == other.type and self.data == other.data
+        return set(self.types) == set(other.types) and self.data == other.data  # 修改：比较类型集
 
     def get_type(self):
-        return self.type
+        return self.types  # 修改：返回类型列表
 
 
 class GridState(State):
@@ -81,37 +131,28 @@ class Operator:
         self.dsl_registry = dsl_registry
 
     def apply(self, state):
-        input_type = state.get_type()
-        input_types = [input_type]
-        # 调用 dsl_registry 的 call_function 方法
-        new_data, output_type = self.dsl_registry.call_function(input_types, state.data)
-        if new_data is not None and output_type is not None:
-            new_state = State(new_data, output_type)
-            return [new_state]
-        return []
-
+        input_types = state.get_type()  # 现在是类型列表
+        applicable_types = set(input_types) & set(self.applicable_types)
+        if not applicable_types:
+            return []
+        new_states = []
+        for input_type in applicable_types:
+            new_data, output_type = self.dsl_registry.call_function([input_type], state.data)
+            if new_data is not None and output_type is not None:
+                new_state = State(new_data, output_type, parent=state, action=self.name)
+                new_states.append(new_state)
+        return new_states
 
     def invert(self, state):
         if self.inverse_function_name:
-            input_type = state.get_type()
-            output_type = self.get_output_type(input_type)
-            functions = self.dsl_registry.get_functions([input_type], output_type)
-            if not functions:
-                raise TypeError(f"No applicable function found for input type {input_type} and output type {output_type}")
-            func_name = functions[0]
-            new_data = self.dsl_registry.call_function(func_name, state.data)
-            return GridState(new_data, output_type)
-        else:
-            raise NotImplementedError(f"Operator {self.name} does not have an inverse function")
-
-    # def get_output_type(self, input_type):
-    #     # 根据输入类型确定输出类型，这里可以根据实际需求进行修改
-    #     if input_type == 'grid':
-    #         return 'indices'
-    #     elif input_type == 'integer':
-    #         return 'object'
-    #     else:
-    #         return 'any' ????????????????????????
+            for input_type in state.get_type():
+                output_type = self.get_output_type(input_type)
+                if output_type:
+                    func_name = self.dsl_registry.get_functions([input_type], output_type)[0]
+                    new_data = self.dsl_registry.call_function(func_name, state.data)
+                    if new_data:
+                        return State(new_data, output_type, parent=state, action=self.inverse_function_name)
+        raise NotImplementedError(f"Operator {self.name} does not have an inverse function")
 
 
 class OperatorLayer:

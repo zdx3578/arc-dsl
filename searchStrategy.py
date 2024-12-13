@@ -103,8 +103,8 @@ class SearchStrategy:
             closed_set_goal.add(current_goal)
 
             # 仅在会合点类型为 'grid' 时认为路径成功
-            if (current_start in closed_set_goal and current_start.get_type() == 'grid') or \
-               (current_goal in closed_set_start and current_goal.get_type() == 'grid'):
+            if (current_start in closed_set_goal and 'grid' in current_start.get_type()) or \
+               (current_goal in closed_set_start and 'grid' in current_goal.get_type()):
                 meeting_point = current_start if current_start in closed_set_goal else current_goal
                 return self.reconstruct_bidirectional_path(came_from_start, came_from_goal, meeting_point)
 
@@ -160,14 +160,15 @@ class SearchStrategy:
     def get_neighbors(self, state, reverse=False):
         neighbors = []
         for op in self.operators:
-            if state.get_type() in op.applicable_types:
-                if reverse and op.inverse_function_name:
-                    new_states = op.invert(state)
-                else:
-                    new_states = op.apply(state)
-                for new_state in new_states:
-                    neighbor = State(new_state.data, new_state.type, parent=state, action=op.name)  # 修改：记录父状态和操作符
-                    neighbors.append(neighbor)
+            applicable_types = set(state.get_type()) & set(op.applicable_types)  # 修改：处理多类型
+            if not applicable_types:
+                continue
+            if reverse and op.inverse_function_name:
+                new_states = op.invert(state)
+            else:
+                new_states = op.apply(state)
+            for new_state in new_states:
+                neighbors.append(new_state)  # 修改：操作符内部已记录父状态和操作符
         return neighbors
 
     def heuristic(self, state, goal_state):
@@ -198,7 +199,7 @@ class SearchStrategy:
         如果需要，应用 'asindices' 函数将状态转换为 'grid' 类型。
             op = self.get_operator_by_name('asindices')"""
 
-        if state.get_type() != 'grid':
+        if 'grid' not in state.get_type():
             op = self.get_operator_by_name('asindices')
             if op:
                 new_states = op.apply(state)
@@ -214,7 +215,7 @@ class SearchStrategy:
         需要根据具体的上下文和可用的函数来实现。
         """
         # 示例：如果状态类型是 'indices'，尝试转换为 'grid'
-        if state.get_type() == 'indices':
+        if 'indices' in state.get_type():
             # 假设有一个函数可以将 indices 转换为 grid，例如 indices_to_grid
             new_data = indices_to_grid(state.data)
             return State(new_data, 'grid')
