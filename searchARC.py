@@ -14,9 +14,11 @@ from searchARC_search import *  # 从 searchARC-search.py 中导入所有内容
 
 
 class State:
-    def __init__(self, data, state_type):
+    def __init__(self, data, type, parent=None, action=None):
         self.data = data
-        self.type = state_type  # 状态类型，如 'grid'、'object' 等
+        self.type = type
+        self.parent = parent      # 新增：记录父状态
+        self.action = action      # 新增：记录产生该状态的操作符
         self.hash = self.compute_hash()
 
     def compute_hash(self):
@@ -87,6 +89,7 @@ class Operator:
             new_state = State(new_data, output_type)
             return [new_state]
         return []
+
 
     def invert(self, state):
         if self.inverse_function_name:
