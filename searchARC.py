@@ -1,3 +1,16 @@
+import dsl
+import constants
+import arc_types
+import os
+import json
+import inspect
+import tqdm
+import sys
+import logging
+import traceback
+import heapq
+
+
 class State:
     def __init__(self):
         pass
@@ -85,7 +98,7 @@ class SearchAlgorithm:
     def __init__(self, operator_layer):
         self.operator_layer = operator_layer
 
-    def search(self, start_state, goal_state, direction='forward'):
+    def search(self, task, direction='forward'):
         raise NotImplementedError
 
 from collections import deque
@@ -94,7 +107,7 @@ class BFS:
     def __init__(self, operator_layer):
         self.operator_layer = operator_layer
 
-    def search(self, start_state, goal_state, direction='forward'):
+    def search(self, task, direction='forward'):
         visited = set()
         queue = deque()
         queue.append((start_state, []))  # State and path
@@ -121,22 +134,24 @@ class SearchStrategy:
     def __init__(self, operators):
         self.operators = operators
 
-    def search(self, start_state, goal_state, strategy='a_star', direction='forward'):
+    def search(self, task, strategy='a_star', direction='bidirectional'):
         if strategy == 'a_star':
             if direction == 'forward':
-                return self.a_star_search(start_state, goal_state)
+                return self.a_star_search(task)
             elif direction == 'backward':
-                return self.a_star_search(goal_state, start_state, reverse=True)
+                return self.a_star_search(task, reverse=True)
             elif direction == 'bidirectional':
-                return self.bidirectional_a_star_search(start_state, goal_state)
+                return self.bidirectional_a_star_search(task, self.heuristic, self.get_neighbors_forward, self.get_neighbors_backward)
         # 可以添加其他策略的实现
         else:
             raise ValueError("未实现的搜索策略")
 
-    def a_star_search(self, start_state, goal_state, reverse=False):
+    def a_star_search(self, task, reverse=False):
         """
         实现 A* 搜索算法。
         """
+        start_state = pair['input']
+        goal_state = pair['output']
         open_set = []
         heapq.heappush(open_set, (0, start_state))
         came_from = {}
@@ -162,64 +177,114 @@ class SearchStrategy:
                     came_from[neighbor] = current
         return None
 
-    def bidirectional_a_star_search(self, start_state, goal_state):
+
+    def bidirectional_a_star_search(self, task, heuristic, get_neighbors_forward, get_neighbors_backward):
         """
-        实现双向 A* 搜索算法。
+        使用双向 A* 搜索算法在状态空间中寻找从 start_state 到 goal_state 的路径。
+
+        参数:
+        - task: 包含多对训练数据的任务列表，格式为 [{'input': input1, 'output': output1}, {'input': input2, 'output': output2}, ...]
+        - heuristic: 启发式函数，估计从当前状态到目标状态的代价
+        - get_neighbors_forward: 函数，返回当前状态的正向邻居状态
+        - get_neighbors_backward: 函数，返回当前状态的反向邻居状态
+
+        返回:
+        - path: 从 start_state 到 goal_state 的路径，如果所有训练对都成功转换，则返回路径，否则返回 None
         """
-        # 正向搜索集
-        open_set_start = []
-        heapq.heappush(open_set_start, (0, start_state))
-        came_from_start = {}
-        cost_so_far_start = {start_state: 0}
+        train_data = task['train']
+        test_data = task['test']
+        for i, data_pair in enumerate(train_data):
+            start_state = data_pair['input']
+            goal_state = data_pair['output']
 
-        # 反向搜索集
-        open_set_goal = []
-        heapq.heappush(open_set_goal, (0, goal_state))
-        came_from_goal = {}
-        cost_so_far_goal = {goal_state: 0}
+            open_set_start = []
+            open_set_goal = []
+            heapq.heappush(open_set_start, (0, start_state))
+            heapq.heappush(open_set_goal, (0, goal_state))
 
-        # 已访问节点集
-        visited_start = set()
-        visited_goal = set()
+            came_from_start = {}
+            came_from_goal = {}
 
-        while open_set_start and open_set_goal:
-            # 正向搜索一步
-            _, current_start = heapq.heappop(open_set_start)
-            visited_start.add(current_start)
+            g_score_start = {start_state: 0}
+            g_score_goal = {goal_state: 0}
 
-            neighbors_start = self.get_neighbors_forward(current_start)
-            for neighbor in neighbors_start:
-                if neighbor in visited_start:
-                    continue
-                new_cost = cost_so_far_start[current_start] + 1
-                if neighbor not in cost_so_far_start or new_cost < cost_so_far_start[neighbor]:
-                    cost_so_far_start[neighbor] = new_cost
-                    priority = new_cost + self.heuristic(neighbor, goal_state)
-                    heapq.heappush(open_set_start, (priority, neighbor))
-                    came_from_start[neighbor] = current_start
+            f_score_start = {start_state: heuristic(start_state, goal_state)}
+            f_score_goal = {goal_state: heuristic(goal_state, start_state)}
 
-                if neighbor in visited_goal:
-                    return self.reconstruct_bidirectional_path(came_from_start, came_from_goal, neighbor)
+            closed_set_start = set()
+            closed_set_goal = set()
 
-            # 反向搜索一步
-            _, current_goal = heapq.heappop(open_set_goal)
-            visited_goal.add(current_goal)
+            while open_set_start and open_set_goal:
+                # 从正向搜索的 open set 中取出代价最小的节点
+                _, current_start = heapq.heappop(open_set_start)
+                closed_set_start.add(current_start)
 
-            neighbors_goal = self.get_neighbors_backward(current_goal)
-            for neighbor in neighbors_goal:
-                if neighbor in visited_goal:
-                    continue
-                new_cost = cost_so_far_goal[current_goal] + 1
-                if neighbor not in cost_so_far_goal or new_cost < cost_so_far_goal[neighbor]:
-                    cost_so_far_goal[neighbor] = new_cost
-                    priority = new_cost + self.heuristic(neighbor, start_state)
-                    heapq.heappush(open_set_goal, (priority, neighbor))
-                    came_from_goal[neighbor] = current_goal
+                # 从反向搜索的 open set 中取出代价最小的节点
+                _, current_goal = heapq.heappop(open_set_goal)
+                closed_set_goal.add(current_goal)
 
-                if neighbor in visited_start:
-                    return self.reconstruct_bidirectional_path(came_from_start, came_from_goal, neighbor)
+                # 检查是否有交集
+                if current_start in closed_set_goal:
+                    return self.reconstruct_bidirectional_path(came_from_start, came_from_goal, current_start)
+                if current_goal in closed_set_start:
+                    return self.reconstruct_bidirectional_path(came_from_start, came_from_goal, current_goal)
 
-        return None
+                # 正向搜索扩展邻居节点
+                neighbors_start = get_neighbors_forward(current_start)
+                for neighbor in neighbors_start:
+                    if neighbor in closed_set_start:
+                        continue
+                    tentative_g_score = g_score_start[current_start] + 1  # 假设每个操作的代价为1
+                    if neighbor not in g_score_start or tentative_g_score < g_score_start[neighbor]:
+                        came_from_start[neighbor] = current_start
+                        g_score_start[neighbor] = tentative_g_score
+                        f_score_start[neighbor] = tentative_g_score + heuristic(neighbor, goal_state)
+                        heapq.heappush(open_set_start, (f_score_start[neighbor], neighbor))
+
+                # 反向搜索扩展前驱节点
+                neighbors_goal = get_neighbors_backward(current_goal)
+                for neighbor in neighbors_goal:
+                    if neighbor in closed_set_goal:
+                        continue
+                    tentative_g_score = g_score_goal[current_goal] + 1  # 假设每个操作的代价为1
+                    if neighbor not in g_score_goal or tentative_g_score < g_score_goal[neighbor]:
+                        came_from_goal[neighbor] = current_goal
+                        g_score_goal[neighbor] = tentative_g_score
+                        f_score_goal[neighbor] = tentative_g_score + heuristic(neighbor, start_state)
+                        heapq.heappush(open_set_goal, (f_score_goal[neighbor], neighbor))
+
+            # 如果某个训练对无法找到路径，则返回 None
+            return None
+
+        # 如果所有训练对都成功转换，则返回路径
+        return self.reconstruct_bidirectional_path(came_from_start, came_from_goal, current_start)
+
+    def reconstruct_bidirectional_path(self, came_from_start, came_from_goal, meeting_point):
+        """
+        重建从初始状态到目标状态的路径。
+
+        参数:
+        - came_from_start: 字典，记录正向搜索每个状态的前驱状态
+        - came_from_goal: 字典，记录反向搜索每个状态的前驱状态
+        - meeting_point: 正向搜索和反向搜索的相遇点
+
+        返回:
+        - path: 从初始状态到目标状态的路径
+        """
+        path_start = [meeting_point]
+        while meeting_point in came_from_start:
+            meeting_point = came_from_start[meeting_point]
+            path_start.append(meeting_point)
+        path_start.reverse()
+
+        path_goal = []
+        meeting_point = path_start[-1]
+        while meeting_point in came_from_goal:
+            meeting_point = came_from_goal[meeting_point]
+            path_goal.append(meeting_point)
+
+        return path_start + path_goal
+
 
     def get_neighbors_forward(self, state):
         neighbors = []
@@ -239,7 +304,7 @@ class SearchStrategy:
 
     def heuristic(self, state, goal_state):
         # 示例启发式函数，可以根据具体问题定义
-        return compute_difference(state.data, goal_state.data)
+        return compute_difference(state, goal_state)
 
     def reconstruct_path(self, came_from, current):
         path = [current]
@@ -249,22 +314,6 @@ class SearchStrategy:
         path.reverse()
         return path
 
-    def reconstruct_bidirectional_path(self, came_from_start, came_from_goal, meeting_point):
-        path_start = []
-        current = meeting_point
-        while current in came_from_start:
-            current = came_from_start[current]
-            path_start.append(current)
-        path_start.reverse()
-
-        path_goal = []
-        current = meeting_point
-        while current in came_from_goal:
-            current = came_from_goal[current]
-            path_goal.append(current)
-
-        full_path = path_start + [meeting_point] + path_goal
-        return full_path
 
 def compute_difference(data1, data2):
     """
@@ -282,7 +331,7 @@ def compute_difference(data1, data2):
         return float('inf')
 
 class DifferenceAnalyzer:
-    def analyze_difference(self, start_state, goal_state):
+    def analyze_difference(self, task):
         difference = compute_difference(start_state.data, goal_state.data)
         # 根据差异大小或类型选择搜索方向
         if difference == 0:
@@ -293,19 +342,29 @@ class DifferenceAnalyzer:
             return 'bidirectional'
 
 
-# class DifferenceAnalyzer:
-#     def analyze(self, start_state, goal_state):
-#         if start_state.get_type() != goal_state.get_type():
-#             raise TypeError("States are of different types")
-#         if start_state.get_type() == 'grid':
-#             difference = self._analyze_grid(start_state.grid, goal_state.grid)
-#         else:
-#             difference = {}
-#         return difference
+class DSLFunctionRegistry:
+    def __init__(self, classified_functions_file):
+        self.classified_functions = self.load_classified_functions(classified_functions_file)
 
-#     def _analyze_grid(self, start_grid, goal_grid):
-#         # Implement grid difference analysis
-#         pass
+    def load_classified_functions(self, input_file):
+        with open(input_file, 'r', encoding='utf-8') as f:
+            classified_functions = json.load(f)
+
+        # 将字符串键转换回元组键
+        classified_functions = {eval(key): value for key, value in classified_functions.items()}
+        # print(f"加载的分类函数: {classified_functions}")  # 调试信息
+        return classified_functions
+
+    def get_functions(self, input_types, output_type):
+        key = str((tuple(input_types), output_type))
+        return self.classified_functions.get(key, [])
+
+    def call_function(self, func_name, *args):
+        # 动态导入 DSL 文件中的函数并调用
+        module_name = 'dsl_module'  # 替换为实际的 DSL 模块名
+        module = __import__(module_name)
+        func = getattr(module, func_name)
+        return func(*args)
 
 class Controller:
     def __init__(self, operator_layer, search_algorithm, difference_analyzer):
@@ -385,23 +444,35 @@ if __name__ == '__main__':
 
 
         # Configuration management
-        config_manager = ConfigManager('config.py')
-        proper_functions = config_manager.get_proper_functions()
-        operator_layer = OperatorLayer.from_config(proper_functions)
+        # config_manager = ConfigManager('config.py')
+        # proper_functions = config_manager.get_proper_functions()
+        # operator_layer = OperatorLayer.from_config(proper_functions)
 
         # Search algorithm selection
-        search_algorithm_name = config_manager.get_search_algorithm()
-        if search_algorithm_name == 'BFS':
-            search_algorithm = BFS(operator_layer)
+        # search_algorithm_name = config_manager.get_search_algorithm()
+        # if search_algorithm_name == 'BFS':
+        #     search_algorithm = BFS(operator_layer)
+
 
         # Difference analyzer
         difference_analyzer = DifferenceAnalyzer()
 
+        classified_functions_file = '/Users/zhangdexiang/github/VSAHDC/arc-dsl/forprolog/classDSLresult2.json'
+        dsl_registry = DSLFunctionRegistry(classified_functions_file)
+
+        search_algorithm = SearchStrategy(dsl_registry)
+        search_algorithm.search(task)
+
+
         # Controller
-        controller = Controller(operator_layer, search_algorithm, difference_analyzer)
+        # controller = Controller(operator_layer, search_algorithm, difference_analyzer, dsl_registry)
 
-        # Run the search
-        controller.run(task)
+        # # Run the search
+        # success = controller.run(task)
+        # if success:
+        #     print("All training pairs successfully transformed.")
+        # else:
+        #     print("Failed to transform some training pairs.")
 
 
-        assert solution == task['test'][0]['output']
+        # assert solution == task['test'][0]['output']
