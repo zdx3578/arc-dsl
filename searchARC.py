@@ -80,14 +80,13 @@ class Operator:
 
     def apply(self, state):
         input_type = state.get_type()
-        functions = self.dsl_registry.get_functions([input_type])
-        neighbors = []
-        for func_name in functions:
-            output_type = self.dsl_registry.get_output_type(func_name)
-            new_data = self.dsl_registry.call_function(func_name, state.data)
-            new_state = State(new_data, output_type)  # 创建新状态，包含输出类型**
-            neighbors.append(new_state)
-        return neighbors
+        input_types = [input_type]
+        # 调用 dsl_registry 的 call_function 方法
+        new_data, output_type = self.dsl_registry.call_function(input_types, state.data)
+        if new_data is not None and output_type is not None:
+            new_state = State(new_data, output_type)
+            return [new_state]
+        return []
 
     def invert(self, state):
         if self.inverse_function_name:
@@ -168,40 +167,56 @@ class DifferenceAnalyzer:
             return 'bidirectional'
 
 
+import ast
+
 class DSLFunctionRegistry:
     def __init__(self, classified_functions_file):
         self.classified_functions = self.load_classified_functions(classified_functions_file)
+        # 动态加载 DSL 模块中的所有函数
+        import dsl
+        self.dsl_functions = {func: getattr(dsl, func) for func in dir(dsl) if callable(getattr(dsl, func))}
 
     def load_classified_functions(self, input_file):
         with open(input_file, 'r', encoding='utf-8') as f:
-            classified_functions = json.load(f)
-
-        # 将字符串键转换回元组键
-        classified_functions = {eval(key): value for key, value in classified_functions.items()}
-        # print(f"加载的分类函数: {classified_functions}")  # 调试信息
+            data = json.load(f)
+        # 将键从字符串转换为元组
+        classified_functions = {}
+        for key_str, functions in data.items():
+            key_tuple = ast.literal_eval(key_str)
+            classified_functions[key_tuple] = functions
         return classified_functions
 
-    def get_functions(self, input_types, output_type=None):
+    def call_function(self, input_types, state_data):
+        """
+        根据输入类型，在 classified_functions 中查找对应的函数，
+        然后从 DSL 中加载实际的函数并调用。
+        """
+        matching_functions = self.get_functions(input_types)
+        for func_name in matching_functions:
+            if func_name in self.dsl_functions:
+                func = self.dsl_functions[func_name]
+                try:
+                    # 调用函数并获取返回值
+                    new_data = func(state_data)
+                    # 获取函数的输出类型
+                    output_type = self.get_output_type(func_name)
+                    return new_data, output_type
+                except Exception as e:
+                    pass  # 可以记录日志或忽略异常，尝试下一个函数
+        return None, None
+
+    def get_functions(self, input_types):
         matching_functions = []
         for key, functions in self.classified_functions.items():
-            key_str = str(key)  # 确保 key 是字符串类型
-            key_input_types, key_output_type = eval(key_str)
-            # **动态匹配输入类型**
+            key_input_types, _ = key
             if tuple(input_types) == key_input_types:
                 matching_functions.extend(functions)
         return matching_functions
 
-    def call_function(self, func_name, *args):
-        # 动态导入 DSL 文件中的函数并调用
-        module_name = 'dsl'  # 替换为实际的 DSL 模块名
-        module = __import__(module_name)
-        func = getattr(module, func_name)
-        return func(*args)
     def get_output_type(self, function_name):
         for key, functions in self.classified_functions.items():
-            key_str = str(key)  # 确保 key 是字符串类型
             if function_name in functions:
-                _, output_type = eval(key_str)
+                _, output_type = key
                 return output_type
         return None
 

@@ -15,8 +15,8 @@ class SearchStrategy:
         # 从 DSL 注册表中加载操作符
         operators = []
         for key, functions in self.dsl_registry.classified_functions.items():
-            key_str = str(key)  # 确保 key 是字符串类型
-            input_types, output_type = eval(key_str)
+            # key_str = str(key)  # 确保 key 是字符串类型
+            input_types, output_type = key
             for func_name in functions:
                 op = Operator(func_name, func_name, applicable_types=input_types, dsl_registry=self.dsl_registry)
                 operators.append(op)
