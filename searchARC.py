@@ -12,8 +12,7 @@ import heapq
 from collections import deque
 # from searchStrategy import *  # 从 searchARC-search.py 中导入所有内容
 import re
-
-import re
+import random
 from collections import defaultdict
 
 class TypeExtractor:
@@ -117,46 +116,6 @@ class TypeExtractor:
     extract_types = query_type  # 为了兼容之前的调用方式
 
 
-class TypeExtractor0:
-    def __init__(self, file_path):
-        """
-        初始化时一次性读取文件内容，并解析出所有的类型定义。
-        :param file_path: 类型定义文件路径
-        """
-        self.type_definitions = self._load_types(file_path)
-
-    def _load_types(self, file_path):
-        """
-        从文件中加载所有的类型定义。
-        :param file_path: 类型定义文件路径
-        :return: 类型定义的字典 {类型名称: 类型定义字符串}
-        """
-        type_definitions = {}
-        with open(file_path, 'r', encoding='utf-8') as file:
-            lines = file.readlines()
-            for line in lines:
-                stripped_line = line.strip()
-                # 匹配类型定义：等号前是类型名称，等号后是定义
-                match = re.match(r'^([A-Za-z_][A-Za-z0-9_]*)\s*=\s*(.+)$', stripped_line)
-                if match:
-                    type_name, type_definition = match.groups()
-                    type_definitions[type_name] = type_definition
-        return type_definitions
-
-    def extract_types(self, keyword):
-        """
-        根据关键字查找包含该关键字的类型。
-        :param keyword: 查找的关键字
-        :return: 包含关键字的类型名称列表
-        """
-        keyword_lower = keyword.lower()
-        matched_types = [
-            name.lower() for name, definition in self.type_definitions.items()  # 转换为小写
-            if keyword_lower in name.lower() or keyword_lower in definition.lower()
-        ]
-        return matched_types
-
-
 # 示例使用
 arc_types_path = 'arc_types.py'  # 替换为实际路径
 
@@ -194,8 +153,7 @@ class State:
     def __eq__(self, other):
         return set(self.types) == set(other.types) and self.data == other.data  # 修改：比较类型集
     def __lt__(self, other):
-        return (self.types, self.data) < (other.types, other.data)
-
+        return random.choice([True, False])
 
     def get_type(self):
         return self.types  # 修改：返回类型列表
@@ -321,7 +279,7 @@ class SearchStrategy:
                 print(actions)
 
                 # 使用记录的函数序列对测试数据进行验证
-                self.validate_test_data(task, actions)
+                # self.validate_test_data(task, actions)
             else:
                 print("未找到解决方案")
 
@@ -354,6 +312,15 @@ class SearchStrategy:
         self.validate_test_data(task, common_actions)
         return common_actions  # 修改：只返回 common_actions
 
+    def data_in_closed_set(self, state_data, closed_set):
+        """
+        检查 state_data 是否存在于 closed_set 中的某个元素的 data 中。
+        """
+        for state in closed_set:
+            if state.data == state_data:
+                return True
+        return False
+
     def _search_single_pair(self, start_state, goal_state, heuristic):
         open_set_start = []
         open_set_goal = []
@@ -379,13 +346,10 @@ class SearchStrategy:
             _, current_goal = heapq.heappop(open_set_goal)
             closed_set_goal.add(current_goal)
 
-            # 仅在会合点类型为 'grid' 时认为路径成功
-            if (current_start in closed_set_goal and 'grid' in current_start.get_type()) or \
-               (current_goal in closed_set_start and 'grid' in current_goal.get_type()):
-                meeting_point = current_start if current_start in closed_set_goal else current_goal
-                return self.reconstruct_bidirectional_path(came_from_start, came_from_goal, meeting_point)
-
+            # 处理所有邻居状态
             neighbors_start = self.get_neighbors(current_start)
+            neighbors_goal = self.get_neighbors(current_goal, reverse=False)
+
             for neighbor in neighbors_start:
                 if neighbor in closed_set_start:
                     continue
@@ -396,16 +360,24 @@ class SearchStrategy:
                     f_score_start[neighbor] = tentative_g_score + heuristic(neighbor, goal_state)
                     heapq.heappush(open_set_start, (f_score_start[neighbor], neighbor))
 
-            neighbors_goal = self.get_neighbors(current_goal, reverse=False)
             for neighbor in neighbors_goal:
                 if neighbor in closed_set_goal:
                     continue
                 tentative_g_score = g_score_goal[current_goal] + 1
                 if neighbor not in g_score_goal or tentative_g_score < g_score_goal[neighbor]:
-                    came_from_goal[neighbor] = current_goal   # 修改：记录父状态
+                    came_from_goal[neighbor] = current_goal  # 修改：记录父状态
                     g_score_goal[neighbor] = tentative_g_score
                     f_score_goal[neighbor] = tentative_g_score + heuristic(neighbor, start_state)
                     heapq.heappush(open_set_goal, (f_score_goal[neighbor], neighbor))
+
+            # 检查是否有会合点
+            for neighbor in neighbors_start:
+                if self.data_in_closed_set(neighbor.data, closed_set_goal) and 'grid' in neighbor.get_type():
+                    return self.reconstruct_bidirectional_path(came_from_start, came_from_goal, neighbor)
+
+            for neighbor in neighbors_goal:
+                if self.data_in_closed_set(neighbor.data, closed_set_start) and 'grid' in neighbor.get_type():
+                    return self.reconstruct_bidirectional_path(came_from_start, came_from_goal, neighbor)
 
         return None
 
@@ -435,32 +407,7 @@ class SearchStrategy:
         return full_path, full_actions   # 修改：返回操作符序列
 
 
-    # def apply(self, state):
-    #     input_types = state.get_type()  # 现在是类型列表
-    #     applicable_types = set(input_types) & set(self.applicable_types)
-    #     if not applicable_types:
-    #         return []
-    #     new_states = []
-    #     for input_type in applicable_types:
-    #         results = self.dsl_registry.call_function([input_type], state.data)  # 修改：接收所有结果
-    #         for new_data, output_type, func_name in results:
-    #             new_state = State(new_data, output_type, parent=state, action=func_name)  # 使用 func_name 记录动作
-    #             new_states.append(new_state)
-    #     return new_states
 
-    # def get_neighbors(self, state, reverse=False):
-    #     neighbors = []
-
-    #     applicable_types = self.get_applicable_types(state, op.applicable_types)  # 使用辅助方法
-    #     if not applicable_types:
-    #         continue
-    #     # if reverse and op.inverse_function_name:
-    #     #     new_states = op.invert(state)
-    #     else:
-    #         new_states = self.apply(state)
-    #     for new_state in new_states:
-    #         neighbors.append(new_state)  # 修改：操作符内部已记录父状态和操作符
-    #     return neighbors
 
     def get_neighbors(self, state, reverse=False):
         """直接通过 dsl_registry 获取所有可能的状态转换"""
@@ -486,36 +433,47 @@ class SearchStrategy:
         for pair in task['test']:
             state = State(pair['input'], 'grid')
             for action in actions:
-                op = self.get_operator_by_name(action)
-                new_states = op.apply(state)
-                if new_states:
-                    # 更新状态，处理类型转换和中间结果
-                    state = new_states[0]
+                func = self.dsl_registry.dsl_functions.get(action)
+                if func:
+                    try:
+                        new_data = func(state.data)
+                        if new_data is not None:
+                            state = State(new_data, 'grid', parent=state, action=action)
+                        else:
+                            print(f"函数 {action} 无法应用于当前状态")
+                            break
+                    except Exception as e:
+                        print(f"函数 {action} 执行时出错: {e}")
+                        logging.error("捕获到异常：%s", e)
+                        logging.error("详细错误信息：\n%s", traceback.format_exc())
+                        break
                 else:
-                    print(f"函数 {action} 无法应用于当前状态")
+                    print(f"未找到操作符 {action}")
                     break
             # 应用 'asindices' 转换
-            state = self.apply_asindices_if_needed(state)
+            # state = self.apply_asindices_if_needed(state)
             # 比较最终输出结果
             if state.data == pair['output']:
                 print("测试数据验证成功，输出与预期一致")
             else:
                 print("测试数据验证失败，输出与预期不一致")
 
-    def apply_asindices_if_needed(self, state):
-        """
-        如果需要，应用 'asindices' 函数将状态转换为 'grid' 类型。
-            op = self.get_operator_by_name('asindices')"""
-
-        if 'grid' not in state.get_type():
-            op = self.get_operator_by_name('asindices')
-            if op:
-                new_states = op.apply(state)
-                if new_states:
-                    return new_states[0]
-                else:
-                    print("函数 asindices 无法应用于当前状态")
-        return state
+    # def apply_asindices_if_needed(self, state):
+    #     """
+    #     如果需要，应用 'asindices' 函数将状态转换为 'grid' 类型。
+    #     """
+    #     if 'grid' not in state.get_type():
+    #         func = self.dsl_registry.dsl_functions.get('asindices')
+    #         if func:
+    #             try:
+    #                 new_data = func(state.data)
+    #                 if new_data is not None:
+    #                     return State(new_data, 'grid', parent=state, action='asindices')
+    #                 else:
+    #                     print("函数 asindices 无法应用于当前状态")
+    #             except Exception as e:
+    #                 print(f"函数 asindices 执行时出错: {e}")
+    #     return state
 
     def convert_to_grid(self, state):
         """
@@ -532,9 +490,9 @@ class SearchStrategy:
             return state
 
     def get_operator_by_name(self, name):
-        for op in self.operators:
-            if op.name == name:
-                return op
+        for op in self.dsl_registry.dsl_functions.values():
+            if op.__name__ == name:
+                return Operator(name, name, dsl_registry=self.dsl_registry)
         return None
 
     def get_applicable_types(self, state_or_input_types, applicable_types):
@@ -599,10 +557,12 @@ class DSLFunctionRegistry:
         matching_functions = self.get_functions(input_types)
         results = []  # 修改：收集所有成功结果
         for func_name in matching_functions:
-            if func_name in self.dsl_functions:
+            if (func_name in self.dsl_functions):
                 func = self.dsl_functions[func_name]
                 try:
-                    # 调用函数并获取返回值
+                    # 调用函数并获取返回值 ！！！！！！！！！！！print
+
+                    # print(func_name)
                     new_data = func(state_data)
                     # 获取函数的输出类型
                     output_type = self.get_output_type(func_name)
@@ -611,7 +571,7 @@ class DSLFunctionRegistry:
                 except Exception as e:
                     logging.error("捕获到异常：%s", e)
                     logging.error("详细错误信息：\n%s", traceback.format_exc())
-                    pass  # 记录日志后继续
+                    # pass  # 记录日志后继续
         return results  # 返回所有成功的结果，包括函数名称
 
     def get_functions(self, input_types):
@@ -699,7 +659,9 @@ if __name__ == '__main__':
 
         # key = 'c3f564a4'
 
+        print("\n\n\n")
         print(i, key)
+
         task = {}
         task['train'] = data['train'][key]
         task['test'] = data['test'][key]
