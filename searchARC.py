@@ -70,7 +70,7 @@ class TypeExtractor:
         :param type_name: 要查找的类型名称
         :return: 包含的所有类型名称列表（已递归展开，去重）。
         """
-        if type_name not in self.type_definitions:
+        if (type_name not in self.type_definitions):
             return []  # 如果类型未定义，返回空列表
 
         # 获取该类型的定义
@@ -274,7 +274,7 @@ class SearchStrategy:
 
             # 如果找到了解决方案，打印函数序列
             if solution:
-                actions = solution  # 修改：solution 现在只包含 actions
+                actions = solution  # 修改：解包路径和操作序列
                 print("成功的状态转换过程的函数序列:")
                 print(actions)
 
@@ -322,109 +322,76 @@ class SearchStrategy:
         return False
 
     def _search_single_pair(self, start_state, goal_state, heuristic):
-        open_set_start = []
-        open_set_goal = []
-        heapq.heappush(open_set_start, (0, start_state))
-        heapq.heappush(open_set_goal, (0, goal_state))
+        max_depth = 10  # 最大搜索深度，可以根据需要调整
+        came_from = {}
+        current_states = [start_state]
+        for depth in range(max_depth):
+            print(f"当前深度：{depth}")
+            neighbors = self.get_neighbors(current_states)
+            if not neighbors:
+                break  # 没有新的邻居，停止搜索
+            next_states = []
+            for neighbor in neighbors:
+                if neighbor.data == goal_state.data:
+                    # 在调用 reconstruct_path 前，先更新 came_from
+                    if neighbor not in came_from:
+                        came_from[neighbor] = neighbor.parent
+                    return self.reconstruct_path(came_from, neighbor)
+                if neighbor not in came_from:
+                    came_from[neighbor] = neighbor.parent
+                    next_states.append(neighbor)
+            current_states = next_states  # 准备生成下一层的邻居
+        return None  # 未找到解
 
-        came_from_start = {}
-        came_from_goal = {}
-
-        g_score_start = {start_state: 0}
-        g_score_goal = {goal_state: 0}
-
-        f_score_start = {start_state: heuristic(start_state, goal_state)}
-        f_score_goal = {goal_state: heuristic(goal_state, start_state)}
-
-        closed_set_start = set()
-        closed_set_goal = set()
-
-        while open_set_start and open_set_goal:
-            _, current_start = heapq.heappop(open_set_start)
-            closed_set_start.add(current_start)
-
-            _, current_goal = heapq.heappop(open_set_goal)
-            closed_set_goal.add(current_goal)
-
-            # 处理所有邻居状态
-            neighbors_start = self.get_neighbors(current_start)
-            neighbors_goal = self.get_neighbors(current_goal, reverse=False)
-
-            for neighbor in neighbors_start:
-                if neighbor in closed_set_start:
-                    continue
-                tentative_g_score = g_score_start[current_start] + 1
-                if neighbor not in g_score_start or tentative_g_score < g_score_start[neighbor]:
-                    came_from_start[neighbor] = current_start  # 修改：记录父状态
-                    g_score_start[neighbor] = tentative_g_score
-                    f_score_start[neighbor] = tentative_g_score + heuristic(neighbor, goal_state)
-                    heapq.heappush(open_set_start, (f_score_start[neighbor], neighbor))
-
-            for neighbor in neighbors_goal:
-                if neighbor in closed_set_goal:
-                    continue
-                tentative_g_score = g_score_goal[current_goal] + 1
-                if neighbor not in g_score_goal or tentative_g_score < g_score_goal[neighbor]:
-                    came_from_goal[neighbor] = current_goal  # 修改：记录父状态
-                    g_score_goal[neighbor] = tentative_g_score
-                    f_score_goal[neighbor] = tentative_g_score + heuristic(neighbor, start_state)
-                    heapq.heappush(open_set_goal, (f_score_goal[neighbor], neighbor))
-
-            # 检查是否有会合点
-            for neighbor in neighbors_start:
-                if self.data_in_closed_set(neighbor.data, closed_set_goal) and 'grid' in neighbor.get_type():
-                    return self.reconstruct_bidirectional_path(came_from_start, came_from_goal, neighbor)
-
-            for neighbor in neighbors_goal:
-                if self.data_in_closed_set(neighbor.data, closed_set_start) and 'grid' in neighbor.get_type():
-                    return self.reconstruct_bidirectional_path(came_from_start, came_from_goal, neighbor)
-
-        return None
-
-    def reconstruct_bidirectional_path(self, came_from_start, came_from_goal, meeting_point):
-        path_start = []
-        actions_start = []
-        state = meeting_point
-        while state in came_from_start:
-            path_start.append(state)
-            actions_start.append(state.action)   # 新增：记录操作符
-            state = state.parent
-        path_start.reverse()
-        actions_start.reverse()
-
-        path_goal = []
-        actions_goal = []
-        state = meeting_point
-        while state in came_from_goal:
-            state = came_from_goal[state]
-            path_goal.append(state)
-            actions_goal.append(state.action)   # 新增：记录操作符
-
-        # 合并路径和操作符
-        full_path = path_start + path_goal
-        full_actions = actions_start + actions_goal
-
-        return full_path, full_actions   # 修改：返回操作符序列
-
-
-
-
-    def get_neighbors(self, state, reverse=False):
-        """直接通过 dsl_registry 获取所有可能的状态转换"""
-        input_types = state.get_type()
+    def get_neighbors(self, current_states):
+        """生成下一层的邻居状态，支持多参数函数和状态组合。"""
         neighbors = []
-
-        if reverse:
-            # 处理反向搜索的逻辑，如果需要
-            # TODO: 实现反向搜索逻辑
-            pass
-        else:
+        state_type_map = defaultdict(list)  # type -> list of states
+        for state in current_states:
+            for t in state.get_type():
+                state_type_map[t].append(state)
+        # 遍历 DSL 中的函数，根据输入类型匹配
+        for key, func_names in self.dsl_registry.classified_functions.items():
+            input_types, output_type = key
+            func_list = func_names
+            # 检查是否有可用的状态来匹配输入类型
+            possible_states_lists = []
             for input_type in input_types:
-                results = self.dsl_registry.call_function([input_type], state.data)  # 修改：接收所有结果
-                for new_data, output_type, func_name in results:
-                    new_state = State(new_data, output_type, parent=state, action=func_name)  # 使用 func_name 记录动作
-                    neighbors.append(new_state)
+                if input_type in state_type_map:
+                    possible_states_lists.append(state_type_map[input_type])
+                else:
+                    break  # 无法匹配，跳过此函数
+            else:
+                # 生成所有可能的状态组合
+                from itertools import product
+                for states_combination in product(*possible_states_lists):
+                    args = [state.data for state in states_combination]
+                    for func_name in func_list:
+                        if func_name in self.dsl_registry.dsl_functions:
+                            func = self.dsl_registry.dsl_functions[func_name]
+                            try:
+                                new_data = func(*args)
+                                if new_data is not None:
+                                    # 创建新状态，记录父状态和操作
+                                    parent_states = states_combination
+                                    new_state = State(new_data, output_type, parent=parent_states, action=func_name)
+                                    neighbors.append(new_state)
+                            except Exception as e:
+                                logging.error("函数 %s 执行时出错：%s", func_name, e)
+                                logging.error("详细错误信息：\n%s", traceback.format_exc())
         return neighbors
+
+    def reconstruct_path(self, came_from, current_state):
+        """回溯路径，生成操作序列和路径。"""
+        path = []
+        actions = []
+        while current_state in came_from:
+            actions.append(current_state.action)
+            path.append(current_state)
+            current_state = came_from[current_state]
+        path.reverse()
+        actions.reverse()
+        return path, actions  # 返回路径和操作序列
 
     def heuristic(self, state, goal_state):
         return compute_difference(state.data, goal_state.data)
@@ -657,7 +624,7 @@ if __name__ == '__main__':
 
     for i, key in enumerate(solvers, start=1):
 
-        # key = 'c3f564a4'
+        key = '9172f3a0'
 
         print("\n\n\n")
         print(i, key)
