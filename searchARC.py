@@ -126,19 +126,26 @@ type_extractor = TypeExtractor(arc_types_path)
 # types = type_extractor.extract_types(type)
 
 class State:
-    def __init__(self, data, type, parent=None, action=None):
+    def __init__(self, data, type, parent=None, action=None, parameters=None):
         self.data = data
         self.types  = type_extractor.extract_types(type)  # 修改：支持多个类型
         self.parent = parent      # 新增：记录父状态
         self.action = action      # 新增：记录产生该状态的操作符
+        self.parameters = parameters if parameters else []
         self.hash = self.compute_hash()
 
     def compute_hash(self):
         """
         计算状态的哈希值，用于重复检测。
         """
-        return hash((tuple(sorted(self.types)), self._data_hash()))  # 修改：使用多个类型
+        return hash((tuple(sorted(self.types)), tuple(self.parameters), self._data_hash()))  # 修改：包含参数
 
+    def __eq__(self, other):
+        return (
+            set(self.types) == set(other.types) and
+            self.data == other.data and
+            self.parameters == other.parameters  # 修改：比较参数)
+        )
     def _data_hash(self):
         if isinstance(self.data, list):
             return tuple(map(tuple, self.data))
@@ -150,8 +157,8 @@ class State:
     def __hash__(self):
         return self.hash
 
-    def __eq__(self, other):
-        return set(self.types) == set(other.types) and self.data == other.data  # 修改：比较类型集
+    # def __eq__(self, other):
+    #     return set(self.types) == set(other.types) and self.data == other.data  # 修改：比较类型集
     def __lt__(self, other):
         return random.choice([True, False])
 
@@ -327,7 +334,7 @@ class SearchStrategy:
         current_states = [start_state]
         for depth in range(max_depth):
             print(f"当前深度：{depth}")
-            neighbors = self.get_neighbors(current_states)
+            neighbors = self.get_neighbors(current_states, start_state)  # 修改：传入 start_state
             if not neighbors:
                 break  # 没有新的邻居，停止搜索
             next_states = []
@@ -343,55 +350,68 @@ class SearchStrategy:
             current_states = next_states  # 准备生成下一层的邻居
         return None  # 未找到解
 
-    def get_neighbors(self, current_states):
+    def get_neighbors(self, current_states, start_state):
         """生成下一层的邻居状态，支持多参数函数和状态组合。"""
         neighbors = []
-        state_type_map = defaultdict(list)  # type -> list of states
+        state_type_map = defaultdict(list)
+        original_state = start_state
+
         for state in current_states:
             for t in state.get_type():
                 state_type_map[t].append(state)
+
         # 遍历 DSL 中的函数，根据输入类型匹配
         for key, func_names in self.dsl_registry.classified_functions.items():
             input_types, output_type = key
             func_list = func_names
-            # 检查是否有可用的状态来匹配输入类型
             possible_states_lists = []
             for input_type in input_types:
                 if input_type in state_type_map:
                     possible_states_lists.append(state_type_map[input_type])
                 else:
-                    break  # 无法匹配，跳过此函数
+                    break
             else:
                 # 生成所有可能的状态组合
                 from itertools import product
                 for states_combination in product(*possible_states_lists):
                     args = [state.data for state in states_combination]
                     for func_name in func_list:
-                        if func_name in self.dsl_registry.dsl_functions:
+                        if func_name in self.dsl_registry.dsl_functions and func_name != 'extract_all_boxes':
                             func = self.dsl_registry.dsl_functions[func_name]
                             try:
                                 new_data = func(*args)
                                 if new_data is not None:
-                                    # 创建新状态，记录父状态和操作
-                                    parent_states = states_combination
-                                    new_state = State(new_data, output_type, parent=parent_states, action=func_name)
+                                    # 保存所有参数，后续在reconstruct_path中处理
+                                    new_state = State(new_data, output_type, parent=states_combination, action=func_name, parameters=args)
                                     neighbors.append(new_state)
                             except Exception as e:
-                                logging.error("函数 %s 执行时出错：%s", func_name, e)
-                                logging.error("详细错误信息：\n%s", traceback.format_exc())
+                                pass
         return neighbors
 
     def reconstruct_path(self, came_from, current_state):
-        """回溯路径，生成操作序列和路径。"""
+        """回溯路径，生成操作序列和路径。同时处理参数列表。"""
         path = []
         actions = []
+        original_data = current_state.parent[0].data if isinstance(current_state.parent, (list, tuple)) else current_state.parent.data
+
         while current_state in came_from:
-            actions.append(current_state.action)
+            # 检查参数列表,提取额外参数
+            if current_state.parameters:
+                # 如果第一个参数是原始输入数据,只保留其他参数
+                if current_state.parameters[0] == original_data:
+                    extra_params = current_state.parameters[1:]
+                else:
+                    extra_params = current_state.parameters
+                actions.append((current_state.action, extra_params))
+            else:
+                actions.append((current_state.action, []))
+
             path.append(current_state)
             current_state = came_from[current_state]
+
         path.reverse()
         actions.reverse()
-        return path, actions  # 返回路径和操作序列
+        return path, actions
 
     def heuristic(self, state, goal_state):
         return compute_difference(state.data, goal_state.data)
@@ -399,13 +419,15 @@ class SearchStrategy:
     def validate_test_data(self, task, actions):
         for pair in task['test']:
             state = State(pair['input'], 'grid')
-            for action in actions:
+            for action, parameters in actions:
                 func = self.dsl_registry.dsl_functions.get(action)
                 if func:
                     try:
-                        new_data = func(state.data)
+                        # 使用当前输入和保存的额外参数构造完整参数列表
+                        args = [state.data] + list(parameters)
+                        new_data = func(*args)
                         if new_data is not None:
-                            state = State(new_data, 'grid', parent=state, action=action)
+                            state = State(new_data, 'grid', parent=state, action=action, parameters=parameters)
                         else:
                             print(f"函数 {action} 无法应用于当前状态")
                             break
@@ -468,6 +490,9 @@ class SearchStrategy:
         else:
             input_types = state_or_input_types
         return set(input_types) & set(applicable_types)
+
+
+
 
 
 def compute_difference(data1, data2):
@@ -612,6 +637,8 @@ def get_data(train=True):
         } for e in v['test']] for k, v in data.items()}
     }
 
+
+
 if __name__ == '__main__':
     data = get_data(train=True)
 
@@ -624,7 +651,9 @@ if __name__ == '__main__':
 
     for i, key in enumerate(solvers, start=1):
 
-        key = '9172f3a0'
+        # key = '9172f3a0'
+        # if i != 1:
+        #     break
 
         print("\n\n\n")
         print(i, key)
