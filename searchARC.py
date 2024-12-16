@@ -374,9 +374,9 @@ if __name__ == '__main__':
 
     for i, key in enumerate(solvers, start=1):
 
-        # key = '4c4377d9'
-        # if i != 1:
-        #     break
+        key = '4c4377d9'
+        if i != 1:
+            break
 
         print("\n\n\n")
         print(i, key)

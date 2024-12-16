@@ -47,16 +47,19 @@ class State:
 class SearchStrategy:
     def __init__(self, dsl_registry, enable_whitelist=True):
         self.dsl_registry = dsl_registry
-        self.enable_whitelist = enable_whitelist  # 新增：控制是否启用函数白名单
-        # 定义函数白名单，仅包含与任务相关的函数
-        self.function_whitelist = {
-            'identity', 'invert', 'double', 'increment', 'decrement',
-            # 移除了加、减、乘、除函数
-            # 'add', 'subtract', 'multiply', 'divide',
-            'shift', 'crop',
-            'rot90', 'rot180', 'rot270', 'hmirror', 'vmirror', 'rotate',
-            'fill', 'paint', 'resize', 'repeat'
-        }
+        # 定义函数白名单，默认包含所有 DSL 函数
+        self.function_whitelist = set(self.dsl_registry.dsl_functions.keys())
+        # 批量移除不需要的函数
+        functions_to_remove = [
+            'add',
+            'subtract',
+            'multiply',
+            'divide',
+            'tojvec',
+            'toivec'
+        ]
+        for func in functions_to_remove:
+            self.function_whitelist.discard(func)  # 使用 discard 防止函数不存在时报错
 
     def search(self, task, strategy='a_star', direction='bidirectional'):
         if strategy == 'a_star':
@@ -172,12 +175,8 @@ class SearchStrategy:
         # 遍历 DSL 中的函数，根据输入类型匹配
         for key, func_names in self.dsl_registry.classified_functions.items():
             input_types, output_type = key
-            if self.enable_whitelist:
-                # 仅使用白名单中的函数
-                func_list = [fn for fn in func_names if fn in self.function_whitelist]
-            else:
-                # 使用所有函数
-                func_list = func_names
+            # 仅使用白名单中的函数
+            func_list = [fn for fn in func_names if fn in self.function_whitelist]
             if not func_list:
                 continue  # 当前类型组合下无可用函数，跳过
 
@@ -202,7 +201,7 @@ class SearchStrategy:
                         func = self.dsl_registry.dsl_functions.get(func_name)
                         if func:
                             try:
-                                # print(f"--尝试应用函数 {func_name}  len: {len(neighbors)}")
+                                print(f"--尝试应用函数 {func_name}  arg {args} len: {len(neighbors)}")
                                 new_data = func(*args)
                                 if new_data is not None:
                                     # 保存所有参数，后续在 reconstruct_path 中处理
