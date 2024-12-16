@@ -73,8 +73,8 @@ class SearchStrategy:
             # 如果找到了解决方案，打印函数序列
             if solution:
                 actions = solution  # 修改：解包路径和操作序列
-                print("成功的状态转换过程的函数序列:")
-                print(actions)
+                print(" ！ ！ ！ ！ ！ 成功的状态转换过程的函数序列:",actions)
+                # print(actions)
 
                 # 使用记录的函数序列对测试数据进行验证
                 # self.validate_test_data(task, actions)
@@ -106,9 +106,9 @@ class SearchStrategy:
                 return None
 
         # 如果找到共用的操作符序列，进行测试验证
-        print("找到适用于所有训练数据对的共用函数序列:", common_actions)
-        self.validate_test_data(task, common_actions)
-        return common_actions  # 修改：只返回 common_actions
+        print(" - - 找到适用于所有训练数据对的共用函数序列:", common_actions)
+        if self.validate_test_data(task, common_actions) :
+            return common_actions  # 修改：只返回 common_actions
 
     def data_in_closed_set(self, state_data, closed_set):
         """
@@ -123,7 +123,21 @@ class SearchStrategy:
         max_depth = 10  # 最大搜索深度，可以根据需要调整
         came_from = {}
         original_data = start_state.data  # 设置原始数据
-        current_states = [start_state]
+        current_states = [start_state] + [State(i, 'integer') for i in range(10)] + [
+            State((0, 0), 'integertuple'),
+            State((0, 1), 'integertuple'),
+            State((1, 0), 'integertuple'),
+            State((-1, 0), 'integertuple'),
+            State((0, -1), 'integertuple'),
+            State((1, 1), 'integertuple'),
+            State((-1, -1), 'integertuple'),
+            State((-1, 1), 'integertuple'),
+            State((1, -1), 'integertuple'),
+            State((0, 2), 'integertuple'),
+            State((2, 0), 'integertuple'),
+            State((2, 2), 'integertuple'),
+            State((3, 3), 'integertuple')
+        ]
 
         for depth in range(max_depth):
             print(f"当前深度：{depth}")
@@ -168,10 +182,15 @@ class SearchStrategy:
                 from itertools import product
                 for states_combination in product(*possible_states_lists):
                     args = [state.data for state in states_combination]
+                    # print(f"len(neighbors){ len(neighbors)} ")
                     for func_name in func_list:
-                        if func_name in self.dsl_registry.dsl_functions and func_name != 'extract_all_boxes':
+                        # print(len(neighbors))
+                        if func_name in self.dsl_registry.dsl_functions and func_name != 'extract_all_boxes' and func_name != 'interval' :
                             func = self.dsl_registry.dsl_functions[func_name]
                             try:
+                                # print(f"--尝试应用函数 {func_name}")
+                                # if func_name == 'replace':
+                                #     print(f"args: {args}")
                                 new_data = func(*args)
                                 if new_data is not None:
                                     # 保存所有参数，后续在reconstruct_path中处理
@@ -220,8 +239,9 @@ class SearchStrategy:
                         if q:
                             args.append(state.data)
                         else:
-                            if isinstance(value, tuple):
-                                value = value[1]  # 提取元组中的值
+                            if action == 'upscale':
+                                if isinstance(value, tuple):
+                                    value = value[1]  # 提取元组中的值
                             args.append(value)
                     try:
                         new_data = func(*args)
@@ -240,9 +260,10 @@ class SearchStrategy:
                     break
             # 比较最终输出结果
             if state.data == pair['output']:
-                print("测试数据验证成功，输出与预期一致")
+                print(" - - 测试数据验证成功，输出与预期一致")
+                return True
             else:
-                print("测试数据验证失败，输出与预期不一致")
+                print("测试数据验证失败，输出与预期---不一致")
 
     def convert_to_grid(self, state):
         """
