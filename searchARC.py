@@ -128,32 +128,32 @@ type_extractor = TypeExtractor(arc_types_path)
 
 
 
-class GridState(State):
-# class State:
-    def __init__(self, data, state_type='grid'):
-        self.data = data
-        self.type = state_type  # 状态类型：'grid'、'object' 等
-        self.hash = self.compute_hash()
+# class GridState(State):
+# # class State:
+#     def __init__(self, data, state_type='grid'):
+#         self.data = data
+#         self.type = state_type  # 状态类型：'grid'、'object' 等
+#         self.hash = self.compute_hash()
 
-    def compute_hash(self):
-        """
-        计算状态的哈希值，用于重复检测。
-        """
-        if self.type == 'grid':
-            return hash(tuple(map(tuple, self.data)))
-        elif self.type == 'object':
-            return hash(frozenset(self.data))
-        else:
-            return hash(self.data)
+#     def compute_hash(self):
+#         """
+#         计算状态的哈希值，用于重复检测。
+#         """
+#         if self.type == 'grid':
+#             return hash(tuple(map(tuple, self.data)))
+#         elif self.type == 'object':
+#             return hash(frozenset(self.data))
+#         else:
+#             return hash(self.data)
 
-    def __hash__(self):
-        return self.hash
+#     def __hash__(self):
+#         return self.hash
 
-    def __eq__(self, other):
-        return self.data == other.data and self.type == other.type
+#     def __eq__(self, other):
+#         return self.data == other.data and self.type == other.type
 
-    def get_size(self):
-        return (len(self.grid), len(self.grid[0]))
+#     def get_size(self):
+#         return (len(self.grid), len(self.grid[0]))
 
 class Operator:
     def __init__(self, name, function_name, inverse_function_name=None, applicable_types=None, dsl_registry=None):

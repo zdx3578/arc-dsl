@@ -42,7 +42,7 @@ class State:
     def get_type(self):
         return self.types  # 修改：返回类型列表
 
-    
+
 
 class SearchStrategy:
     def __init__(self, dsl_registry):
