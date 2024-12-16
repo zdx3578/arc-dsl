@@ -5,7 +5,7 @@ import searchARC
 class State:
     def __init__(self, data, type, parent=None, action=None, parameters=None):
         self.data = data
-        self.types  = type_extractor.extract_types(type)  # 修改：支持多个类型
+        self.types = type_extractor.extract_types(type)  # 修改：支持多个类型
         self.parent = parent      # 新增：记录父状态
         self.action = action      # 新增：记录产生该状态的操作符
         self.parameters = parameters if parameters else []
@@ -21,8 +21,9 @@ class State:
         return (
             set(self.types) == set(other.types) and
             self.data == other.data and
-            self.parameters == other.parameters  # 修改：比较参数)
+            self.parameters == other.parameters  # 修改：比较参数
         )
+
     def _data_hash(self):
         if isinstance(self.data, list):
             return tuple(map(tuple, self.data))
@@ -34,8 +35,6 @@ class State:
     def __hash__(self):
         return self.hash
 
-    # def __eq__(self, other):
-    #     return set(self.types) == set(other.types) and self.data == other.data  # 修改：比较类型集
     def __lt__(self, other):
         return random.choice([True, False])
 
@@ -123,7 +122,9 @@ class SearchStrategy:
     def _search_single_pair(self, start_state, goal_state, heuristic):
         max_depth = 10  # 最大搜索深度，可以根据需要调整
         came_from = {}
+        original_data = start_state.data  # 设置原始数据
         current_states = [start_state]
+
         for depth in range(max_depth):
             print(f"当前深度：{depth}")
             neighbors = self.get_neighbors(current_states, start_state)  # 修改：传入 start_state
@@ -135,7 +136,7 @@ class SearchStrategy:
                     # 在调用 reconstruct_path 前，先更新 came_from
                     if neighbor not in came_from:
                         came_from[neighbor] = neighbor.parent
-                    return self.reconstruct_path(came_from, neighbor)
+                    return self.reconstruct_path(came_from, neighbor, original_data)
                 if neighbor not in came_from:
                     came_from[neighbor] = neighbor.parent
                     next_states.append(neighbor)
@@ -146,7 +147,7 @@ class SearchStrategy:
         """生成下一层的邻居状态，支持多参数函数和状态组合。"""
         neighbors = []
         state_type_map = defaultdict(list)
-        original_state = start_state
+        original_data = start_state.data
 
         for state in current_states:
             for t in state.get_type():
@@ -174,27 +175,27 @@ class SearchStrategy:
                                 new_data = func(*args)
                                 if new_data is not None:
                                     # 保存所有参数，后续在reconstruct_path中处理
-                                    new_state = State(new_data, output_type, parent=states_combination, action=func_name, parameters=args)
+                                    parameters = []
+                                    for arg in args:
+                                        if arg == original_data:
+                                            parameters.append((True, 'is_origin_data'))
+                                        else:
+                                            parameters.append((False, arg))
+                                    new_state = State(new_data, output_type, parent=states_combination, action=func_name, parameters=parameters)
                                     neighbors.append(new_state)
                             except Exception as e:
                                 pass
         return neighbors
 
-    def reconstruct_path(self, came_from, current_state):
+    def reconstruct_path(self, came_from, current_state, original_data):
         """回溯路径，生成操作序列和路径。同时处理参数列表。"""
         path = []
         actions = []
-        original_data = current_state.parent[0].data if isinstance(current_state.parent, (list, tuple)) else current_state.parent.data
 
         while current_state in came_from:
             # 检查参数列表,提取额外参数
             if current_state.parameters:
-                # 如果第一个参数是原始输入数据,只保留其他参数
-                if current_state.parameters[0] == original_data:
-                    extra_params = current_state.parameters[1:]
-                else:
-                    extra_params = current_state.parameters
-                actions.append((current_state.action, extra_params))
+                actions.append((current_state.action, current_state.parameters))
             else:
                 actions.append((current_state.action, []))
 
@@ -214,9 +215,15 @@ class SearchStrategy:
             for action, parameters in actions:
                 func = self.dsl_registry.dsl_functions.get(action)
                 if func:
+                    args = []
+                    for q, value in parameters:
+                        if q:
+                            args.append(state.data)
+                        else:
+                            if isinstance(value, tuple):
+                                value = value[1]  # 提取元组中的值
+                            args.append(value)
                     try:
-                        # 使用当前输入和保存的额外参数构造完整参数列表
-                        args = [state.data] + list(parameters)
                         new_data = func(*args)
                         if new_data is not None:
                             state = State(new_data, 'grid', parent=state, action=action, parameters=parameters)
@@ -231,30 +238,11 @@ class SearchStrategy:
                 else:
                     print(f"未找到操作符 {action}")
                     break
-            # 应用 'asindices' 转换
-            # state = self.apply_asindices_if_needed(state)
             # 比较最终输出结果
             if state.data == pair['output']:
                 print("测试数据验证成功，输出与预期一致")
             else:
                 print("测试数据验证失败，输出与预期不一致")
-
-    # def apply_asindices_if_needed(self, state):
-    #     """
-    #     如果需要，应用 'asindices' 函数将状态转换为 'grid' 类型。
-    #     """
-    #     if 'grid' not in state.get_type():
-    #         func = self.dsl_registry.dsl_functions.get('asindices')
-    #         if func:
-    #             try:
-    #                 new_data = func(state.data)
-    #                 if new_data is not None:
-    #                     return State(new_data, 'grid', parent=state, action='asindices')
-    #                 else:
-    #                     print("函数 asindices 无法应用于当前状态")
-    #             except Exception as e:
-    #                 print(f"函数 asindices 执行时出错: {e}")
-    #     return state
 
     def convert_to_grid(self, state):
         """
