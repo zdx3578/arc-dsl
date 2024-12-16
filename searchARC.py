@@ -374,7 +374,7 @@ if __name__ == '__main__':
 
     for i, key in enumerate(solvers, start=1):
 
-        # key = 'b1948b0a'
+        # key = '4c4377d9'
         # if i != 1:
         #     break
 
@@ -404,7 +404,8 @@ if __name__ == '__main__':
         classified_functions_file = '/Users/zhangdexiang/github/VSAHDC/arc-dsl/forprolog/classDSLresult2.json'
         dsl_registry = DSLFunctionRegistry(classified_functions_file)
 
-        search_algorithm = SearchStrategy(dsl_registry)
+        # search_algorithm = SearchStrategy(dsl_registry)
+        search_algorithm = SearchStrategy(dsl_registry, enable_whitelist=False)
         search_algorithm.search(task)
 
 

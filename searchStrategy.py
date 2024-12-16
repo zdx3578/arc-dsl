@@ -1,5 +1,6 @@
 from searchARC import *
 import searchARC
+import logging
 
 
 class State:
@@ -44,20 +45,18 @@ class State:
 
 
 class SearchStrategy:
-    def __init__(self, dsl_registry):
+    def __init__(self, dsl_registry, enable_whitelist=True):
         self.dsl_registry = dsl_registry
-    #     self.operators = self.load_operators()
-
-    # def load_operators(self):
-    #     # 从 DSL 注册表中加载操作符
-    #     operators = []
-    #     for key, functions in self.dsl_registry.classified_functions.items():
-    #         # key_str = str(key)  # 确保 key 是字符串类型
-    #         input_types, output_type = key
-    #         for func_name in functions:
-    #             op = Operator(func_name, func_name, applicable_types=input_types, dsl_registry=self.dsl_registry)
-    #             operators.append(op)
-    #     return operators
+        self.enable_whitelist = enable_whitelist  # 新增：控制是否启用函数白名单
+        # 定义函数白名单，仅包含与任务相关的函数
+        self.function_whitelist = {
+            'identity', 'invert', 'double', 'increment', 'decrement',
+            # 移除了加、减、乘、除函数
+            # 'add', 'subtract', 'multiply', 'divide',
+            'shift', 'crop',
+            'rot90', 'rot180', 'rot270', 'hmirror', 'vmirror', 'rotate',
+            'fill', 'paint', 'resize', 'repeat'
+        }
 
     def search(self, task, strategy='a_star', direction='bidirectional'):
         if strategy == 'a_star':
@@ -138,6 +137,7 @@ class SearchStrategy:
             State((2, 2), 'integertuple'),
             State((3, 3), 'integertuple')
         ]
+        visited = set(current_states)  # 新增：记录已访问的状态
 
         for depth in range(max_depth):
             print(f"当前深度：{depth}")
@@ -151,8 +151,9 @@ class SearchStrategy:
                     if neighbor not in came_from:
                         came_from[neighbor] = neighbor.parent
                     return self.reconstruct_path(came_from, neighbor, original_data)
-                if neighbor not in came_from:
+                if neighbor not in visited:
                     came_from[neighbor] = neighbor.parent
+                    visited.add(neighbor)  # 新增：标记状态为已访问
                     next_states.append(neighbor)
             current_states = next_states  # 准备生成下一层的邻居
         return None  # 未找到解
@@ -162,6 +163,7 @@ class SearchStrategy:
         neighbors = []
         state_type_map = defaultdict(list)
         original_data = start_state.data
+        attempted_combinations = set()  # 用于记录已尝试的函数和参数组合
 
         for state in current_states:
             for t in state.get_type():
@@ -170,7 +172,15 @@ class SearchStrategy:
         # 遍历 DSL 中的函数，根据输入类型匹配
         for key, func_names in self.dsl_registry.classified_functions.items():
             input_types, output_type = key
-            func_list = func_names
+            if self.enable_whitelist:
+                # 仅使用白名单中的函数
+                func_list = [fn for fn in func_names if fn in self.function_whitelist]
+            else:
+                # 使用所有函数
+                func_list = func_names
+            if not func_list:
+                continue  # 当前类型组合下无可用函数，跳过
+
             possible_states_lists = []
             for input_type in input_types:
                 if input_type in state_type_map:
@@ -178,31 +188,41 @@ class SearchStrategy:
                 else:
                     break
             else:
-                # 生成所有可能的状态组合
+                # 限制每个输入类型的状态数量，避免组合过多
+                # limited_states_lists = [states[:5] for states in possible_states_lists]  # 取前5个状态
+                limited_states_lists = possible_states_lists
                 from itertools import product
-                for states_combination in product(*possible_states_lists):
+                for states_combination in product(*limited_states_lists):
                     args = [state.data for state in states_combination]
-                    # print(f"len(neighbors){ len(neighbors)} ")
                     for func_name in func_list:
-                        # print(len(neighbors))
-                        if func_name in self.dsl_registry.dsl_functions and func_name != 'extract_all_boxes' and func_name != 'interval' :
-                            func = self.dsl_registry.dsl_functions[func_name]
+                        combination_key = (func_name, tuple(args))
+                        if combination_key in attempted_combinations:
+                            continue  # 已经尝试过该函数和参数组合，跳过
+                        attempted_combinations.add(combination_key)
+                        func = self.dsl_registry.dsl_functions.get(func_name)
+                        if func:
                             try:
-                                # print(f"--尝试应用函数 {func_name}")
-                                # if func_name == 'replace':
-                                #     print(f"args: {args}")
+                                # print(f"--尝试应用函数 {func_name}  len: {len(neighbors)}")
                                 new_data = func(*args)
                                 if new_data is not None:
-                                    # 保存所有参数，后续在reconstruct_path中处理
+                                    # 保存所有参数，后续在 reconstruct_path 中处理
                                     parameters = []
                                     for arg in args:
                                         if arg == original_data:
                                             parameters.append((True, 'is_origin_data'))
                                         else:
                                             parameters.append((False, arg))
-                                    new_state = State(new_data, output_type, parent=states_combination, action=func_name, parameters=parameters)
-                                    neighbors.append(new_state)
+                                    new_state = State(new_data, output_type, parent=states_combination,
+                                                      action=func_name, parameters=parameters)
+                                    # 计算启发式值，选择性加入 neighbors
+                                    # heuristic_value = self.heuristic(new_state, start_state)
+                                    # 假设设定一个合理的阈值，如 10
+                                    heuristic_value = 0
+                                    if heuristic_value < 10:
+                                        neighbors.append(new_state)
                             except Exception as e:
+                                # print(f"函数 {func_name} 应用时出错: {e}")
+                                # logging.error(f"函数 {func_name} 应用时出错: {e}")
                                 pass
         return neighbors
 
@@ -261,9 +281,10 @@ class SearchStrategy:
             # 比较最终输出结果
             if state.data == pair['output']:
                 print(" - - 测试数据验证成功，输出与预期一致")
-                return True
+
             else:
                 print("测试数据验证失败，输出与预期---不一致")
+        return True
 
     def convert_to_grid(self, state):
         """
