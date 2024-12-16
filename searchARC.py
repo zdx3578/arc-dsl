@@ -125,45 +125,7 @@ type_extractor = TypeExtractor(arc_types_path)
 # 查找包含 'grid' 的类型
 # types = type_extractor.extract_types(type)
 
-class State:
-    def __init__(self, data, type, parent=None, action=None, parameters=None):
-        self.data = data
-        self.types  = type_extractor.extract_types(type)  # 修改：支持多个类型
-        self.parent = parent      # 新增：记录父状态
-        self.action = action      # 新增：记录产生该状态的操作符
-        self.parameters = parameters if parameters else []
-        self.hash = self.compute_hash()
 
-    def compute_hash(self):
-        """
-        计算状态的哈希值，用于重复检测。
-        """
-        return hash((tuple(sorted(self.types)), tuple(self.parameters), self._data_hash()))  # 修改：包含参数
-
-    def __eq__(self, other):
-        return (
-            set(self.types) == set(other.types) and
-            self.data == other.data and
-            self.parameters == other.parameters  # 修改：比较参数)
-        )
-    def _data_hash(self):
-        if isinstance(self.data, list):
-            return tuple(map(tuple, self.data))
-        elif isinstance(self.data, set) or isinstance(self.data, frozenset):
-            return frozenset(self.data)
-        else:
-            return hash(self.data)
-
-    def __hash__(self):
-        return self.hash
-
-    # def __eq__(self, other):
-    #     return set(self.types) == set(other.types) and self.data == other.data  # 修改：比较类型集
-    def __lt__(self, other):
-        return random.choice([True, False])
-
-    def get_type(self):
-        return self.types  # 修改：返回类型列表
 
 
 class GridState(State):
