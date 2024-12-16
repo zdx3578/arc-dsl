@@ -412,9 +412,9 @@ if __name__ == '__main__':
 
     for i, key in enumerate(solvers, start=1):
 
-        key = 'a416b8f3'
-        if i != 1:
-            break
+        # key = 'a416b8f3'
+        # if i != 1:
+        #     break
 
         print("\n\n\n")
         print(i, key)

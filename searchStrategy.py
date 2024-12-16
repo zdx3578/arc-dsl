@@ -1,5 +1,8 @@
 from searchARC import *
 import searchARC
+from functools import partial
+from typing import List, Tuple, Set, Any, Callable
+import logging
 
 
 class SearchStrategy:
@@ -112,7 +115,7 @@ class SearchStrategy:
 
                     came_from[neighbor] = neighbor.parent
                     next_states.append(neighbor)
-                    print(f"添加新的未访问状态，当前next_states大小: {len(next_states)}")
+                    # print(f"添加新的未访问状态，当前next_states大小: {len(next_states)}")
 
             if not next_states:
                 print("没有新的状态可以扩展，搜索终止")
@@ -139,7 +142,7 @@ class SearchStrategy:
                 state_type_map[t].append(state)
 
         # 添加调试信息
-        print(f"状态类型映射: {dict(state_type_map)}")
+        # print(f"状态类型映射: {dict(state_type_map)}")
 
         # 遍历 DSL 中的函数，根据输入类型匹配
         for key, func_names in self.dsl_registry.classified_functions.items():
@@ -186,73 +189,106 @@ class SearchStrategy:
         return neighbors
 
     def reconstruct_path(self, came_from, current_state):
-        """回溯路径，生成操作序列和路径。同时处理参数列表。"""
+        """使用函数式方式重构路径重建逻辑"""
+
+        def collect_original_data(state, acc_set: Set) -> Set:
+            """纯函数：收集原始输入数据"""
+            if state not in came_from:
+                return acc_set
+            parent = state.parent
+            if not parent:
+                return acc_set
+
+            new_data = set()
+            if isinstance(parent, (list, tuple)):
+                new_data.update(p.data for p in parent if p.parent is None)
+            elif parent.parent is None:
+                new_data.add(parent.data)
+
+            return collect_original_data(came_from[state], acc_set | new_data)
+
+        def create_param_info(params, original_datas: Set) -> Tuple[List, List]:
+            """纯函数：创建参数信息"""
+            positions = []
+            values = []
+
+            for i, param in enumerate(params or []):
+                is_original = param in original_datas
+                positions.append(i if is_original else None)
+                values.append(None if is_original else param)
+
+            return (
+                [p for p in positions if p is not None],  # 原始输入位置
+                values  # 参数值，原始输入位置为None
+            )
+
+        def build_action(state, original_datas: Set) -> Tuple:
+            """纯函数：构建动作信息"""
+            if not state.parameters:
+                return (state.action, [], [])
+            param_positions, param_values = create_param_info(state.parameters, original_datas)
+            return (state.action, param_values, param_positions)
+
+        # 获取原始数据集
+        original_datas = collect_original_data(current_state, set())
+
+        # 构建路径和动作
         path = []
         actions = []
-        original_data = (
-            current_state.parent[0].data
-            if isinstance(current_state.parent, (list, tuple))
-            else current_state.parent.data
-        )
-
         while current_state in came_from:
-            # 检查参数列表,提取额外参数
-            if current_state.parameters:
-                # 如果第一个参数是原始输入数据,只保留其他参数
-                if current_state.parameters[0] == original_data:
-                    extra_params = current_state.parameters[1:]
-                else:
-                    extra_params = current_state.parameters
-                actions.append((current_state.action, extra_params))
-            else:
-                actions.append((current_state.action, []))
-
             path.append(current_state)
+            actions.append(build_action(current_state, original_datas))
             current_state = came_from[current_state]
 
-        path.reverse()
-        actions.reverse()
-        return path, actions
+        return list(reversed(path)), list(reversed(actions))
 
     def heuristic(self, state, goal_state):
         return compute_difference(state.data, goal_state.data)
 
     def validate_test_data(self, task, actions):
-        for pair in task["test"]:
-            state = State(pair["input"], "grid")
-            for action, parameters in actions:
-                func = self.dsl_registry.dsl_functions.get(action)
-                if func:
-                    try:
-                        # 使用当前输入和保存的额外参数构造完整参数列表
-                        args = [state.data] + list(parameters)
-                        new_data = func(*args)
-                        if new_data is not None:
-                            state = State(
-                                new_data,
-                                "grid",
-                                parent=state,
-                                action=action,
-                                parameters=parameters,
-                            )
-                        else:
-                            print(f"函数 {action} 无法应用于当前状态")
-                            break
-                    except Exception as e:
-                        print(f"函数 {action} 执行时出错: {e}")
-                        logging.error("捕获到异常：%s", e)
-                        logging.error("详细错误信息：\n%s", traceback.format_exc())
-                        break
-                else:
-                    print(f"未找到操作符 {action}")
-                    break
-            # 应用 'asindices' 转换
-            # state = self.apply_asindices_if_needed(state)
-            # 比较最终输出结果
-            if state.data == pair["output"]:
-                print("测试数据验证成功，输出与预期一致")
-            else:
-                print("测试数据验证失败，输出与预期不一致")
+        """使用函数式方式重构验证逻辑"""
+
+        def apply_action(state: State, action_info: Tuple) -> State:
+            """纯函数：应用单个动作到状态"""
+            action_name, param_values, input_positions = action_info
+            func = self.dsl_registry.dsl_functions.get(action_name)
+
+            if not func:
+                raise ValueError(f"未找到操作符 {action_name}")
+
+            # 构建参数列表
+            args = param_values.copy()
+            for pos in input_positions:
+                args[pos] = state.data
+
+            try:
+                result = func(*args)
+                if result is None:
+                    raise ValueError(f"函数 {action_name} 无法应用于当前状态")
+
+                return State(result, "grid", parent=state, action=action_name, parameters=args)
+
+            except Exception as e:
+                logging.error(f"函数 {action_name} 执行时出错: {e}")
+                logging.error(f"详细错误信息：\n{traceback.format_exc()}")
+                raise
+
+        def validate_single_pair(pair, actions):
+            """纯函数：验证单个输入输出对"""
+            initial_state = State(pair["input"], "grid")
+            try:
+                final_state = reduce(apply_action, actions, initial_state)
+                return final_state.data == pair["output"]
+            except Exception as e:
+                print(f"验证过程出错: {e}")
+                return False
+
+        # 验证所有测试数据
+        results = map(lambda pair: validate_single_pair(pair, actions), task["test"])
+
+        # 处理验证结果
+        for success in results:
+            print("测试数据验证成功，输出与预期一致" if success else "测试数据验证失败，输出与预期不一致")
 
     # def apply_asindices_if_needed(self, state):
     #     """
@@ -268,7 +304,7 @@ class SearchStrategy:
     #                 else:
     #                     print("函数 asindices 无法应用于当前状态")
     #             except Exception as e:
-    #                 print(f"函数 asindices 执行时出错: {e}")
+    #                 print(f"函数 asindices 执行时出错: e")
     #     return state
 
     def convert_to_grid(self, state):
