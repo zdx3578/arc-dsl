@@ -257,81 +257,88 @@ class SearchStrategy:
         return neighbors
 
     def reconstruct_path(self, came_from, current_state, original_data):
-        """回溯路径，生成操作序列和路径。同时处理参数列表，支持多个父节点。"""
+        """回溯路径，生成操作序列和路径，构建可执行的函数代码。"""
         actions = []
         visited_states = set()
+        var_mapping = {}  # 状态到变量名的映射
 
         def dfs(state):
             if state in visited_states:
-                return []
+                return
             visited_states.add(state)
+
             if state in came_from:
                 parents = came_from[state]
                 if not isinstance(parents, (list, tuple)):
                     parents = [parents]
-                paths = []
                 for parent in parents:
-                    sub_actions = dfs(parent)
-                    if state.parameters:
-                        sub_actions.append((state.action, state.parameters))
-                    else:
-                        sub_actions.append((state.action, []))
-                    paths.extend([sub_actions])
-                # 选择最长的路径（也可以根据需要选择其他策略）
-                longest_path = max(paths, key=len)
-                return longest_path
+                    dfs(parent)
+                # 为当前状态分配变量名
+                var_name = f'x{len(var_mapping)}'
+                var_mapping[state] = var_name
+                # 构建函数调用语句
+                if state.action:
+                    params = []
+                    for is_origin, param in state.parameters:
+                        if is_origin:
+                            params.append('I')  # 输入数据变量名为 'I'
+                        else:
+                            # 在已分配的变量中查找参数对应的状态
+                            param_state = None
+                            for s in var_mapping:
+                                if s.data == param:
+                                    param_state = s
+                                    break
+                            if param_state:
+                                param_var = var_mapping[param_state]
+                            else:
+                                # 参数是常量，直接使用其字面量
+                                param_var = repr(param)
+                            params.append(param_var)
+                    func_call = f"{var_mapping[state]} = {state.action}({', '.join(params)})"
+                    actions.append(func_call)
             else:
-                return []
+                # 初始状态，可能是输入数据或常量
+                if state.data == original_data:
+                    var_mapping[state] = 'I'  # 输入数据变量名为 'I'
+                else:
+                    const_name = f'const_{len(var_mapping)}'
+                    var_mapping[state] = const_name
+                    actions.append(f"{const_name} = {repr(state.data)}")  # 定义常量
 
-        action_sequence = dfs(current_state)
-        action_sequence.reverse()  # 由于是从 goal 到 start，需要反转
-
-        transformations = action_sequence
+        dfs(current_state)
+        actions.append(f"O = {var_mapping[current_state]}")  # 最终输出
+        transformations = actions  # 修正：不反转操作序列
         print()
         print("找到 transformations:", transformations)  # 打印变换路径
-        return None, transformations  # 返回变换路径
+
+        return None, transformations  # 返回构建的函数代码
+
+    def validate_test_data(self, task, transformations):
+        """组装并执行由 transformations 构建的函数，对测试数据进行验证。"""
+        func_code = ['def solve(I):']
+        for line in transformations:
+            func_code.append('    ' + line)
+        func_code.append('    return O')
+        func_code_str = '\n'.join(func_code)
+        print("生成的函数代码:")
+        print(func_code_str)
+        # 执行函数代码
+        local_vars = {}
+        exec(func_code_str, globals(), local_vars)
+        solve = local_vars['solve']
+        for pair in task['test']:
+            I = pair['input']
+            output = solve(I)
+            if output == pair['output']:
+                print(" - - 测试数据验证成功，输出与预期一致")
+            else:
+                print("测试数据验证失败，输出与预期不一致")
+                return False
+        return True
 
     def heuristic(self, state, goal_state):
         return compute_difference(state.data, goal_state.data)
-
-    def validate_test_data(self, task, transformations):
-        for pair in task['test']:
-            state = State(pair['input'], 'grid')
-            # 应用变换路径
-            for transformation in transformations:
-                action = transformation['action']
-                parameters = transformation['parameters']
-                func = self.dsl_registry.dsl_functions.get(action)
-                if func:
-                    args = []
-                    for is_origin, param in parameters:
-                        if is_origin:
-                            args.append(state.data)
-                        else:
-                            # 重建参数的变换过程
-                            param_state = self.reconstruct_parameter(param, pair['input'])
-                            args.append(param_state.data)
-                    try:
-                        new_data = func(*args)
-                        if new_data is not None:
-                            state = State(new_data, 'grid', transformation_path=state.transformation_path + [transformation])
-                        else:
-                            print(f"函数 {action} 无法应用于当前状态")
-                            break
-                    except Exception as e:
-                        print(f"函数 {action} 执行时出错: {e}")
-                        logging.error("捕获到异常：%s", e)
-                        logging.error("详细错误信息：\n%s", traceback.format_exc())
-                        break
-                else:
-                    print(f"未找到操作符 {action}")
-                    break
-            # 比较最终输出结果
-            if state.data == pair['output']:
-                print(" - - 测试数据验证成功，输出与预期一致")
-
-            else:
-                print("测试数据验证失败，输出与预期不一致")
 
     def reconstruct_parameter(self, param_info, input_data):
         # 重建参数的状态，包括变换路径
