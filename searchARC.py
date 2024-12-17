@@ -374,7 +374,7 @@ if __name__ == '__main__':
 
     for i, key in enumerate(solvers, start=1):
 
-        key = '4c4377d9'
+        key = 'd10ecb37'
         if i != 1:
             break
 
@@ -405,7 +405,7 @@ if __name__ == '__main__':
         dsl_registry = DSLFunctionRegistry(classified_functions_file)
 
         # search_algorithm = SearchStrategy(dsl_registry)
-        search_algorithm = SearchStrategy(dsl_registry, enable_whitelist=False)
+        search_algorithm = SearchStrategy(dsl_registry, enable_whitelist=True)
         search_algorithm.search(task)
 
 

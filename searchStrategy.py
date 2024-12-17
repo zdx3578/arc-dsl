@@ -221,7 +221,7 @@ class SearchStrategy:
                         func = self.dsl_registry.dsl_functions.get(func_name)
                         if func:
                             try:
-                                print(f"--尝试应用函数 {func_name}  arg {args}  - - neighborslen: {len(neighbors)}")
+                                # print(f"--尝试应用函数 {func_name}  arg {args}  - - neighborslen: {len(neighbors)}")
                                 new_data = func(*args)
                                 if new_data is not None:
                                     # 保存所有参数，后续在 reconstruct_path 中处理
@@ -259,13 +259,13 @@ class SearchStrategy:
     def reconstruct_path(self, came_from, current_state, original_data):
         """回溯路径，生成操作序列和路径，构建可执行的函数代码。"""
         actions = []
-        visited_states = set()
+        # visited_states = set()
         var_mapping = {}  # 状态到变量名的映射
 
         def dfs(state):
-            if state in visited_states:
-                return
-            visited_states.add(state)
+            # if state in visited_states:
+            #     return
+            # visited_states.add(state)
 
             if state in came_from:
                 parents = came_from[state]
