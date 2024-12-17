@@ -5,13 +5,14 @@ from dsl  import *
 
 
 class State:
-    def __init__(self, data, type, parent=None, action=None, parameters=None):
+    def __init__(self, data, type, parent=None, action=None, parameters=None, transformation_path=None):
         self.data = data
         self.types = type_extractor.extract_types(type)  # 修改：支持多个类型
         self.parent = parent      # 新增：记录父状态
         self.action = action      # 新增：记录产生该状态的操作符
         self.parameters = parameters if parameters else []
         self.hash = self.compute_hash()
+        self.transformation_path = transformation_path if transformation_path else []
 
     def compute_hash(self):
         """
@@ -230,8 +231,19 @@ class SearchStrategy:
                                             parameters.append((True, 'is_origin_data'))
                                         else:
                                             parameters.append((False, arg))
+                                    # 构建新的变换路径
+                                    new_transformation_path = []
+                                    for state in states_combination:
+                                        new_transformation_path.extend(state.transformation_path)
+                                    new_transformation = {
+                                        'action': func_name,
+                                        'parameters': parameters
+                                    }
+                                    new_transformation_path.append(new_transformation)
+                                    # 创建新状态，包含变换路径
                                     new_state = State(new_data, output_type, parent=states_combination,
-                                                      action=func_name, parameters=parameters)
+                                                      action=func_name, parameters=parameters,
+                                                      transformation_path=new_transformation_path)
                                     # 计算启发式值，选择性加入 neighbors
                                     # heuristic_value = self.heuristic(new_state, start_state)
                                     # 假设设定一个合理的阈值，如 10
@@ -245,46 +257,64 @@ class SearchStrategy:
         return neighbors
 
     def reconstruct_path(self, came_from, current_state, original_data):
-        """回溯路径，生成操作序列和路径。同时处理参数列表。"""
-        path = []
+        """回溯路径，生成操作序列和路径。同时处理参数列表，支持多个父节点。"""
         actions = []
+        visited_states = set()
 
-        while current_state in came_from:
-            # 检查参数列表,提取额外参数
-            if current_state.parameters:
-                actions.append((current_state.action, current_state.parameters))
+        def dfs(state):
+            if state in visited_states:
+                return []
+            visited_states.add(state)
+            if state in came_from:
+                parents = came_from[state]
+                if not isinstance(parents, (list, tuple)):
+                    parents = [parents]
+                paths = []
+                for parent in parents:
+                    sub_actions = dfs(parent)
+                    if state.parameters:
+                        sub_actions.append((state.action, state.parameters))
+                    else:
+                        sub_actions.append((state.action, []))
+                    paths.extend([sub_actions])
+                # 选择最长的路径（也可以根据需要选择其他策略）
+                longest_path = max(paths, key=len)
+                return longest_path
             else:
-                actions.append((current_state.action, []))
+                return []
 
-            path.append(current_state)
-            current_state = came_from[current_state]
+        action_sequence = dfs(current_state)
+        action_sequence.reverse()  # 由于是从 goal 到 start，需要反转
 
-        path.reverse()
-        actions.reverse()
-        return path, actions
+        transformations = action_sequence
+        print()
+        print("找到 transformations:", transformations)  # 打印变换路径
+        return None, transformations  # 返回变换路径
 
     def heuristic(self, state, goal_state):
         return compute_difference(state.data, goal_state.data)
 
-    def validate_test_data(self, task, actions):
+    def validate_test_data(self, task, transformations):
         for pair in task['test']:
             state = State(pair['input'], 'grid')
-            for action, parameters in actions:
+            # 应用变换路径
+            for transformation in transformations:
+                action = transformation['action']
+                parameters = transformation['parameters']
                 func = self.dsl_registry.dsl_functions.get(action)
                 if func:
                     args = []
-                    for q, value in parameters:
-                        if q:
+                    for is_origin, param in parameters:
+                        if is_origin:
                             args.append(state.data)
                         else:
-                            if action == 'upscale':
-                                if isinstance(value, tuple):
-                                    value = value[1]  # 提取元组中的值
-                            args.append(value)
+                            # 重建参数的变换过程
+                            param_state = self.reconstruct_parameter(param, pair['input'])
+                            args.append(param_state.data)
                     try:
                         new_data = func(*args)
                         if new_data is not None:
-                            state = State(new_data, 'grid', parent=state, action=action, parameters=parameters)
+                            state = State(new_data, 'grid', transformation_path=state.transformation_path + [transformation])
                         else:
                             print(f"函数 {action} 无法应用于当前状态")
                             break
@@ -301,8 +331,18 @@ class SearchStrategy:
                 print(" - - 测试数据验证成功，输出与预期一致")
 
             else:
-                print("测试数据验证失败，输出与预期---不一致")
-        return True
+                print("测试数据验证失败，输出与预期不一致")
+
+    def reconstruct_parameter(self, param_info, input_data):
+        # 重建参数的状态，包括变换路径
+        is_origin, value = param_info
+        if is_origin:
+            return State(input_data, 'grid')
+        else:
+            # 根据参数的变换路径重建参数
+            state = State(value, 'unknown')
+            # 如有需要，添加对参数变换的处理
+            return state
 
     def convert_to_grid(self, state):
         """
