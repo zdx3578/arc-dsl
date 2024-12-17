@@ -89,7 +89,7 @@ class SearchStrategy:
             # 如果找到了解决方案，打印函数序列
             if solution:
                 actions = solution  # 修改：解包路径和操作序列
-                print(" ！ ！ ！ ！ ！ 成功的状态转换过程的函数序列:",actions)
+                print(" \n ok over ！ ！ ！ ！ ！ all data test over 成功的状态转换过程的函数序列:",actions)
                 # print(actions)
 
                 # 使用记录的函数序列对测试数据进行验证
@@ -122,8 +122,9 @@ class SearchStrategy:
                 return None
 
         # 如果找到共用的操作符序列，进行测试验证
-        print(" - - 找到适用于所有训练数据对的共用函数序列:", common_actions)
-        if self.validate_test_data(task, common_actions) :
+        print(" \n- - action all same  找到适用于所有训练数据对的共用函数序列:", common_actions)
+        if self.validate_on_all_data(task, common_actions) :
+            # print(" ！ ！ ！ ！ ！ 成功的状态转换过程的函数序列:",common_actions)
             return common_actions  # 修改：只返回 common_actions
 
     def data_in_closed_set(self, state_data, closed_set):
@@ -159,7 +160,7 @@ class SearchStrategy:
         visited = set(current_states)  # 新增：记录已访问的状态
 
         for depth in range(max_depth):
-            print(f"当前深度：{depth}")
+            print(f"\n当前深度：{depth}")
             neighbors = self.get_neighbors(current_states, start_state, visited)  # 修改：传入 visited
             if not neighbors:
                 break  # 没有新的邻居，停止搜索
@@ -195,6 +196,7 @@ class SearchStrategy:
             if not self.validate_single_pair(I, expected_output, actions):
                 print(f"----Failed on input: {I}, expected output: {expected_output}")
                 return False  # 有一个数据未通过验证
+        print(" ！ ！ ！ ！ ！ all data test 成功的状态转换过程的函数序列:",actions)
         return True  # 所有数据都通过
 
     def validate_single_pair(self, I, expected_output, actions):
@@ -342,72 +344,14 @@ class SearchStrategy:
         dfs(current_state)
         actions.append(f"O = {var_mapping[current_state]}")  # 最终输出
         transformations = actions  # 修正：不反转操作序列
-        print()
+        # print()
         print("找到 transformations:", transformations)  # 打印变换路径
 
         return None, transformations  # 返回构建的函数代码
 
-    def validate_test_data(self, task, transformations):
-        """组装并执行由 transformations 构建的函数，对测试数据进行验证。"""
-        func_code = ['def solve(I):']
-        for line in transformations:
-            func_code.append('    ' + line)
-        func_code.append('    return O')
-        func_code_str = '\n'.join(func_code)
-        print("生成的函数代码:")
-        print(func_code_str)
-        # 执行函数代码
-        local_vars = {}
-        exec(func_code_str, globals(), local_vars)
-        solve = local_vars['solve']
-        for pair in task['test']:
-            I = pair['input']
-            output = solve(I)
-            if output == pair['output']:
-                print(" - - 测试数据验证成功，输出与预期一致")
-            else:
-                print("测试数据验证失败，输出与预期不一致")
-                return False
-        return True
+
 
     def heuristic(self, state, goal_state):
         return compute_difference(state.data, goal_state.data)
 
-    def reconstruct_parameter(self, param_info, input_data):
-        # 重建参数的状态，包括变换路径
-        is_origin, value = param_info
-        if is_origin:
-            return State(input_data, 'grid')
-        else:
-            # 根据参数的变换路径重建参数
-            state = State(value, 'unknown')
-            # 如有需要，添加对参数变换的处理
-            return state
-
-    def convert_to_grid(self, state):
-        """
-        将非 'grid' 类型的状态转换为 'grid' 类型。
-        需要根据具体的上下文和可用的函数来实现。
-        """
-        # 示例：如果状态类型是 'indices'，尝试转换为 'grid'
-        if 'indices' in state.get_type():
-            # 假设有一个函数可以将 indices 转换为 grid，例如 indices_to_grid
-            new_data = indices_to_grid(state.data)
-            return State(new_data, 'grid')
-        else:
-            # 无法转换，返回原状态
-            return state
-
-    def get_operator_by_name(self, name):
-        for op in self.dsl_registry.dsl_functions.values():
-            if op.__name__ == name:
-                return Operator(name, name, dsl_registry=self.dsl_registry)
-        return None
-
-    def get_applicable_types(self, state_or_input_types, applicable_types):
-        if isinstance(state_or_input_types, State):
-            input_types = state_or_input_types.get_type()
-        else:
-            input_types = state_or_input_types
-        return set(input_types) & set(applicable_types)
 
