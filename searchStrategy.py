@@ -104,7 +104,7 @@ class SearchStrategy:
             start_state = State(pair['input'], 'grid')  # 包含类型信息
             goal_state = State(pair['output'], 'grid')  # 包含类型信息
 
-            solution = self._search_single_pair(start_state, goal_state, heuristic)
+            solution = self._search_single_pair( task , start_state, goal_state, heuristic)
             if solution is None:
                 print("未找到训练数据对的解决方案")
                 return None
@@ -135,7 +135,7 @@ class SearchStrategy:
                 return True
         return False
 
-    def _search_single_pair(self, start_state, goal_state, heuristic):
+    def _search_single_pair(self,task, start_state, goal_state, heuristic):
         max_depth = 10  # 最大搜索深度，可以根据需要调整
         came_from = {}
         original_data = start_state.data  # 设置原始数据
@@ -169,7 +169,13 @@ class SearchStrategy:
                     # 在调用 reconstruct_path 前，先更新 came_from
                     if neighbor not in came_from:
                         came_from[neighbor] = neighbor.parent
-                    return self.reconstruct_path(came_from, neighbor, original_data)
+                    # return self.reconstruct_path(came_from, neighbor, original_data)
+                    _, actions = self.reconstruct_path(came_from, neighbor, original_data)
+                    if self.validate_on_all_data(task, actions):
+                        return None, actions  # 返回找到的解，立即结束搜索
+                    else:
+                        pass  # 继续搜索
+
                 if neighbor not in visited:
                     visited.add(neighbor)  # 新增：标记状态为已访问
                 # if neighbor not in came_from:
@@ -178,6 +184,33 @@ class SearchStrategy:
                     next_states.append(neighbor)
             current_states = next_states  # 准备生成下一层的邻居
         return None  # 未找到解
+
+
+
+    def validate_on_all_data(self, task, actions):
+        """在所有训练数据和测试数据上验证给定的函数序列。"""
+        for pair in task['train'] + task.get('test', []):
+            I = pair['input']
+            expected_output = pair['output']
+            if not self.validate_single_pair(I, expected_output, actions):
+                print(f"----Failed on input: {I}, expected output: {expected_output}")
+                return False  # 有一个数据未通过验证
+        return True  # 所有数据都通过
+
+    def validate_single_pair(self, I, expected_output, actions):
+        """对单个数据对进行验证。"""
+        func_code = ['def solve(I):']
+        for line in actions:
+            func_code.append('    ' + line)
+        func_code.append('    return O')
+        func_code_str = '\n'.join(func_code)
+        local_vars = {}
+        exec(func_code_str, globals(), local_vars)
+        solve = local_vars['solve']
+        output = solve(I)
+        return output == expected_output
+
+
 
     def get_neighbors(self, current_states, start_state, visited):
         """生成下一层的邻居状态，支持多参数函数和状态组合。"""
