@@ -159,7 +159,7 @@ class SearchStrategy:
 
         for depth in range(max_depth):
             print(f"当前深度：{depth}")
-            neighbors = self.get_neighbors(current_states, start_state)  # 修改：传入 start_state
+            neighbors = self.get_neighbors(current_states, start_state, visited)  # 修改：传入 visited
             if not neighbors:
                 break  # 没有新的邻居，停止搜索
             next_states = []
@@ -178,14 +178,15 @@ class SearchStrategy:
             current_states = next_states  # 准备生成下一层的邻居
         return None  # 未找到解
 
-    def get_neighbors(self, current_states, start_state):
+    def get_neighbors(self, current_states, start_state, visited):
         """生成下一层的邻居状态，支持多参数函数和状态组合。"""
         neighbors = []
         state_type_map = defaultdict(list)
         original_data = start_state.data
         attempted_combinations = set()  # 用于记录已尝试的函数和参数组合
 
-        for state in current_states:
+        # 使用所有已访问的状态来生成可能的函数组合
+        for state in visited:
             for t in state.get_type():
                 state_type_map[t].append(state)
 
