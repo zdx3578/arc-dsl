@@ -1,6 +1,7 @@
 from searchARC import *
 import searchARC
 import logging
+from dsl  import *
 
 
 class State:
@@ -45,21 +46,33 @@ class State:
 
 
 class SearchStrategy:
-    def __init__(self, dsl_registry, enable_whitelist=True):
+    def __init__(self, dsl_registry, enable_whitelist=False):
         self.dsl_registry = dsl_registry
-        # 定义函数白名单，默认包含所有 DSL 函数
-        self.function_whitelist = set(self.dsl_registry.dsl_functions.keys())
-        # 批量移除不需要的函数
-        functions_to_remove = [
-            'add',
-            'subtract',
-            'multiply',
-            'divide',
-            'tojvec',
-            'toivec'
-        ]
-        for func in functions_to_remove:
-            self.function_whitelist.discard(func)  # 使用 discard 防止函数不存在时报错
+        # 定义函数白名单，根据 enable_whitelist 参数选择初始化方式
+        if enable_whitelist:
+            # 初始化为包含所有 DSL 函数
+            self.function_whitelist = set(self.dsl_registry.dsl_functions.keys())
+            # 批量移除不需要的函数
+            functions_to_remove = [
+                'add',
+                'subtract',
+                'multiply',
+                'divide',
+                'tojvec',
+                'toivec'
+            ]
+            for func in functions_to_remove:
+                self.function_whitelist.discard(func)  # 使用 discard 防止函数不存在时报错
+        else:
+            # 手动指定需要的函数集合
+            self.function_whitelist = {
+                'hmirror',
+                'vconcat',
+                # 其他需要的函数
+            }
+            # 如果需要添加更多函数，直接在此处添加即可
+            # 例如:
+            # 'another_function',
 
     def search(self, task, strategy='a_star', direction='bidirectional'):
         if strategy == 'a_star':
@@ -140,6 +153,8 @@ class SearchStrategy:
             State((2, 2), 'integertuple'),
             State((3, 3), 'integertuple')
         ]
+        # current_states = [start_state]
+
         visited = set(current_states)  # 新增：记录已访问的状态
 
         for depth in range(max_depth):
@@ -155,8 +170,10 @@ class SearchStrategy:
                         came_from[neighbor] = neighbor.parent
                     return self.reconstruct_path(came_from, neighbor, original_data)
                 if neighbor not in visited:
-                    came_from[neighbor] = neighbor.parent
                     visited.add(neighbor)  # 新增：标记状态为已访问
+                # if neighbor not in came_from:
+                    came_from[neighbor] = neighbor.parent
+
                     next_states.append(neighbor)
             current_states = next_states  # 准备生成下一层的邻居
         return None  # 未找到解
@@ -197,11 +214,12 @@ class SearchStrategy:
                         combination_key = (func_name, tuple(args))
                         if combination_key in attempted_combinations:
                             continue  # 已经尝试过该函数和参数组合，跳过
+                            # pass
                         attempted_combinations.add(combination_key)
                         func = self.dsl_registry.dsl_functions.get(func_name)
                         if func:
                             try:
-                                print(f"--尝试应用函数 {func_name}  arg {args} len: {len(neighbors)}")
+                                print(f"--尝试应用函数 {func_name}  arg {args}  - - neighborslen: {len(neighbors)}")
                                 new_data = func(*args)
                                 if new_data is not None:
                                     # 保存所有参数，后续在 reconstruct_path 中处理
