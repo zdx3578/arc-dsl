@@ -1,11 +1,14 @@
 from dsl import *
 from constants import *
+import dsl2
+
 
 # 第 1 个函数  d10ecb37
 def solve_d10ecb37(I):
     O = crop(I, ORIGIN, TWO_BY_TWO)
     return O
 
+is_subgrid = dsl2.is_subgrid_grid
 
 # 第 2 个函数  74dd1130
 def solve_74dd1130(I):

@@ -47,7 +47,7 @@ class State:
 
 
 class SearchStrategy:
-    def __init__(self, dsl_registry, enable_whitelist=False):
+    def __init__(self, dsl_registry, enable_whitelist=False, whitelist = None):
         self.dsl_registry = dsl_registry
         # 定义函数白名单，根据 enable_whitelist 参数选择初始化方式
         if enable_whitelist:
@@ -65,12 +65,13 @@ class SearchStrategy:
             for func in functions_to_remove:
                 self.function_whitelist.discard(func)  # 使用 discard 防止函数不存在时报错
         else:
+            self.function_whitelist = whitelist
             # 手动指定需要的函数集合
-            self.function_whitelist = {
-                'hmirror',
-                'vconcat',
-                # 其他需要的函数
-            }
+            # self.function_whitelist = {
+            #     'hmirror',
+            #     'vconcat',
+            #     # 其他需要的函数
+            # }
             # 如果需要添加更多函数，直接在此处添加即可
             # 例如:
             # 'another_function',
@@ -135,6 +136,10 @@ class SearchStrategy:
             if state.data == state_data:
                 return True
         return False
+
+
+    def _search_single_pair_reverse(self,task, start_state, goal_state, heuristic):
+        return self._search_single_pair(task, goal_state, start_state, heuristic)
 
     def _search_single_pair(self,task, start_state, goal_state, heuristic):
         max_depth = 10  # 最大搜索深度，可以根据需要调整

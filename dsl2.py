@@ -4,6 +4,7 @@ from dsl import *
 from typing import Dict, Any, List, Tuple, Callable, Optional
 import logging
 import traceback
+import dsl
 
 @contextmanager
 def safe_context():
@@ -1226,7 +1227,7 @@ def is_subgrid_grid(grid1: Grid, grid2: Grid) -> bool:
                 if not match:
                     break
             if match:
-                return True
+                return True, crop
 
     return False
 

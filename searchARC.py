@@ -14,6 +14,7 @@ from searchStrategy import *  # 从 searchARC-search.py 中导入所有内容
 import re
 import random
 from collections import defaultdict
+import solvers_is_judge as solvers
 
 class TypeExtractor:
     def __init__(self, file_path):
@@ -122,38 +123,7 @@ arc_types_path = 'arc_types.py'  # 替换为实际路径
 # 初始化时一次性加载文件内容
 type_extractor = TypeExtractor(arc_types_path)
 
-# 查找包含 'grid' 的类型
-# types = type_extractor.extract_types(type)
 
-
-
-
-# class GridState(State):
-# # class State:
-#     def __init__(self, data, state_type='grid'):
-#         self.data = data
-#         self.type = state_type  # 状态类型：'grid'、'object' 等
-#         self.hash = self.compute_hash()
-
-#     def compute_hash(self):
-#         """
-#         计算状态的哈希值，用于重复检测。
-#         """
-#         if self.type == 'grid':
-#             return hash(tuple(map(tuple, self.data)))
-#         elif self.type == 'object':
-#             return hash(frozenset(self.data))
-#         else:
-#             return hash(self.data)
-
-#     def __hash__(self):
-#         return self.hash
-
-#     def __eq__(self, other):
-#         return self.data == other.data and self.type == other.type
-
-#     def get_size(self):
-#         return (len(self.grid), len(self.grid[0]))
 
 class Operator:
     def __init__(self, name, function_name, inverse_function_name=None, applicable_types=None, dsl_registry=None):
@@ -215,8 +185,73 @@ class SearchAlgorithm:
         raise NotImplementedError
 
 
+def get_is_functions(code_file):
+    """
+    从指定的代码文件中获取所有以 'is_' 开头的函数和以 'solve_' 开头的函数的名称列表。
+    """
+    with open(code_file, 'r', encoding='utf-8') as file:
+        code = file.read()
+    # 提取所有以 'is_' 开头的函数名称
+    is_functions = re.findall(r'def (is_\w+)\s*\(', code)
+    # 提取所有以 'solve_' 开头的函数名称
+    solve_functions = re.findall(r'def (solve_\w+)\s*\(', code)
+    return is_functions + solve_functions
 
+def is_checking(task):
+    """
+    遍历所有的 'is_' 函数，验证任务的训练数据。
+    对于验证成功的函数，提取其子函数。
+    """
+    code_file = '/Users/zhangdexiang/github/VSAHDC/arc-dsl/solvers_is_judge.py'  # 指定包含 is 函数的文件
+    is_functions = get_is_functions(code_file)
+    valid_functions = []
 
+    for is_function_name in is_functions:
+        # 从模块中获取函数对象
+        is_function = getattr(solvers, is_function_name)
+        if not is_function:
+            continue  # 如果函数不存在，跳过
+
+        success = True
+        for pair in task['train']:
+            input_grid = pair['input']
+            output_grid = pair['output']
+            # 调用 is 函数进行验证
+            try:
+                if not is_function(input_grid, output_grid):
+                    success = False
+                    break
+            except Exception as e:
+                success = False
+                break
+
+        if success:
+            # 如果在所有训练数据对上验证成功，记录函数名称
+            # valid_functions.append(is_function_name)
+            # 提取该函数的子函数
+            subclasses = get_function_subclass(is_function_name, code_file)
+            print(f"Function '{is_function_name}' passed validation. Subclasses: {subclasses}")
+            return subclasses
+
+def get_function_subclass(function_name, code_file):
+    """
+    获取指定函数中调用的子函数名称列表。
+    """
+    with open(code_file, 'r', encoding='utf-8') as file:
+        code = file.read()
+    # 提取指定函数的完整定义
+    pattern = rf'def {function_name}\s*\(.*?\):([\s\S]*?)(?=\n\ndef |\n#|\Z)'
+    match = re.search(pattern, code)
+    if not match:
+        print(f"Function {function_name} not found.")
+        return []
+
+    function_body = match.group(1)
+    # 提取函数体中调用的函数名称
+    called_functions = re.findall(r'\b(\w+)\s*\(', function_body)
+    # 去除自身和内置函数，获取唯一的函数名称列表
+    subclasses = set(called_functions) - {function_name}
+    return subclasses
 
 def compute_difference(data1, data2):
     """
@@ -233,16 +268,16 @@ def compute_difference(data1, data2):
     else:
         return float('inf')
 
-class DifferenceAnalyzer:
-    def analyze_difference(self, task):
-        difference = compute_difference(start_state.data, goal_state.data)
-        # 根据差异大小或类型选择搜索方向
-        if difference == 0:
-            return 'none'
-        elif difference < 10:
-            return 'forward'
-        else:
-            return 'bidirectional'
+# class DifferenceAnalyzer:
+#     def analyze_difference(self, task):
+#         difference = compute_difference(start_state.data, goal_state.data)
+#         # 根据差异大小或类型选择搜索方向
+#         if difference == 0:
+#             return 'none'
+#         elif difference < 10:
+#             return 'forward'
+#         else:
+#             return 'bidirectional'
 
 
 import ast
@@ -370,13 +405,13 @@ if __name__ == '__main__':
     pattern = r"def solve_([a-fA-F0-9]+)\(I\):"
     import re
     # 获取所有匹配的函数名
-    solvers = re.findall(pattern, code)
+    solver_functions_name = re.findall(pattern, code)  # 修改变量名为 solver_functions
 
-    for i, key in enumerate(solvers, start=1):
+    for i, key in enumerate(solver_functions_name, start=1):  # 使用 solver_functions
 
-        # key = 'd10ecb37'
-        # if i != 1:
-        #     break
+        key = '74dd1130'
+        if i != 1:
+            break
 
         print("\n\n\n")
         print(i, key)
@@ -399,13 +434,18 @@ if __name__ == '__main__':
 
 
         # Difference analyzer
-        difference_analyzer = DifferenceAnalyzer()
+        # difference_analyzer = DifferenceAnalyzer()
+
+        whitelist = is_checking(task)
 
         classified_functions_file = '/Users/zhangdexiang/github/VSAHDC/arc-dsl/forprolog/classDSLresult2.json'
         dsl_registry = DSLFunctionRegistry(classified_functions_file)
 
         # search_algorithm = SearchStrategy(dsl_registry)
-        search_algorithm = SearchStrategy(dsl_registry, enable_whitelist=True)
+        if whitelist :
+            search_algorithm = SearchStrategy(dsl_registry, enable_whitelist=False, whitelist = whitelist)
+        else:
+            search_algorithm = SearchStrategy(dsl_registry, enable_whitelist=True,)
         search_algorithm.search(task)
 
 
