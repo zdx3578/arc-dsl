@@ -239,38 +239,76 @@ class SearchStrategy:
 
 
     def get_neighbors(self, current_states, start_state, visited, goal_state=None, task=None, came_from=None):
-        """生成邻居状态,支持提前终止搜索"""
+        """修改版本: 支持状态权重动态提升"""
         neighbors = []
         state_type_map = defaultdict(list)
         original_data = start_state.data
         attempted_combinations = set()
 
-        # 按权重对当前状态进行分组
+        # 按权重对当前状态进行分组和排序
         weight_groups = defaultdict(list)
         for state in visited:
             weight_groups[state.weight].extend((state, t) for t in state.get_type())
 
-        # 按权重从低到高处理状态
-        for weight in sorted(weight_groups.keys()):
+        # 预处理：为每种类型的状态按权重排序
+        sorted_type_states = defaultdict(list)
+        for weight in sorted(weight_groups.keys(), reverse=True):  # 从高到低遍历权重
             for state, t in weight_groups[weight]:
+                sorted_type_states[t].append((state, weight))
                 state_type_map[t].append(state)
 
+        # 对每种类型的状态按权重排序
+        for t in sorted_type_states:
+            sorted_type_states[t].sort(key=lambda x: x[1], reverse=True)
+
+        # 添加状态频率计数器
+        state_frequency = defaultdict(int)
+        for state in visited:
+            state_frequency[state.data] += 1
+
+        # 修改权重计算逻辑
+        def calculate_weight(input_weights, state_data):
+            base_weight = max(input_weights) + 2
+            frequency = state_frequency[state_data]
+            # 根据出现频率提升权重
+            frequency_bonus = min(frequency * 2, 10)  # 最多提升10
+            return base_weight + frequency_bonus
+
+        # 按权重从高到低处理状态和函数
+        for weight in sorted(weight_groups.keys(), reverse=True):
+            # 获取当前权重下可用的函数
+            available_funcs = []
             for key, func_names in self.dsl_registry.classified_functions.items():
                 input_types, output_type = key
                 func_list = [fn for fn in func_names if fn in self.function_whitelist]
                 if not func_list:
                     continue
 
+                # 检查是否有足够的高权重状态可用作参数
+                has_high_weight_inputs = True
+                for input_type in input_types:
+                    if input_type not in sorted_type_states or not sorted_type_states[input_type]:
+                        has_high_weight_inputs = False
+                        break
+
+                if has_high_weight_inputs:
+                    available_funcs.append((func_list, input_types, output_type))
+
+            # 优先使用权重高的状态作为函数参数
+            for func_list, input_types, output_type in available_funcs:
                 possible_states_lists = []
                 for input_type in input_types:
-                    if input_type in state_type_map:
-                        possible_states_lists.append(state_type_map[input_type])
-                    else:
-                        break
-                else:
-                    from itertools import product
-                    for states_combination in product(*possible_states_lists):
-                        args = [state.data for state in states_combination]
+                    # 获取该类型的所有状态，但优先使用高权重的
+                    states = [s for s, w in sorted_type_states[input_type]]
+                    possible_states_lists.append(states)
+
+                from itertools import product
+                for states_combination in product(*possible_states_lists):
+                    args = [state.data for state in states_combination]
+                    max_input_weight = max(state.weight for state in states_combination)
+
+                    # 如果组合中包含高权重状态，优先测试这些函数
+                    if max_input_weight >= weight:
                         for func_name in func_list:
                             combination_key = (func_name, tuple(args))
                             if combination_key in attempted_combinations:
@@ -280,10 +318,9 @@ class SearchStrategy:
                             func = self.dsl_registry.dsl_functions.get(func_name)
                             if func:
                                 try:
-                                    # print(f"--尝试应用函数 {func_name}  arg {args}  - - neighborslen: {len(neighbors)}")
                                     new_data = func(*args)
                                     if new_data is not None:
-                                        # 保存所有参数，后续在 reconstruct_path 中处理
+                                        # 构建参数列表...
                                         parameters = []
                                         for arg in args:
                                             if arg == original_data:
@@ -291,13 +328,11 @@ class SearchStrategy:
                                             else:
                                                 parameters.append((False, arg))
 
-                                        # 计算新状态的权重
-                                        # 如果所有输入状态都是基础常量(权重为0)，新状态权重设为1
-                                        # 否则，新状态权重设为最大输入状态权重+1
+                                        # 使用新的权重计算方法
                                         input_weights = [s.weight for s in states_combination]
-                                        new_weight = max(input_weights) + 1 if max(input_weights) > 0 else 1
+                                        new_weight = calculate_weight(input_weights, new_data)
 
-                                        # 构建新的变换路径
+                                        # 构建变换路径...
                                         new_transformation_path = []
                                         for state in states_combination:
                                             new_transformation_path.extend(state.transformation_path)
@@ -307,7 +342,7 @@ class SearchStrategy:
                                         }
                                         new_transformation_path.append(new_transformation)
 
-                                        # 创建新状态时设置权重
+                                        # 创建新状态
                                         new_state = State(
                                             new_data,
                                             output_type,
@@ -315,86 +350,97 @@ class SearchStrategy:
                                             action=func_name,
                                             parameters=parameters,
                                             transformation_path=new_transformation_path,
-                                            weight=new_weight  # 设置新状态的权重
+                                            weight=new_weight
                                         )
 
                                         # 立即检查是否找到目标状态
                                         if goal_state and new_data == goal_state.data:
-                                            # 更新came_from
                                             came_from[new_state] = new_state.parent
-                                            # 尝试重建路径
                                             _, actions = self.reconstruct_path(came_from, new_state, original_data)
                                             if task and self.validate_on_all_data(task, actions):
-                                                return None, actions  # 提前返回找到的解决方案
+                                                return None, actions
 
-                                        # 根据权重过滤后添加到neighbors
+                                        # 更新状态频率
+                                        state_frequency[new_data] += 1
+
+                                        # 根据权重过滤并添加到neighbors
                                         if new_weight <= 30 or self.heuristic(new_state, start_state) < 5:
                                             neighbors.append(new_state)
 
                                 except Exception as e:
                                     pass
 
-        return neighbors, None  # 返回neighbors和None表示未找到解决方案
+        return neighbors, None
 
     def reconstruct_path(self, came_from, current_state, original_data):
-        """回溯路径，生成操作序列和路径，构建可执行的函数代码。"""
+        """回溯路径，生成操作序列，并优化掉未使用的变量"""
         actions = []
-        # visited_states = set()
-        var_mapping = {}  # 状态到变量名的映射
+        var_mapping = {}
+        used_vars = set()
 
-        def dfs(state):
-            # if state in visited_states:
-            #     return
-            # visited_states.add(state)
+        def mark_used_vars(var_name):
+            """标记变量为已使用，包括以 'x' 或 'const_' 开头的变量"""
+            if var_name.startswith('x') or var_name.startswith('const_') or var_name in ['I', 'O']:
+                used_vars.add(var_name)
 
-            if state in came_from:
-                parents = came_from[state]
-                if not isinstance(parents, (list, tuple)):
-                    parents = [parents]
-                for parent in parents:
-                    dfs(parent)
-                # 为当前状态分配变量名
-                var_name = f'x{len(var_mapping)}'
+        # 首先，构建 var_mapping，将状态映射到变量名
+        def build_var_mapping(state):
+            if state in var_mapping:
+                return
+            if state.action:
+                for parent_state in state.parent:
+                    build_var_mapping(parent_state)
+                var_name = f'x{len(var_mapping) + 1}'  # 修改：确保变量名唯一
                 var_mapping[state] = var_name
-                # 构建函数调用语句
-                if state.action:
+            else:
+                if state.data == original_data:
+                    var_mapping[state] = 'I'
+                else:
+                    var_mapping[state] = f'const_{len(var_mapping) + 1}'  # 修改：使用 const_ 前缀
+
+        build_var_mapping(current_state)
+
+        # 然后，从输出变量开始，倒序追溯，标记所有被使用的变量
+        def trace_used_vars(state):
+            var_name = var_mapping[state]
+            mark_used_vars(var_name)
+            if state.action:
+                for parent_state in state.parent:
+                    trace_used_vars(parent_state)
+                    parent_var_name = var_mapping[parent_state]
+                    mark_used_vars(parent_var_name)
+            else:
+                if state.data == original_data:
+                    mark_used_vars('I')
+
+        trace_used_vars(current_state)
+
+        # 根据 var_mapping 和 used_vars 构建操作序列
+        def build_actions(state):
+            if state.action:
+                for parent_state in state.parent:
+                    build_actions(parent_state)
+
+                var_name = var_mapping[state]
+                if var_name in used_vars:
                     params = []
-                    for is_origin, param in state.parameters:
-                        if is_origin:
-                            params.append('I')  # 输入数据变量名为 'I'
-                        else:
-                            # 在已分配的变量中查找参数对应的状态
-                            param_state = None
-                            for s in var_mapping:
-                                if s.data == param:
-                                    param_state = s
-                                    break
-                            if param_state:
-                                param_var = var_mapping[param_state]
-                            else:
-                                # 参数是常量，直接使用其字面量
-                                param_var = repr(param)
-                            params.append(param_var)
-                    func_call = f"{var_mapping[state]} = {state.action}({', '.join(params)})"
+                    for parent_state in state.parent:
+                        parent_var_name = var_mapping[parent_state]
+                        params.append(parent_var_name)
+                    func_call = f"{var_name} = {state.action}({', '.join(params)})"
                     actions.append(func_call)
             else:
-                # 初始状态，可能是输入数据或常量
-                if state.data == original_data:
-                    var_mapping[state] = 'I'  # 输入数据变量名为 'I'
-                else:
-                    const_name = f'const_{len(var_mapping)}'
-                    var_mapping[state] = const_name
-                    actions.append(f"{const_name} = {repr(state.data)}")  # 定义常量
+                var_name = var_mapping[state]
+                if var_name != 'I' and var_name in used_vars:
+                    const_value = repr(state.data)
+                    actions.append(f"{var_name} = {const_value}")
 
-        dfs(current_state)
-        actions.append(f"O = {var_mapping[current_state]}")  # 最终输出
-        transformations = actions  # 修正：不反转操作序列
-        # print()
-        print("找到 transformations:", transformations)  # 打印变换路径
+        build_actions(current_state)
 
-        return None, transformations  # 返回构建的函数代码
+        actions.append(f"O = {var_mapping[current_state]}")
 
-
+        print("找到 transformations:", actions)
+        return None, actions
 
     def heuristic(self, state, goal_state):
         return compute_difference(state.data, goal_state.data)
