@@ -1214,25 +1214,44 @@ def upscale(
         return shift(frozenset(o), (di_inv, dj_inv))
 
 
+def get_mode(
+    values: List[Union[int, float]]
+) -> Union[int, float]:
+    """计算列表中的众数"""
+    if not values:
+        return 0
+    counts = {}
+    for val in values:
+        counts[val] = counts.get(val, 0) + 1
+    return max(counts.items(), key=lambda x: x[1])[0]
+
 def downscale(
     grid: Grid,
     factor: Integer
 ) -> Grid:
-    """ downscale grid """
+    """downscale grid with noise tolerance using mode value in each window"""
+    if not grid or not grid[0]:
+        return tuple()
+
     h, w = len(grid), len(grid[0])
-    g = tuple()
-    for i in range(h):
-        r = tuple()
-        for j in range(w):
-            if j % factor == 0:
-                r = r + (grid[i][j],)
-        g = g + (r, )
-    h = len(g)
-    dsg = tuple()
-    for i in range(h):
-        if i % factor == 0:
-            dsg = dsg + (g[i],)
-    return dsg
+    result = []
+
+    # 按factor×factor的窗口扫描
+    for i in range(0, h, factor):
+        row = []
+        for j in range(0, w, factor):
+            # 收集窗口内的所有值
+            window_values = []
+            for di in range(factor):
+                for dj in range(factor):
+                    if i + di < h and j + dj < w:
+                        window_values.append(grid[i + di][j + dj])
+            # 使用众数作为该区域的值
+            row.append(get_mode(window_values))
+        if row:
+            result.append(tuple(row))
+
+    return tuple(result)
 
 
 def hconcat(
