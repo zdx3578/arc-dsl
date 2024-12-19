@@ -170,7 +170,20 @@ class SearchStrategy:
 
         for depth in range(max_depth):
             print(f"\n当前深度：{depth}")
-            neighbors = self.get_neighbors(current_states, start_state, visited)  # 修改：传入 visited
+            # 修改get_neighbors调用,传入额外参数
+            neighbors, solution = self.get_neighbors(
+                current_states,
+                start_state,
+                visited,
+                goal_state=goal_state,
+                task=task,
+                came_from=came_from
+            )
+
+            # 如果找到解决方案,直接返回
+            if solution:
+                return None, solution
+
             if not neighbors:
                 break  # 没有新的邻居，停止搜索
             next_states = []
@@ -223,8 +236,8 @@ class SearchStrategy:
 
 
 
-    def get_neighbors(self, current_states, start_state, visited):
-        """基于权重的分阶段搜索生成邻居状态"""
+    def get_neighbors(self, current_states, start_state, visited, goal_state=None, task=None, came_from=None):
+        """生成邻居状态,支持提前终止搜索"""
         neighbors = []
         state_type_map = defaultdict(list)
         original_data = start_state.data
@@ -240,7 +253,6 @@ class SearchStrategy:
             for state, t in weight_groups[weight]:
                 state_type_map[t].append(state)
 
-            # 遍历 DSL 中的函数，根据输入类型匹配
             for key, func_names in self.dsl_registry.classified_functions.items():
                 input_types, output_type = key
                 func_list = [fn for fn in func_names if fn in self.function_whitelist]
@@ -269,6 +281,7 @@ class SearchStrategy:
                                     # print(f"--尝试应用函数 {func_name}  arg {args}  - - neighborslen: {len(neighbors)}")
                                     new_data = func(*args)
                                     if new_data is not None:
+                                        # 保存所有参数，后续在 reconstruct_path 中处理
                                         parameters = []
                                         for arg in args:
                                             if arg == original_data:
@@ -282,6 +295,7 @@ class SearchStrategy:
                                         input_weights = [s.weight for s in states_combination]
                                         new_weight = max(input_weights) + 1 if max(input_weights) > 0 else 1
 
+                                        # 构建新的变换路径
                                         new_transformation_path = []
                                         for state in states_combination:
                                             new_transformation_path.extend(state.transformation_path)
@@ -302,17 +316,23 @@ class SearchStrategy:
                                             weight=new_weight  # 设置新状态的权重
                                         )
 
-                                        # 根据权重过滤状态
-                                        # 权重较高的状态(>3)需要更严格的启发式评估
+                                        # 立即检查是否找到目标状态
+                                        if goal_state and new_data == goal_state.data:
+                                            # 更新came_from
+                                            came_from[new_state] = new_state.parent
+                                            # 尝试重建路径
+                                            _, actions = self.reconstruct_path(came_from, new_state, original_data)
+                                            if task and self.validate_on_all_data(task, actions):
+                                                return None, actions  # 提前返回找到的解决方案
+
+                                        # 根据权重过滤后添加到neighbors
                                         if new_weight <= 30 or self.heuristic(new_state, start_state) < 5:
                                             neighbors.append(new_state)
 
                                 except Exception as e:
-                                # print(f"函数 {func_name} 应用时出错: {e}")
-                                # logging.error(f"函数 {func_name} 应用时出错: {e}")
                                     pass
 
-        return neighbors
+        return neighbors, None  # 返回neighbors和None表示未找到解决方案
 
     def reconstruct_path(self, came_from, current_state, original_data):
         """回溯路径，生成操作序列和路径，构建可执行的函数代码。"""

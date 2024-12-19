@@ -436,8 +436,8 @@ if __name__ == '__main__':
         # Difference analyzer
         # difference_analyzer = DifferenceAnalyzer()
 
-        # whitelist = is_checking(task)
-        whitelist = None
+        whitelist = is_checking(task)
+        # whitelist = None
 
         classified_functions_file = '/Users/zhangdexiang/github/VSAHDC/arc-dsl/forprolog/classDSLresult2.json'
         dsl_registry = DSLFunctionRegistry(classified_functions_file)

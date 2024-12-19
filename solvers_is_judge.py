@@ -1094,6 +1094,11 @@ solve_6fa7a44f = solve_4c4377d9
 # 8be77c9e(I) 合并到 4c4377d9
 solve_8be77c9e = solve_4c4377d9
 
+def is_concat_mirror(I,O):
+    x1 = hmirror(I)
+    return O == vconcat(x1, I)
+
+
 
 # 第 58 个函数  ff805c23
 def solve_ff805c23(I):
