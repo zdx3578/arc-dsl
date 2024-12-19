@@ -65,8 +65,10 @@ class SearchStrategy:
             ]
             for func in functions_to_remove:
                 self.function_whitelist.discard(func)  # 使用 discard 防止函数不存在时报错
+            print(' - - - fun is dsl_functions')
         else:
             self.function_whitelist = whitelist
+            print(' - - - fun is ' + str(whitelist))
             # 手动指定需要的函数集合
             # self.function_whitelist = {
             #     'hmirror',

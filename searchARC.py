@@ -235,10 +235,11 @@ def is_checking(task):
 
 def get_function_subclass(function_name, code_file):
     """
-    获取指定函数中调用的子函数名称列表。
+    获取指定函数中调用的子函数名称列表,包括列表定义中的函数。
     """
     with open(code_file, 'r', encoding='utf-8') as file:
         code = file.read()
+
     # 提取指定函数的完整定义
     pattern = rf'def {function_name}\s*\(.*?\):([\s\S]*?)(?=\n\ndef |\n#|\Z)'
     match = re.search(pattern, code)
@@ -247,11 +248,26 @@ def get_function_subclass(function_name, code_file):
         return []
 
     function_body = match.group(1)
-    # 提取函数体中调用的函数名称
-    called_functions = re.findall(r'\b(\w+)\s*\(', function_body)
-    # 去除自身和内置函数，获取唯一的函数名称列表
-    subclasses = set(called_functions) - {function_name}
-    return subclasses
+
+    # 收集所有找到的函数名
+    functions = set()
+
+    # 提取函数体中直接调用的函数
+    direct_calls = re.findall(r'\b(\w+)\s*\(', function_body)
+    functions.update(direct_calls)
+
+    # 提取列表定义中的函数名
+    # 匹配形如 [hmirror, vmirror] 或 [hconcat, vconcat] 的列表定义
+    list_definitions = re.findall(r'\[([\w,\s]+)\]', function_body)
+    for definition in list_definitions:
+        # 分割并清理每个函数名
+        list_functions = [f.strip() for f in definition.split(',') if f.strip()]
+        functions.update(list_functions)
+
+    # 去除自身和内置函数
+    functions.discard(function_name)
+
+    return list(functions)
 
 def compute_difference(data1, data2):
     """
@@ -412,6 +428,9 @@ if __name__ == '__main__':
         # key = '74dd1130'
         # if i != 1:
         #     break
+
+        if i % 18 == 0:
+            print()
 
         print("\n\n\n")
         print(i, key)

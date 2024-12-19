@@ -1094,9 +1094,22 @@ solve_6fa7a44f = solve_4c4377d9
 # 8be77c9e(I) 合并到 4c4377d9
 solve_8be77c9e = solve_4c4377d9
 
-def is_concat_mirror(I,O):
-    x1 = hmirror(I)
-    return O == vconcat(x1, I)
+def is_concat_mirror(I, O):
+    # 遍历镜像和拼接操作的组合
+    for mirror in [hmirror, vmirror]:
+        mirrored_matrix = mirror(I)  # 应用镜像操作
+        for concat in [hconcat, vconcat]:
+            try:
+                # 检查两种拼接顺序
+                if concat(I, mirrored_matrix) == O or concat(mirrored_matrix, I) == O:
+                    return True 
+            except Exception:
+                # 防止操作不匹配导致错误
+                continue
+    # 如果没有匹配的组合，返回 False
+    return False
+
+
 
 
 
