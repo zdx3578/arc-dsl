@@ -114,7 +114,7 @@ class SearchStrategy:
             goal_state = State(pair['output'], 'grid')
 
             # 搜索当前数据对的所有可能解决方案
-            max_attempts = 2  # 限制每个数据对的最大尝试次数
+            max_attempts = 1  # 限制每个数据对的最大尝试次数
             for _ in range(max_attempts):
                 solution = self._search_single_pair(task, start_state, goal_state, heuristic)
                 if solution:
@@ -158,7 +158,7 @@ class SearchStrategy:
         return self._search_single_pair(task, goal_state, start_state, heuristic)
 
     def _search_single_pair(self,task, start_state, goal_state, heuristic):
-        max_depth = 10  # 最大搜索深度，可以根据需要调整
+        max_depth = 5  # 最大搜索深度，可以根据需要调整
         came_from = {}
         original_data = start_state.data  # 设置原始数据
 
