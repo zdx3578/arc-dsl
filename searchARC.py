@@ -409,9 +409,9 @@ if __name__ == '__main__':
 
     for i, key in enumerate(solver_functions_name, start=1):  # 使用 solver_functions
 
-        key = '74dd1130'
-        if i != 1:
-            break
+        # key = '74dd1130'
+        # if i != 1:
+        #     break
 
         print("\n\n\n")
         print(i, key)
@@ -436,7 +436,8 @@ if __name__ == '__main__':
         # Difference analyzer
         # difference_analyzer = DifferenceAnalyzer()
 
-        whitelist = is_checking(task)
+        # whitelist = is_checking(task)
+        whitelist = None
 
         classified_functions_file = '/Users/zhangdexiang/github/VSAHDC/arc-dsl/forprolog/classDSLresult2.json'
         dsl_registry = DSLFunctionRegistry(classified_functions_file)

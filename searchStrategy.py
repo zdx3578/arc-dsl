@@ -5,7 +5,7 @@ from dsl  import *
 
 
 class State:
-    def __init__(self, data, type, parent=None, action=None, parameters=None, transformation_path=None):
+    def __init__(self, data, type, parent=None, action=None, parameters=None, transformation_path=None, weight=0):
         self.data = data
         self.types = type_extractor.extract_types(type)  # 修改：支持多个类型
         self.parent = parent      # 新增：记录父状态
@@ -13,6 +13,7 @@ class State:
         self.parameters = parameters if parameters else []
         self.hash = self.compute_hash()
         self.transformation_path = transformation_path if transformation_path else []
+        self.weight = weight  # 新增：状态权重属性
 
     def compute_hash(self):
         """
@@ -145,22 +146,25 @@ class SearchStrategy:
         max_depth = 10  # 最大搜索深度，可以根据需要调整
         came_from = {}
         original_data = start_state.data  # 设置原始数据
-        current_states = [start_state] + [State(i, 'integer') for i in range(10)] + [
-            State((0, 0), 'integertuple'),
-            State((0, 1), 'integertuple'),
-            State((1, 0), 'integertuple'),
-            State((-1, 0), 'integertuple'),
-            State((0, -1), 'integertuple'),
-            State((1, 1), 'integertuple'),
-            State((-1, -1), 'integertuple'),
-            State((-1, 1), 'integertuple'),
-            State((1, -1), 'integertuple'),
-            State((0, 2), 'integertuple'),
-            State((2, 0), 'integertuple'),
-            State((2, 2), 'integertuple'),
-            State((3, 3), 'integertuple')
-        ]
-        # current_states = [start_state]
+
+        # 修改初始状态列表，添加权重
+        current_states = [start_state]  # 起始状态权重默认为5
+        # 添加基础常量状态，设置低权重
+        basic_states = ([State(i, 'integer', weight=0) for i in range(10)] +
+            [State((0, 0), 'integertuple', weight=10),
+             State((0, 1), 'integertuple', weight=10),
+             State((1, 0), 'integertuple', weight=10),
+             State((-1, 0), 'integertuple', weight=10),
+             State((0, -1), 'integertuple', weight=10),
+             State((1, 1), 'integertuple', weight=10),
+             State((-1, -1), 'integertuple', weight=10),
+             State((-1, 1), 'integertuple', weight=10),
+             State((1, -1), 'integertuple', weight=10),
+             State((0, 2), 'integertuple', weight=10),
+             State((2, 0), 'integertuple', weight=10),
+             State((2, 2), 'integertuple', weight=10),
+             State((3, 3), 'integertuple', weight=10)])
+        current_states.extend(basic_states)
 
         visited = set(current_states)  # 新增：记录已访问的状态
 
@@ -220,80 +224,94 @@ class SearchStrategy:
 
 
     def get_neighbors(self, current_states, start_state, visited):
-        """生成下一层的邻居状态，支持多参数函数和状态组合。"""
+        """基于权重的分阶段搜索生成邻居状态"""
         neighbors = []
         state_type_map = defaultdict(list)
         original_data = start_state.data
-        attempted_combinations = set()  # 用于记录已尝试的函数和参数组合
+        attempted_combinations = set()
 
-        # 使用所有已访问的状态来生成可能的函数组合
+        # 按权重对当前状态进行分组
+        weight_groups = defaultdict(list)
         for state in visited:
-            for t in state.get_type():
+            weight_groups[state.weight].extend((state, t) for t in state.get_type())
+
+        # 按权重从低到高处理状态
+        for weight in sorted(weight_groups.keys()):
+            for state, t in weight_groups[weight]:
                 state_type_map[t].append(state)
 
-        # 遍历 DSL 中的函数，根据输入类型匹配
-        for key, func_names in self.dsl_registry.classified_functions.items():
-            input_types, output_type = key
-            # 仅使用白名单中的函数
-            func_list = [fn for fn in func_names if fn in self.function_whitelist]
-            if not func_list:
-                continue  # 当前类型组合下无可用函数，跳过
+            # 遍历 DSL 中的函数，根据输入类型匹配
+            for key, func_names in self.dsl_registry.classified_functions.items():
+                input_types, output_type = key
+                func_list = [fn for fn in func_names if fn in self.function_whitelist]
+                if not func_list:
+                    continue
 
-            possible_states_lists = []
-            for input_type in input_types:
-                if input_type in state_type_map:
-                    possible_states_lists.append(state_type_map[input_type])
+                possible_states_lists = []
+                for input_type in input_types:
+                    if input_type in state_type_map:
+                        possible_states_lists.append(state_type_map[input_type])
+                    else:
+                        break
                 else:
-                    break
-            else:
-                # 限制每个输入类型的状态数量，避免组合过多
-                # limited_states_lists = [states[:5] for states in possible_states_lists]  # 取前5个状态
-                limited_states_lists = possible_states_lists
-                from itertools import product
-                for states_combination in product(*limited_states_lists):
-                    args = [state.data for state in states_combination]
-                    for func_name in func_list:
-                        combination_key = (func_name, tuple(args))
-                        if combination_key in attempted_combinations:
-                            continue  # 已经尝试过该函数和参数组合，跳过
-                            # pass
-                        attempted_combinations.add(combination_key)
-                        func = self.dsl_registry.dsl_functions.get(func_name)
-                        if func:
-                            try:
-                                # print(f"--尝试应用函数 {func_name}  arg {args}  - - neighborslen: {len(neighbors)}")
-                                new_data = func(*args)
-                                if new_data is not None:
-                                    # 保存所有参数，后续在 reconstruct_path 中处理
-                                    parameters = []
-                                    for arg in args:
-                                        if arg == original_data:
-                                            parameters.append((True, 'is_origin_data'))
-                                        else:
-                                            parameters.append((False, arg))
-                                    # 构建新的变换路径
-                                    new_transformation_path = []
-                                    for state in states_combination:
-                                        new_transformation_path.extend(state.transformation_path)
-                                    new_transformation = {
-                                        'action': func_name,
-                                        'parameters': parameters
-                                    }
-                                    new_transformation_path.append(new_transformation)
-                                    # 创建新状态，包含变换路径
-                                    new_state = State(new_data, output_type, parent=states_combination,
-                                                      action=func_name, parameters=parameters,
-                                                      transformation_path=new_transformation_path)
-                                    # 计算启发式值，选择性加入 neighbors
-                                    # heuristic_value = self.heuristic(new_state, start_state)
-                                    # 假设设定一个合理的阈值，如 10
-                                    heuristic_value = 0
-                                    if heuristic_value < 10:
-                                        neighbors.append(new_state)
-                            except Exception as e:
+                    from itertools import product
+                    for states_combination in product(*possible_states_lists):
+                        args = [state.data for state in states_combination]
+                        for func_name in func_list:
+                            combination_key = (func_name, tuple(args))
+                            if combination_key in attempted_combinations:
+                                continue
+                            attempted_combinations.add(combination_key)
+
+                            func = self.dsl_registry.dsl_functions.get(func_name)
+                            if func:
+                                try:
+                                    # print(f"--尝试应用函数 {func_name}  arg {args}  - - neighborslen: {len(neighbors)}")
+                                    new_data = func(*args)
+                                    if new_data is not None:
+                                        parameters = []
+                                        for arg in args:
+                                            if arg == original_data:
+                                                parameters.append((True, 'is_origin_data'))
+                                            else:
+                                                parameters.append((False, arg))
+
+                                        # 计算新状态的权重
+                                        # 如果所有输入状态都是基础常量(权重为0)，新状态权重设为1
+                                        # 否则，新状态权重设为最大输入状态权重+1
+                                        input_weights = [s.weight for s in states_combination]
+                                        new_weight = max(input_weights) + 1 if max(input_weights) > 0 else 1
+
+                                        new_transformation_path = []
+                                        for state in states_combination:
+                                            new_transformation_path.extend(state.transformation_path)
+                                        new_transformation = {
+                                            'action': func_name,
+                                            'parameters': parameters
+                                        }
+                                        new_transformation_path.append(new_transformation)
+
+                                        # 创建新状态时设置权重
+                                        new_state = State(
+                                            new_data,
+                                            output_type,
+                                            parent=states_combination,
+                                            action=func_name,
+                                            parameters=parameters,
+                                            transformation_path=new_transformation_path,
+                                            weight=new_weight  # 设置新状态的权重
+                                        )
+
+                                        # 根据权重过滤状态
+                                        # 权重较高的状态(>3)需要更严格的启发式评估
+                                        if new_weight <= 30 or self.heuristic(new_state, start_state) < 5:
+                                            neighbors.append(new_state)
+
+                                except Exception as e:
                                 # print(f"函数 {func_name} 应用时出错: {e}")
                                 # logging.error(f"函数 {func_name} 应用时出错: {e}")
-                                pass
+                                    pass
+
         return neighbors
 
     def reconstruct_path(self, came_from, current_state, original_data):

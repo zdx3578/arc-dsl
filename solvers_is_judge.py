@@ -81,12 +81,12 @@ def solve_6f8cd79b00(I):
     O = fill(I, EIGHT, x4)
     return O
 
-def is_fill_I_box_color(I,color=8):
+def is_fill_I_box_color(I,O,color=8):
     # x1 = asindices(I)
     # # x0 = outbox(x1)
     # x2 = box(x1)
-    O = fill(I, color, box(asindices(I)))
-    return O
+    return O == fill(I, color, box(asindices(I)))
+
 
 
 # 第 12 个函数  c3f564a4
