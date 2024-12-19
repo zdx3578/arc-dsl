@@ -93,7 +93,7 @@ class SearchStrategy:
             # 如果找到了解决方案，打印函数序列
             if solution:
                 actions = solution  # 修改：解包路径和操作序列
-                print(" \n ok over ！ ！ ！ ！ ！ all data test over 成功的状态转换过程的函数序列:",actions)
+                print(actions, " \n ok over ！ ！ ！ ！ ！ all data test over 成功的状态转换过程的函数序列:",)
                 # print(actions)
 
                 # 使用记录的函数序列对测试数据进行验证
@@ -103,33 +103,45 @@ class SearchStrategy:
 
     def bidirectional_a_star_search(self, task, heuristic):
         actions_list = []
+        best_solution = None
+        min_solution_length = float('inf')
 
+        # 对每个训练数据对进行搜索
         for pair in task['train']:
-            start_state = State(pair['input'], 'grid')  # 包含类型信息
-            goal_state = State(pair['output'], 'grid')  # 包含类型信息
+            pair_solutions = []  # 存储当前数据对的所有可能解决方案
+            start_state = State(pair['input'], 'grid')
+            goal_state = State(pair['output'], 'grid')
 
-            solution = self._search_single_pair( task , start_state, goal_state, heuristic)
-            if solution is None:
-                print("未找到训练数据对的解决方案")
+            # 搜索当前数据对的所有可能解决方案
+            max_attempts = 2  # 限制每个数据对的最大尝试次数
+            for _ in range(max_attempts):
+                solution = self._search_single_pair(task, start_state, goal_state, heuristic)
+                if solution:
+                    _, actions = solution
+                    filtered_actions = [action for action in actions if action]
+                    if filtered_actions:
+                        pair_solutions.append(filtered_actions)
+                        # 如果找到更简洁的解决方案，更新最佳解
+                        if len(filtered_actions) < min_solution_length:
+                            min_solution_length = len(filtered_actions)
+                            best_solution = filtered_actions
+
+            if not pair_solutions:
+                print(f"未找到第 {len(actions_list) + 1} 个训练数据对的解决方案")
                 return None
-            else:
-                path, actions = solution
-                # 过滤掉 None 值
-                filtered_actions = [action for action in actions if action]
-                actions_list.append(filtered_actions)
 
-        # 检查是否存在适用于所有训练数据对的共用操作符序列
-        common_actions = actions_list[0]
-        for actions in actions_list[1:]:
-            if actions != common_actions:
-                print("无法找到适用于所有训练数据对的共用函数序列")
-                return None
+            actions_list.append(pair_solutions)
 
-        # 如果找到共用的操作符序列，进行测试验证
-        print(" \n- - action all same  找到适用于所有训练数据对的共用函数序列:", common_actions)
-        if self.validate_on_all_data(task, common_actions) :
-            # print(" ！ ！ ！ ！ ！ 成功的状态转换过程的函数序列:",common_actions)
-            return common_actions  # 修改：只返回 common_actions
+        # 尝试找到适用于所有数据对的最简解决方案
+        if best_solution:
+            # 验证最佳解决方案是否适用于所有数据对
+            if self.validate_on_all_data(task, best_solution):
+                print("\n best 找到适用于所有训练数据对的最优函数序列:\n",best_solution)
+                return best_solution
+
+        # 如果没有找到通用解决方案，尝试其他可能的组合
+        print("未找到适用于所有训练数据对的通用函数序列")
+        return None
 
     def data_in_closed_set(self, state_data, closed_set):
         """
@@ -220,7 +232,7 @@ class SearchStrategy:
             if not self.validate_single_pair(I, expected_output, actions):
                 print(f"----Failed on input: {I}, expected output: {expected_output}")
                 return False  # 有一个数据未通过验证
-        print(" ！ ！ ！ ！ ！ all data test 成功的状态转换过程的函数序列:",actions)
+        print(actions," ！ ！ ！ ！ ！ all data test 成功的状态转换过程的函数序列:",)
         return True  # 所有数据都通过
 
     def validate_single_pair(self, I, expected_output, actions):
@@ -439,7 +451,7 @@ class SearchStrategy:
 
         actions.append(f"O = {var_mapping[current_state]}")
 
-        print("找到 transformations:", actions)
+        print(actions,"找到 transformations:", )
         return None, actions
 
     def heuristic(self, state, goal_state):
