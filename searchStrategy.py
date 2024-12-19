@@ -5,7 +5,8 @@ from dsl  import *
 
 
 class State:
-    def __init__(self, data, type, parent=None, action=None, parameters=None, transformation_path=None, weight=0):
+    def __init__(self, data, type, parent=None, action=None, parameters=None, transformation_path=None, weight=5):
+        # 将默认权重改为5,让初始状态有一个中等权重
         self.data = data
         self.types = type_extractor.extract_types(type)  # 修改：支持多个类型
         self.parent = parent      # 新增：记录父状态
@@ -264,14 +265,14 @@ class SearchStrategy:
 
         # 预处理：为每种类型的状态按权重排序
         sorted_type_states = defaultdict(list)
-        for weight in sorted(weight_groups.keys(), reverse=True):  # 从高到低遍历权重
+        for weight in sorted(weight_groups.keys()):  # 删除 reverse=True
             for state, t in weight_groups[weight]:
                 sorted_type_states[t].append((state, weight))
                 state_type_map[t].append(state)
 
         # 对每种类型的状态按权重排序
         for t in sorted_type_states:
-            sorted_type_states[t].sort(key=lambda x: x[1], reverse=True)
+            sorted_type_states[t].sort(key=lambda x: x[1])
 
         # 添加状态频率计数器
         state_frequency = defaultdict(int)
@@ -286,8 +287,8 @@ class SearchStrategy:
             frequency_bonus = min(frequency * 2, 10)  # 最多提升10
             return base_weight + frequency_bonus
 
-        # 按权重从高到低处理状态和函数
-        for weight in sorted(weight_groups.keys(), reverse=True):
+        # 按权重从低到高处理状态和函数
+        for weight in sorted(weight_groups.keys()):  # 删除 reverse=True
             # 获取当前权重下可用的函数
             available_funcs = []
             for key, func_names in self.dsl_registry.classified_functions.items():
@@ -296,22 +297,22 @@ class SearchStrategy:
                 if not func_list:
                     continue
 
-                # 检查是否有足够的高权重状态可用作参数
-                has_high_weight_inputs = True
+                # 检查是否有足够的低权重状态可用作参数
+                has_low_weight_inputs = True
                 for input_type in input_types:
                     if input_type not in sorted_type_states or not sorted_type_states[input_type]:
-                        has_high_weight_inputs = False
+                        has_low_weight_inputs = False
                         break
 
-                if has_high_weight_inputs:
+                if has_low_weight_inputs:
                     available_funcs.append((func_list, input_types, output_type))
 
-            # 优先使用权重高的状态作为函数参数
+            # 优先使用权重低的状态作为函数参数
             for func_list, input_types, output_type in available_funcs:
                 possible_states_lists = []
                 for input_type in input_types:
-                    # 获取该类型的所有状态，但优先使用高权重的
-                    states = [s for s, w in sorted_type_states[input_type]]
+                    # 获取该类型的所有状态，但优先使用低权重的
+                    states = [s for s, w in sorted(sorted_type_states[input_type])]  # 删除 reverse=True
                     possible_states_lists.append(states)
 
                 from itertools import product
@@ -319,8 +320,8 @@ class SearchStrategy:
                     args = [state.data for state in states_combination]
                     max_input_weight = max(state.weight for state in states_combination)
 
-                    # 如果组合中包含高权重状态，优先测试这些函数
-                    if max_input_weight >= weight:
+                    # 如果组合中包含低权重状态，优先测试这些函数
+                    if max_input_weight <= weight:  # 修改为 <=
                         for func_name in func_list:
                             combination_key = (func_name, tuple(args))
                             if combination_key in attempted_combinations:
