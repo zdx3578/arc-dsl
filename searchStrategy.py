@@ -69,8 +69,13 @@ class SearchStrategy:
             print(' - - - fun is dsl_functions')
             self.function_whitelist_args = None
         else:
-            self.function_whitelist = whitelist[0]
-            self.function_whitelist_args = whitelist[1]
+            if whitelist[0] == 1:
+                self.function_whitelist = whitelist[1][0]
+                self.function_whitelist_args = whitelist[1][1]
+            elif whitelist[0] == 2:
+                self.function_whitelist = whitelist[1]
+                self.function_whitelist_args = None
+                # self.function_whitelist_args = whitelist[1]
             print(' - - - fun is ' + str(whitelist))
             # 手动指定需要的函数集合
             # self.function_whitelist = {

@@ -228,12 +228,24 @@ def is_checking(task):
             # 调用 is 函数进行验证
             try:
                 result = is_function(input_grid, output_grid)
-                if result ==  False:
+
+                if result == False:  # 直接返回 False 的情况
                     success = False
                     break
-                else:
+                elif result == True:  # 直接返回 True 的情况
+                    pass
+                elif isinstance(result, tuple) and result[0] == True:  # 返回元组的情况
                     functionargs.append(result[1:])
-                    # args = result[2:]
+                else:
+                    raise ValueError("Unexpected return value from is_function")
+
+
+                # if result ==  False:
+                #     success = False
+                #     break
+                # else:
+                #     functionargs.append(result[1:])
+                #     # args = result[2:]
             except Exception as e:
                 logging.error("捕获到异常：%s", e)
                 logging.error("详细错误信息：\n%s", traceback.format_exc())
@@ -244,7 +256,7 @@ def is_checking(task):
         if success:
             if functionargs:
                 if validate_args(functionargs):
-                    return functionargs
+                    return (1,functionargs)
                 else:
                     print("Warning: Function arguments are not consistent across results")
                     return None
@@ -254,7 +266,7 @@ def is_checking(task):
                 # 提取该函数的子函数
                 subclasses = get_function_subclass(is_function_name, code_file)
                 print(f"Function '{is_function_name}' passed validation. Subclasses: {subclasses}")
-                return subclasses
+                return (2,subclasses)
 
 def get_function_subclass(function_name, code_file):
     """
@@ -448,9 +460,9 @@ if __name__ == '__main__':
 
     for i, key in enumerate(solver_functions_name, start=1):  # 使用 solver_functions
 
-        # key = 'a416b8f3'
-        # if i != 1:
-        #     break
+        key = '4c4377d9'
+        if i != 1:
+            break
 
         if i % 18 == 0:
             print()
