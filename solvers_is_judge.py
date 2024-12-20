@@ -52,7 +52,7 @@ def is_subgrid_grid(grid1: Grid, grid2: Grid) -> bool:
                 if not match:
                     break
             if match:
-                return (True, crop, (i, j),(small_rows, small_cols))
+                return (True, 'crop', (i, j),(small_rows, small_cols))
 
     return False
 

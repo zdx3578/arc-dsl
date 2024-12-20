@@ -197,6 +197,13 @@ def get_is_functions(code_file):
     solve_functions = re.findall(r'def (solve_\w+)\s*\(', code)
     return is_functions + solve_functions
 
+def validate_args(args_list):
+            """验证参数列表中的所有参数是否相同"""
+            if not args_list:
+                return True
+            first_args = args_list[0]
+            return all(args == first_args for args in args_list)
+
 def is_checking(task):
     """
     遍历所有的 'is_' 函数，验证任务的训练数据。
@@ -205,7 +212,9 @@ def is_checking(task):
     code_file = '/Users/zhangdexiang/github/VSAHDC/arc-dsl/solvers_is_judge.py'  # 指定包含 is 函数的文件
     is_functions = get_is_functions(code_file)
     valid_functions = []
+    functionargs = []
 
+    ### todo todo now just one correct is_function_name
     for is_function_name in is_functions:
         # 从模块中获取函数对象
         is_function = getattr(solvers, is_function_name)
@@ -223,7 +232,7 @@ def is_checking(task):
                     success = False
                     break
                 else:
-                    functionargs = result[1:]
+                    functionargs.append(result[1:])
                     # args = result[2:]
             except Exception as e:
                 logging.error("捕获到异常：%s", e)
@@ -231,9 +240,14 @@ def is_checking(task):
                 success = False
                 break
 
+
         if success:
-            if function :
-                return functionargs
+            if functionargs:
+                if validate_args(functionargs):
+                    return functionargs
+                else:
+                    print("Warning: Function arguments are not consistent across results")
+                    return None
             else:
                 # 如果在所有训练数据对上验证成功，记录函数名称
                 # valid_functions.append(is_function_name)
