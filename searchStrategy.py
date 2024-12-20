@@ -68,7 +68,8 @@ class SearchStrategy:
                 self.function_whitelist.discard(func)  # 使用 discard 防止函数不存在时报错
             print(' - - - fun is dsl_functions')
         else:
-            self.function_whitelist = whitelist
+            self.function_whitelist = whitelist[0]
+            self.function_whitelist_args = whitelist[1]
             print(' - - - fun is ' + str(whitelist))
             # 手动指定需要的函数集合
             # self.function_whitelist = {
@@ -180,6 +181,17 @@ class SearchStrategy:
              State((2, 2), 'integertuple', weight=10),
              State((3, 3), 'integertuple', weight=10)])
         current_states.extend(basic_states)
+        def create_state_from_arg(arg, weight=0):
+            """根据参数类型创建对应的State对象"""
+            if isinstance(arg, tuple):
+                if all(isinstance(x, tuple) for x in arg):
+                    return State(arg, 'tupletuple', weight=weight)
+                return State(arg, 'integertuple', weight=weight)
+            return State(arg, 'integer', weight=weight)
+
+        if self.function_whitelist_args:
+            args_states = [create_state_from_arg(arg) for arg in self.function_whitelist_args]
+            current_states.extend(args_states)
 
         visited = set(current_states)  # 新增：记录已访问的状态
 

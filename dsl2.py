@@ -1197,39 +1197,7 @@ def display_diff_matrices(diff1: List[Tuple[int, Tuple[int, int]]],
         print("\n" + "-"*20 + "\n")
 
 
-def is_subgrid_grid(grid1: Grid, grid2: Grid) -> bool:
-    """
-    检查 grid1 是否是 grid2 的子网格。
 
-    参数:
-    - grid1: Grid - 第一个矩形网格。
-    - grid2: Grid - 第二个矩形网格。
-
-    返回:
-    - bool: 如果 grid1 是 grid2 的子网格，返回 True；否则返回 False。
-    """
-    h1, w1 = len(grid1), len(grid1[0])
-    h2, w2 = len(grid2), len(grid2[0])
-
-    # 检查 grid1 的尺寸是否小于或等于 grid2
-    if h1 > h2 or w1 > w2:
-        return False
-
-    # 遍历 grid2，检查是否存在与 grid1 匹配的子网格
-    for i in range(h2 - h1 + 1):
-        for j in range(w2 - w1 + 1):
-            match = True
-            for x in range(h1):
-                for y in range(w1):
-                    if grid1[x][y] != grid2[i + x][j + y]:
-                        match = False
-                        break
-                if not match:
-                    break
-            if match:
-                return True, crop
-
-    return False
 
 
 def is_subgrid(task, flags):

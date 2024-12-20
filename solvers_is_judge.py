@@ -8,7 +8,53 @@ def solve_d10ecb37(I):
     O = crop(I, ORIGIN, TWO_BY_TWO)
     return O
 
-is_subgrid = dsl2.is_subgrid_grid
+def is_subgrid_grid(grid1: Grid, grid2: Grid) -> bool:
+    """
+    检查 grid1 是否是 grid2 的子网格。
+
+    参数:
+    - grid1: Grid - 第一个矩形网格。
+    - grid2: Grid - 第二个矩形网格。
+
+    返回:
+    - bool: 如果 grid1 是 grid2 的子网格，返回 True；否则返回 False。
+    """
+    h1, w1 = len(grid1), len(grid1[0])
+    h2, w2 = len(grid2), len(grid2[0])
+
+    # 检查 grid1 的尺寸是否小于或等于 grid2
+    # if h1 > h2 or w1 > w2:
+    #     return False
+            # 获取两个矩阵的大小
+    rows1, cols1 = len(grid1), len(grid1[0])
+    rows2, cols2 = len(grid2), len(grid2[0])
+
+    # 确定较大的矩阵和较小的矩阵
+    if rows1 >= rows2 and cols1 >= cols2:
+        big_grid, small_grid = grid1, grid2
+        big_rows, big_cols, small_rows, small_cols = rows1, cols1, rows2, cols2
+    elif rows2 >= rows1 and cols2 >= cols1:
+        big_grid, small_grid = grid2, grid1
+        big_rows, big_cols, small_rows, small_cols = rows2, cols2, rows1, cols1
+    else:
+        return False  # 两个矩阵形状不兼容，无法嵌套
+
+    # 遍历 grid2，检查是否存在与 grid1 匹配的子网格
+    for i in range(big_rows - small_rows + 1):
+        for j in range(big_cols - small_cols + 1):
+            match = True
+            # 检查大矩阵的当前位置是否与小矩阵完全匹配
+            for x in range(small_rows):
+                for y in range(small_cols):
+                    if big_grid[i + x][j + y] != small_grid[x][y]:
+                        match = False
+                        break
+                if not match:
+                    break
+            if match:
+                return (True, crop, (i, j),(small_rows, small_cols))
+
+    return False
 
 # 第 2 个函数  74dd1130
 def solve_74dd1130(I):
@@ -1102,7 +1148,7 @@ def is_concat_mirror(I, O):
             try:
                 # 检查两种拼接顺序
                 if concat(I, mirrored_matrix) == O or concat(mirrored_matrix, I) == O:
-                    return True 
+                    return True
             except Exception:
                 # 防止操作不匹配导致错误
                 continue

@@ -218,20 +218,29 @@ def is_checking(task):
             output_grid = pair['output']
             # 调用 is 函数进行验证
             try:
-                if not is_function(input_grid, output_grid):
+                result = is_function(input_grid, output_grid)
+                if result[0] ==  False:
                     success = False
                     break
+                else:
+                    functionargs = result[1:]
+                    # args = result[2:]
             except Exception as e:
+                logging.error("捕获到异常：%s", e)
+                logging.error("详细错误信息：\n%s", traceback.format_exc())
                 success = False
                 break
 
         if success:
-            # 如果在所有训练数据对上验证成功，记录函数名称
-            # valid_functions.append(is_function_name)
-            # 提取该函数的子函数
-            subclasses = get_function_subclass(is_function_name, code_file)
-            print(f"Function '{is_function_name}' passed validation. Subclasses: {subclasses}")
-            return subclasses
+            if function :
+                return functionargs
+            else:
+                # 如果在所有训练数据对上验证成功，记录函数名称
+                # valid_functions.append(is_function_name)
+                # 提取该函数的子函数
+                subclasses = get_function_subclass(is_function_name, code_file)
+                print(f"Function '{is_function_name}' passed validation. Subclasses: {subclasses}")
+                return subclasses
 
 def get_function_subclass(function_name, code_file):
     """
@@ -425,9 +434,9 @@ if __name__ == '__main__':
 
     for i, key in enumerate(solver_functions_name, start=1):  # 使用 solver_functions
 
-        # key = '74dd1130'
-        # if i != 1:
-        #     break
+        key = '5bd6f4ac'
+        if i != 1:
+            break
 
         if i % 18 == 0:
             print()
