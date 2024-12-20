@@ -15,6 +15,7 @@ class State:
         self.hash = self.compute_hash()
         self.transformation_path = transformation_path if transformation_path else []
         self.weight = weight  # 新增：状态权重属性
+        self.value_generation_path = []  # 新增：记录值的生成路径
 
     def compute_hash(self):
         """
@@ -383,6 +384,15 @@ class SearchStrategy:
                                             transformation_path=new_transformation_path,
                                             weight=new_weight
                                         )
+                                        # 记录值的生成路径
+                                        value_generation = {
+                                            'result': new_data,
+                                            'function': func_name,
+                                            'args': args,
+                                            'arg_states': states_combination  # 保存用于生成该值的源状态
+                                        }
+                                        new_state.value_generation_path = sum([s.value_generation_path for s in states_combination], [])
+                                        new_state.value_generation_path.append(value_generation)
 
                                         # 立即检查是否找到目标状态
                                         if goal_state and new_data == goal_state.data:
@@ -408,6 +418,7 @@ class SearchStrategy:
         actions = []
         var_mapping = {}
         used_vars = set()
+        value_generations = {}  # 记录每个变量值的生成过程
 
         def mark_used_vars(var_name):
             """标记变量为已使用，包括以 'x' 或 'const_' 开头的变量"""
@@ -449,6 +460,14 @@ class SearchStrategy:
         # 根据 var_mapping 和 used_vars 构建操作序列
         def build_actions(state):
             if state.action:
+                # 记录该状态的值是如何生成的
+                var_name = var_mapping[state]
+                if var_name in used_vars:
+                    value_generations[var_name] = {
+                        'value': state.data,
+                        'generation_path': state.value_generation_path
+                    }
+
                 for parent_state in state.parent:
                     build_actions(parent_state)
 
@@ -471,6 +490,14 @@ class SearchStrategy:
         actions.append(f"O = {var_mapping[current_state]}")
 
         print(actions,"找到 transformations:", )
+
+        # 可以打印出每个变量的生成过程
+        print("\n变量生成过程:")
+        for var_name, gen_info in value_generations.items():
+            print(f"{var_name}: {gen_info['value']}")
+            for step in gen_info['generation_path']:
+                print(f"  <- {step['function']}({step['args']})")
+
         return None, actions
 
     def heuristic(self, state, goal_state):
