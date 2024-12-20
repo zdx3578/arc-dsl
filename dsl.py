@@ -600,6 +600,7 @@ def height(
     return lowermost(piece) - uppermost(piece) + 1
 
 
+
 def width(
     piece: Piece
 ) -> Integer:

@@ -194,8 +194,8 @@ def get_is_functions(code_file):
     # 提取所有以 'is_' 开头的函数名称
     is_functions = re.findall(r'def (is_\w+)\s*\(', code)
     # 提取所有以 'solve_' 开头的函数名称
-    solve_functions = re.findall(r'def (solve_\w+)\s*\(', code)
-    return is_functions + solve_functions
+    # solve_functions = re.findall(r'def (solve_\w+)\s*\(', code)
+    return is_functions ##+ solve_functions
 
 def validate_args(args_list):
             """验证参数列表中的所有参数是否相同"""
@@ -228,7 +228,7 @@ def is_checking(task):
             # 调用 is 函数进行验证
             try:
                 result = is_function(input_grid, output_grid)
-                if result[0] ==  False:
+                if result ==  False:
                     success = False
                     break
                 else:
@@ -448,9 +448,9 @@ if __name__ == '__main__':
 
     for i, key in enumerate(solver_functions_name, start=1):  # 使用 solver_functions
 
-        key = '5bd6f4ac'
-        if i != 1:
-            break
+        # key = 'a416b8f3'
+        # if i != 1:
+        #     break
 
         if i % 18 == 0:
             print()

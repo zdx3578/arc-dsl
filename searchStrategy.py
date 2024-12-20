@@ -67,6 +67,7 @@ class SearchStrategy:
             for func in functions_to_remove:
                 self.function_whitelist.discard(func)  # 使用 discard 防止函数不存在时报错
             print(' - - - fun is dsl_functions')
+            self.function_whitelist_args = None
         else:
             self.function_whitelist = whitelist[0]
             self.function_whitelist_args = whitelist[1]

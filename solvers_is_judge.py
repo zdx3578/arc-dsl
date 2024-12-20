@@ -37,7 +37,7 @@ def is_subgrid_grid(grid1: Grid, grid2: Grid) -> bool:
         big_grid, small_grid = grid2, grid1
         big_rows, big_cols, small_rows, small_cols = rows2, cols2, rows1, cols1
     else:
-        return False  # 两个矩阵形状不兼容，无法嵌套
+        return (False)  # 两个矩阵形状不兼容，无法嵌套
 
     # 遍历 grid2，检查是否存在与 grid1 匹配的子网格
     for i in range(big_rows - small_rows + 1):
@@ -54,7 +54,7 @@ def is_subgrid_grid(grid1: Grid, grid2: Grid) -> bool:
             if match:
                 return (True, 'crop', (i, j),(small_rows, small_cols))
 
-    return False
+    return (False)
 
 # 第 2 个函数  74dd1130
 def solve_74dd1130(I):
@@ -131,7 +131,7 @@ def is_fill_I_box_color(I,O,color=8):
     # x1 = asindices(I)
     # # x0 = outbox(x1)
     # x2 = box(x1)
-    return O == fill(I, color, box(asindices(I)))
+    return (O == fill(I, color, box(asindices(I))))
 
 
 
@@ -1148,12 +1148,12 @@ def is_concat_mirror(I, O):
             try:
                 # 检查两种拼接顺序
                 if concat(I, mirrored_matrix) == O or concat(mirrored_matrix, I) == O:
-                    return True
+                    return (True)
             except Exception:
                 # 防止操作不匹配导致错误
                 continue
     # 如果没有匹配的组合，返回 False
-    return False
+    return (False)
 
 
 
