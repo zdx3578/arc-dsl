@@ -617,6 +617,29 @@ def hwratio(
     """ height to width ratio """
     return divide(height(piece), width(piece))
 
+def hratio(
+    piece: Piece, piece2: Piece
+) -> Integer:
+    """ height to width ratio """
+    return divide(height(piece2), height(piece))
+
+def wratio(
+    piece: Piece, piece2: Piece
+) -> Integer:
+    """ height to width ratio """
+    return divide(width(piece2), width(piece))
+
+def hratioI(
+    piece: Piece, piece2: Piece
+) -> Integer:
+    """ height to width ratio """
+    return divide(height(piece), height(piece2))
+
+def wratioI(
+    piece: Piece, piece2: Piece
+) -> Integer:
+    """ height to width ratio """
+    return divide(width(piece), width(piece2))
 
 def shape(
     piece: Piece
