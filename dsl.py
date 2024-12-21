@@ -611,6 +611,12 @@ def width(
         return len(piece[0])
     return rightmost(piece) - leftmost(piece) + 1
 
+def hwratio(
+    piece: Piece
+) -> Integer:
+    """ height to width ratio """
+    return divide(height(piece), width(piece))
+
 
 def shape(
     piece: Piece
@@ -1364,6 +1370,8 @@ def index(
     loc: IntegerTuple
 ) -> Integer:
     """ color at location """
+    if len(loc) != 2:
+        return None
     i, j = loc
     h, w = len(grid), len(grid[0])
     if not (0 <= i < h and 0 <= j < w):

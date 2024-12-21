@@ -16,6 +16,18 @@ class State:
         self.transformation_path = transformation_path if transformation_path else []
         self.weight = weight  # 新增：状态权重属性
         self.value_generation_path = []  # 新增：记录值的生成路径
+        self.computation_trace = {  # 新增:完整记录计算过程
+            'inputs': [],  # 输入值列表
+            'function': None,  # 使用的函数
+            'args': [],  # 参数
+            'result': None,  # 计算结果
+            'source_states': []  # 源状态列表
+        }
+        self.value_source = {
+            'type': None,  # 'input_direct' | 'computed' | 'constant'
+            'origin': None,  # 来源描述
+            'computation': None  # 如果是计算得到的,记录计算过程
+        }
 
     def compute_hash(self):
         """
@@ -201,6 +213,16 @@ class SearchStrategy:
             current_states.extend(args_states)
 
         visited = set(current_states)  # 新增：记录已访问的状态
+        original_states = current_states # 保存初始状态列表
+
+        def create_base_state(value, type_name, source_type, origin=None):
+            state = State(value, type_name)
+            state.value_source = {
+                'type': source_type,
+                'origin': origin or f"Found in input values",
+                'computation': None
+            }
+            return state
 
         for depth in range(max_depth):
             print(f"\n当前深度：{depth}")
@@ -256,14 +278,32 @@ class SearchStrategy:
         return True  # 所有数据都通过
 
     def validate_single_pair(self, I, expected_output, actions):
-        """对单个数据对进行验证。"""
+        """修改验证过程支持动态计算"""
+        # 添加辅助函数
+        def get_value_from_input(input_data, target):
+            """从输入动态计算值"""
+            if isinstance(input_data, (list, tuple)):
+                # 尝试各种计算方法
+                if target == max(max(row) for row in input_data):
+                    return target
+                elif target == len(input_data):
+                    return target
+            return target
+
+        # 构建执行环境
+        exec_globals = {
+            'get_value_from_input': get_value_from_input,
+            **globals()
+        }
+
+        # 构建执行环境
         func_code = ['def solve(I):']
         for line in actions:
             func_code.append('    ' + line)
         func_code.append('    return O')
         func_code_str = '\n'.join(func_code)
         local_vars = {}
-        exec(func_code_str, globals(), local_vars)
+        exec(func_code_str, exec_globals, local_vars)
         solve = local_vars['solve']
         output = solve(I)
         return output == expected_output
@@ -341,7 +381,12 @@ class SearchStrategy:
 
                     # 如果组合中包含低权重状态，优先测试这些函数
                     if max_input_weight <= weight:  # 修改为 <=
+                        print(f"func_list type: {type(func_list)}")
+                        print(f"func_list content: {func_list}")
+                        if not isinstance(func_list, (list, tuple)):
+                            func_list = list(func_list)
                         for func_name in func_list:
+                            print(f"Processing function: {func_name}")
                             combination_key = (func_name, tuple(args))
                             if combination_key in attempted_combinations:
                                 continue
@@ -352,6 +397,9 @@ class SearchStrategy:
                                 try:
                                     new_data = func(*args)
                                     if new_data is not None:
+                                        # 记录完整的计算过程
+
+
                                         # 构建参数列表...
                                         parameters = []
                                         for arg in args:
@@ -374,6 +422,14 @@ class SearchStrategy:
                                         }
                                         new_transformation_path.append(new_transformation)
 
+                                        computation_trace = {
+                                            'inputs': [state.data for state in states_combination],
+                                            'function': func_name,
+                                            'args': parameters,
+                                            'result': new_data,
+                                            'source_states': states_combination
+                                        }
+
                                         # 创建新状态
                                         new_state = State(
                                             new_data,
@@ -384,6 +440,7 @@ class SearchStrategy:
                                             transformation_path=new_transformation_path,
                                             weight=new_weight
                                         )
+                                        new_state.computation_trace = computation_trace
                                         # 记录值的生成路径
                                         value_generation = {
                                             'result': new_data,
@@ -409,6 +466,9 @@ class SearchStrategy:
                                             neighbors.append(new_state)
 
                                 except Exception as e:
+                                    logging.error("捕获到异常：%s", e)
+                                    logging.error("详细错误信息：\n%s", traceback.format_exc())
+
                                     pass
 
         return neighbors, None
@@ -459,32 +519,54 @@ class SearchStrategy:
 
         # 根据 var_mapping 和 used_vars 构建操作序列
         def build_actions(state):
-            if state.action:
-                # 记录该状态的值是如何生成的
-                var_name = var_mapping[state]
-                if var_name in used_vars:
-                    value_generations[var_name] = {
-                        'value': state.data,
-                        'generation_path': state.value_generation_path
-                    }
-
+            # 先处理父状态
+            if state.parent:
                 for parent_state in state.parent:
                     build_actions(parent_state)
 
-                var_name = var_mapping[state]
-                if var_name in used_vars:
-                    params = []
-                    for parent_state in state.parent:
-                        parent_var_name = var_mapping[parent_state]
-                        params.append(parent_var_name)
-                    func_call = f"{var_name} = {state.action}({', '.join(params)})"
-                    actions.append(func_call)
-            else:
-                var_name = var_mapping[state]
-                if var_name != 'I' and var_name in used_vars:
-                    const_value = repr(state.data)
-                    actions.append(f"{var_name} = {const_value}")
+            # 获取当前状态对应的变量名
+            var_name = var_mapping[state]
+            if var_name not in used_vars:
+                return
 
+            # 记录状态的生成信息
+            value_generations[var_name] = {
+                'value': state.data,
+                'computation': state.computation_trace
+            }
+
+            # 生成代码
+            if state.action:
+                # 函数调用的情况
+                computation = state.computation_trace
+                if computation['function']:
+                    args = []
+                    for source_state in computation['source_states']:
+                        source_var = var_mapping[source_state]
+                        args.append(source_var)
+                    func_call = f"{var_name} = {computation['function']}({', '.join(args)})"
+                    actions.append(func_call)
+            elif var_name != 'I':  # 常量或基础状态
+                if state.computation_trace['function']:
+                    # 使用计算过程生成常量
+                    computation = state.computation_trace
+                    args = [var_mapping[s] for s in computation['source_states']]
+                    actions.append(f"{var_name} = {computation['function']}({', '.join(args)})")
+                else:
+                    # 如果是基础常量，使用动态计算
+                    actions.append(f"{var_name} = get_value_from_input(I, {repr(state.data)})")
+
+        # 构建操作序列前先确保所有父状态都被映射
+        def ensure_all_mappings(state):
+            if state in var_mapping:
+                return
+            if state.parent:
+                for parent_state in state.parent:
+                    ensure_all_mappings(parent_state)
+            build_var_mapping(state)
+
+        ensure_all_mappings(current_state)
+        trace_used_vars(current_state)
         build_actions(current_state)
 
         actions.append(f"O = {var_mapping[current_state]}")
@@ -492,11 +574,12 @@ class SearchStrategy:
         print(actions,"找到 transformations:", )
 
         # 可以打印出每个变量的生成过程
-        print("\n变量生成过程:")
-        for var_name, gen_info in value_generations.items():
-            print(f"{var_name}: {gen_info['value']}")
-            for step in gen_info['generation_path']:
-                print(f"  <- {step['function']}({step['args']})")
+        # print("\n变量生成过程:")
+        # for var_name, gen_info in value_generations.items():
+        #     print(f"{var_name}: {gen_info['value']}")
+        #     # for step in gen_info['generation_path']:
+        #     for step in gen_info['computation']:
+        #         print(f"  <- {step['function']}({step['args']})")      ????????????bug
 
         return None, actions
 
