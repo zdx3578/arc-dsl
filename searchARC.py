@@ -474,15 +474,17 @@ if __name__ == '__main__':
 
     for i, key in enumerate(solver_functions_name, start=1):  # 使用 solver_functions
 
-        key = '5582e5ca'
+        key = '2dee498d'
         if i != 1:
             break
 
-        if i % 22 == 0:
-            print()
+
 
         print("\n\n\n")
         print(i, key)
+
+        if i % 23 == 0:
+            print()
 
         task = {}
         task['train'] = data['train'][key]

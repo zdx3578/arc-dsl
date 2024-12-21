@@ -33,8 +33,8 @@ class State:
         """
         计算状态的哈希值，用于重复检测。
         """
-        return hash((tuple(sorted(self.types)), tuple(self.parameters), self._data_hash()))  # 修改：包含参数
-
+        import time
+        return hash(time.perf_counter_ns())
     def __eq__(self, other):
         return (
             set(self.types) == set(other.types) and
@@ -99,6 +99,14 @@ class SearchStrategy:
             # 如果需要添加更多函数，直接在此处添加即可
             # 例如:
             # 'another_function',
+    # @staticmethod
+    def create_zero_matrix(self, grid):
+        if not grid or not grid[0]:
+            return tuple()
+
+        h, w = len(grid), len(grid[0])
+        # 使用tuple保持数据类型一致
+        return tuple(tuple(0 for _ in range(w)) for _ in range(h))
 
     def search(self, task, strategy='a_star', direction='bidirectional'):
         if strategy == 'a_star':
@@ -132,11 +140,12 @@ class SearchStrategy:
             pair_solutions = []  # 存储当前数据对的所有可能解决方案
             start_state = State(pair['input'], 'grid')
             goal_state = State(pair['output'], 'grid')
+            goalhw_state = State(self.create_zero_matrix(pair['output']), 'grid')
 
             # 搜索当前数据对的所有可能解决方案
             max_attempts = 1  # 限制每个数据对的最大尝试次数
             for _ in range(max_attempts):
-                solution = self._search_single_pair(task, start_state, goal_state, heuristic)
+                solution = self._search_single_pair(task, start_state, goal_state,goalhw_state, heuristic)
                 if solution:
                     _, actions = solution
                     filtered_actions = [action for action in actions if action]
@@ -174,32 +183,32 @@ class SearchStrategy:
         return False
 
 
-    def _search_single_pair_reverse(self,task, start_state, goal_state, heuristic):
+    def _search_single_pair_reverse(self,task, start_state, goal_state,goalhw_state, heuristic):
         return self._search_single_pair(task, goal_state, start_state, heuristic)
 
-    def _search_single_pair(self,task, start_state, goal_state, heuristic):
+    def _search_single_pair(self,task, start_state, goal_state,goalhw_state,  heuristic):
         max_depth = 5  # 最大搜索深度，可以根据需要调整
         came_from = {}
         original_data = start_state.data  # 设置原始数据
 
         # 修改初始状态列表，添加权重
-        current_states = [start_state]  # 起始状态权重默认为5
+        current_states = [start_state, goalhw_state]  # 起始状态权重默认为5
         # 添加基础常量状态，设置低权重
-        # basic_states = ([State(i, 'integer', weight=20) for i in range(10)] +
-        #     [State((0, 0), 'integertuple', weight=20),
-        #      State((0, 1), 'integertuple', weight=20),
-        #      State((1, 0), 'integertuple', weight=20),
-        #      State((-1, 0), 'integertuple', weight=20),
-        #      State((0, -1), 'integertuple', weight=20),
-        #      State((1, 1), 'integertuple', weight=20),
-        #      State((-1, -1), 'integertuple', weight=20),
-        #      State((-1, 1), 'integertuple', weight=20),
-        #      State((1, -1), 'integertuple', weight=20),
-        #      State((0, 2), 'integertuple', weight=20),
-        #      State((2, 0), 'integertuple', weight=20),
-        #      State((2, 2), 'integertuple', weight=20),
-        #      State((3, 3), 'integertuple', weight=20)])
-        # current_states.extend(basic_states)
+        basic_states = ([State(i, 'integer', weight=31) for i in range(10)] +
+            [State((0, 0), 'integertuple', weight=31),
+             State((0, 1), 'integertuple', weight=31),
+             State((1, 0), 'integertuple', weight=31),
+             State((-1, 0), 'integertuple', weight=31),
+             State((0, -1), 'integertuple', weight=31),
+             State((1, 1), 'integertuple', weight=31),
+             State((-1, -1), 'integertuple', weight=31),
+             State((-1, 1), 'integertuple', weight=31),
+             State((1, -1), 'integertuple', weight=31),
+             State((0, 2), 'integertuple', weight=31),
+             State((2, 0), 'integertuple', weight=31),
+             State((2, 2), 'integertuple', weight=31),
+             State((3, 3), 'integertuple', weight=31)])
+        current_states.extend(basic_states)
         def create_state_from_arg(arg, weight=0):
             """根据参数类型创建对应的State对象"""
             if isinstance(arg, tuple):
@@ -211,6 +220,7 @@ class SearchStrategy:
         if self.function_whitelist_args:
             args_states = [create_state_from_arg(arg) for arg in self.function_whitelist_args]
             current_states.extend(args_states)
+        # current_states.extend(goalhw_state)
 
         visited = set(current_states)  # 新增：记录已访问的状态
         original_states = current_states # 保存初始状态列表
@@ -244,7 +254,7 @@ class SearchStrategy:
                 break  # 没有新的邻居，停止搜索
             next_states = []
             for neighbor in neighbors:
-                if neighbor.data == goal_state.data:
+                if neighbor.data == goal_state.data and neighbor.hash != goal_state.hash:
                     # 在调用 reconstruct_path 前，先更新 came_from
                     if neighbor not in came_from:
                         came_from[neighbor] = neighbor.parent
