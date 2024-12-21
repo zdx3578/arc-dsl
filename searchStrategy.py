@@ -185,21 +185,21 @@ class SearchStrategy:
         # 修改初始状态列表，添加权重
         current_states = [start_state]  # 起始状态权重默认为5
         # 添加基础常量状态，设置低权重
-        basic_states = ([State(i, 'integer', weight=0) for i in range(10)] +
-            [State((0, 0), 'integertuple', weight=10),
-             State((0, 1), 'integertuple', weight=10),
-             State((1, 0), 'integertuple', weight=10),
-             State((-1, 0), 'integertuple', weight=10),
-             State((0, -1), 'integertuple', weight=10),
-             State((1, 1), 'integertuple', weight=10),
-             State((-1, -1), 'integertuple', weight=10),
-             State((-1, 1), 'integertuple', weight=10),
-             State((1, -1), 'integertuple', weight=10),
-             State((0, 2), 'integertuple', weight=10),
-             State((2, 0), 'integertuple', weight=10),
-             State((2, 2), 'integertuple', weight=10),
-             State((3, 3), 'integertuple', weight=10)])
-        current_states.extend(basic_states)
+        # basic_states = ([State(i, 'integer', weight=20) for i in range(10)] +
+        #     [State((0, 0), 'integertuple', weight=20),
+        #      State((0, 1), 'integertuple', weight=20),
+        #      State((1, 0), 'integertuple', weight=20),
+        #      State((-1, 0), 'integertuple', weight=20),
+        #      State((0, -1), 'integertuple', weight=20),
+        #      State((1, 1), 'integertuple', weight=20),
+        #      State((-1, -1), 'integertuple', weight=20),
+        #      State((-1, 1), 'integertuple', weight=20),
+        #      State((1, -1), 'integertuple', weight=20),
+        #      State((0, 2), 'integertuple', weight=20),
+        #      State((2, 0), 'integertuple', weight=20),
+        #      State((2, 2), 'integertuple', weight=20),
+        #      State((3, 3), 'integertuple', weight=20)])
+        # current_states.extend(basic_states)
         def create_state_from_arg(arg, weight=0):
             """根据参数类型创建对应的State对象"""
             if isinstance(arg, tuple):
@@ -381,12 +381,12 @@ class SearchStrategy:
 
                     # 如果组合中包含低权重状态，优先测试这些函数
                     if max_input_weight <= weight:  # 修改为 <=
-                        print(f"func_list type: {type(func_list)}")
-                        print(f"func_list content: {func_list}")
+                        # print(f"func_list type: {type(func_list)}")
+                        # print(f"func_list content: {func_list}")
                         if not isinstance(func_list, (list, tuple)):
                             func_list = list(func_list)
                         for func_name in func_list:
-                            print(f"Processing function: {func_name}")
+                            # print(f"Processing function: {func_name}")
                             combination_key = (func_name, tuple(args))
                             if combination_key in attempted_combinations:
                                 continue
@@ -466,8 +466,8 @@ class SearchStrategy:
                                             neighbors.append(new_state)
 
                                 except Exception as e:
-                                    logging.error("捕获到异常：%s", e)
-                                    logging.error("详细错误信息：\n%s", traceback.format_exc())
+                                    # logging.error("捕获到异常：%s", e)
+                                    # logging.error("详细错误信息：\n%s", traceback.format_exc())
 
                                     pass
 

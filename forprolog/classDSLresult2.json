@@ -155,7 +155,14 @@
     ],
     "(('piece',), 'integer')": [
         "height",
-        "width"
+        "width",
+        "hwratio"
+    ],
+    "(('piece', 'piece'), 'integer')": [
+        "hratio",
+        "wratio",
+        "hratioI",
+        "wratioI"
     ],
     "(('piece',), 'integertuple')": [
         "shape"
@@ -298,6 +305,9 @@
     ],
     "(('element', 'integer'), 'element')": [
         "upscale"
+    ],
+    "(('any', 'any'), 'any')": [
+        "get_mode"
     ],
     "(('grid', 'grid'), 'grid')": [
         "hconcat",

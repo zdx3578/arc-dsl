@@ -247,8 +247,8 @@ def is_checking(task):
                 #     functionargs.append(result[1:])
                 #     # args = result[2:]
             except Exception as e:
-                logging.error("捕获到异常：%s", e)
-                logging.error("详细错误信息：\n%s", traceback.format_exc())
+                # logging.error("捕获到异常：%s", e)
+                # logging.error("详细错误信息：\n%s", traceback.format_exc())
                 success = False
                 break
 
@@ -276,13 +276,27 @@ def get_function_subclass(function_name, code_file):
         code = file.read()
 
     # 提取指定函数的完整定义
-    pattern = rf'def {function_name}\s*\(.*?\):([\s\S]*?)(?=\n\ndef |\n#|\Z)'
-    match = re.search(pattern, code)
+    # pattern = rf'def {'is_upscale'}\s*\(.*?\):([\s\S]*?)(?=\n\ndef |\n#|\Z)'
+    # pattern = rf"def {function_name}\(.*?\)\s*(->\s*\w+)?\s*:(.*?)(?=\n\s*def\s|\Z)"
+    # pattern = rf"def {function_name}\(I\):.*?(?=\n\s*def |$)"
+    pattern = rf'''
+        def\s+{function_name}    # 函数名
+        \s*\(                    # 左括号
+        [^)]*                    # 参数部分（非贪婪）
+        \)\s*                    # 右括号
+        (?:->[ \t]*\w+)?        # 可选的返回类型
+        \s*:\s*                 # 冒号
+        (?:(?!def\s).)*         # 函数体（非贪婪）
+    '''.strip()
+
+    match = re.search(pattern, code, re.VERBOSE | re.DOTALL)
+
+    # match = re.search(pattern, code)
     if not match:
         print(f"Function {function_name} not found.")
         return []
 
-    function_body = match.group(1)
+    function_body = match.group(0)
 
     # 收集所有找到的函数名
     functions = set()
@@ -460,11 +474,11 @@ if __name__ == '__main__':
 
     for i, key in enumerate(solver_functions_name, start=1):  # 使用 solver_functions
 
-        # key = '5582e5ca'
-        # if i != 1:
-        #     break
+        key = '5582e5ca'
+        if i != 1:
+            break
 
-        if i % 18 == 0:
+        if i % 22 == 0:
             print()
 
         print("\n\n\n")

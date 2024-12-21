@@ -8,6 +8,11 @@ def solve_d10ecb37(I):
     O = crop(I, ORIGIN, TWO_BY_TWO)
     return O
 
+def is_upscale(grid1: Grid, grid2: Grid) -> bool:
+    x1 = hratio(grid1,grid2)
+    x2 = upscale(grid1,x1)
+    return grid2 == x2
+
 def is_out_is_is_subgrid(grid2: Grid, grid1: Grid) -> bool:
     """
     检查 grid1 是否是 grid2 的子网格。
