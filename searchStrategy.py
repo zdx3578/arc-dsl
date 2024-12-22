@@ -8,7 +8,8 @@ class State:
     def __init__(self, data, type, parent=None, action=None, parameters=None, transformation_path=None, weight=5):
         # 将默认权重改为5,让初始状态有一个中等权重
         self.data = data
-        self.types = type_extractor.extract_types(type)  # 修改：支持多个类型
+        self.types = type_extractor.extract_types(type)
+        self.types.append('container')# 修改：支持多个类型
         self.parent = parent      # 新增：记录父状态
         self.action = action      # 新增：记录产生该状态的操作符
         self.parameters = parameters if parameters else []
@@ -65,6 +66,9 @@ class SearchStrategy:
     def __init__(self, dsl_registry, enable_whitelist=False, whitelist = None):
         self.dsl_registry = dsl_registry
         # 定义函数白名单，根据 enable_whitelist 参数选择初始化方式
+        global success
+        if 'success' not in globals():
+            success = 0
         if enable_whitelist:
             # 初始化为包含所有 DSL 函数
             self.function_whitelist = set(self.dsl_registry.dsl_functions.keys())
@@ -166,7 +170,10 @@ class SearchStrategy:
         if best_solution:
             # 验证最佳解决方案是否适用于所有数据对
             if self.validate_on_all_data(task, best_solution):
+                global success
+                success += 1
                 print("\n best 找到适用于所有训练数据对的最优函数序列:\n",best_solution)
+                print(f"success {success}")
                 return best_solution
 
         # 如果没有找到通用解决方案，尝试其他可能的组合
@@ -194,20 +201,22 @@ class SearchStrategy:
         # 修改初始状态列表，添加权重
         current_states = [start_state, goalhw_state]  # 起始状态权重默认为5
         # 添加基础常量状态，设置低权重
-        basic_states = ([State(i, 'integer', weight=31) for i in range(10)] +
-            [State((0, 0), 'integertuple', weight=31),
-             State((0, 1), 'integertuple', weight=31),
-             State((1, 0), 'integertuple', weight=31),
-             State((-1, 0), 'integertuple', weight=31),
-             State((0, -1), 'integertuple', weight=31),
-             State((1, 1), 'integertuple', weight=31),
-             State((-1, -1), 'integertuple', weight=31),
-             State((-1, 1), 'integertuple', weight=31),
-             State((1, -1), 'integertuple', weight=31),
-             State((0, 2), 'integertuple', weight=31),
-             State((2, 0), 'integertuple', weight=31),
-             State((2, 2), 'integertuple', weight=31),
-             State((3, 3), 'integertuple', weight=31)])
+        basic_states = ([State(i, 'integer', weight=9) for i in range(10)]
+            + [State((0, 0), 'integertuple', weight=10),
+             State((0, 1), 'integertuple', weight=10),
+             State((1, 0), 'integertuple', weight=10),
+             State((-1, 0), 'integertuple', weight=10),
+             State((0, -1), 'integertuple', weight=10),
+             State((1, 1), 'integertuple', weight=10),
+             State((-1, -1), 'integertuple', weight=10),
+             State((-1, 1), 'integertuple', weight=10),
+             State((1, -1), 'integertuple', weight=10),
+             State((0, 2), 'integertuple', weight=10),
+             State((2, 0), 'integertuple', weight=10),
+             State((2, 2), 'integertuple', weight=10),
+             State((3, 3), 'integertuple', weight=10)])
+        # basic_states = ([State(i, 'integer', weight=9)for i in [3,8]])
+
         current_states.extend(basic_states)
         def create_state_from_arg(arg, weight=0):
             """根据参数类型创建对应的State对象"""
@@ -355,6 +364,8 @@ class SearchStrategy:
             # 根据出现频率提升权重
             frequency_bonus = min(frequency * 2, 10)  # 最多提升10
             return base_weight + frequency_bonus
+            # frequency_bonus = min(frequency * 2, 3)  # 最多提升10
+            # return base_weight - frequency * 2
 
         # 按权重从低到高处理状态和函数
         for weight in sorted(weight_groups.keys()):  # 删除 reverse=True
@@ -363,6 +374,7 @@ class SearchStrategy:
             for key, func_names in self.dsl_registry.classified_functions.items():
                 input_types, output_type = key
                 func_list = [fn for fn in func_names if fn in self.function_whitelist]
+                # func_list = self.function_whitelist
                 if not func_list:
                     continue
 
@@ -373,7 +385,7 @@ class SearchStrategy:
                         has_low_weight_inputs = False
                         break
 
-                if has_low_weight_inputs:
+                if has_low_weight_inputs:           #true
                     available_funcs.append((func_list, input_types, output_type))
 
             # 优先使用权重低的状态作为函数参数
@@ -404,6 +416,10 @@ class SearchStrategy:
 
                             func = self.dsl_registry.dsl_functions.get(func_name)
                             if func:
+                                # if func_name in ['ofcolor','delta', 'fill']:  #['objects' ]: #, 'hsplit', 'first', 'transpose']:
+                                #     print(f"Processing function: {func_name}")
+                                #     pass
+                                # print(func,args)
                                 try:
                                     new_data = func(*args)
                                     if new_data is not None:
@@ -466,6 +482,7 @@ class SearchStrategy:
                                             came_from[new_state] = new_state.parent
                                             _, actions = self.reconstruct_path(came_from, new_state, original_data)
                                             if task and self.validate_on_all_data(task, actions):
+                                                print(f'len neighbors: {len(neighbors)}')
                                                 return None, actions
 
                                         # 更新状态频率
@@ -480,7 +497,7 @@ class SearchStrategy:
                                     # logging.error("详细错误信息：\n%s", traceback.format_exc())
 
                                     pass
-
+        print(f'len neighbors: {len(neighbors)}')
         return neighbors, None
 
     def reconstruct_path(self, came_from, current_state, original_data):

@@ -209,6 +209,7 @@ def is_checking(task):
     遍历所有的 'is_' 函数，验证任务的训练数据。
     对于验证成功的函数，提取其子函数。
     """
+    ## classified_functions_file = '/home/zdx/github/VSAHDC/arc-dsl/forprolog/classDSLresult2.json'
     code_file = '/Users/zhangdexiang/github/VSAHDC/arc-dsl/solvers_is_judge.py'  # 指定包含 is 函数的文件
     is_functions = get_is_functions(code_file)
     valid_functions = []
@@ -362,6 +363,10 @@ class DSLFunctionRegistry:
         for key_str, functions in data.items():
             key_tuple = ast.literal_eval(key_str)
             classified_functions[key_tuple] = functions
+        from collections import OrderedDict
+
+        # 将普通字典转换为有序字典并排序
+        classified_functions = OrderedDict(sorted(classified_functions.items(), key=lambda x: x[0]))
         return classified_functions
 
     def call_function(self, input_types, state_data):
@@ -472,9 +477,11 @@ if __name__ == '__main__':
     # 获取所有匹配的函数名
     solver_functions_name = re.findall(pattern, code)  # 修改变量名为 solver_functions
 
+    # success = 0
+
     for i, key in enumerate(solver_functions_name, start=1):  # 使用 solver_functions
 
-        key = '2dee498d'
+        key = '32597951'
         if i != 1:
             break
 
@@ -483,7 +490,10 @@ if __name__ == '__main__':
         print("\n\n\n")
         print(i, key)
 
-        if i % 23 == 0:
+        # if key == '32597951':
+        #     continue
+
+        if i % 25 == 0:
             print()
 
         task = {}
@@ -507,8 +517,9 @@ if __name__ == '__main__':
         # difference_analyzer = DifferenceAnalyzer()
 
         whitelist = is_checking(task)
-        # whitelist = None
+        whitelist = (2, ['ofcolor','delta', 'fill']) #(2, ['hconcat', 'vconcat', 'mirror', 'return', 'vmirror', 'concat', 'hmirror'])
 
+        ## classified_functions_file = '/home/zdx/github/VSAHDC/arc-dsl/forprolog/classDSLresult2.json'
         classified_functions_file = '/Users/zhangdexiang/github/VSAHDC/arc-dsl/forprolog/classDSLresult2.json'
         dsl_registry = DSLFunctionRegistry(classified_functions_file)
 

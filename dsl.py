@@ -1081,6 +1081,37 @@ def rot180(
     """ half rotation """
     return tuple(tuple(row[::-1]) for row in grid[::-1])
 
+def upper_third(grid: Grid) -> Grid:
+    """ Upper third of grid """
+    third = len(grid) // 3
+    return grid[:third]
+
+
+def middle_third(grid: Grid) -> Grid:
+    """ Middle third of grid """
+    third = len(grid) // 3
+    return grid[third:2 * third]
+
+
+def lower_third(grid: Grid) -> Grid:
+    """ Lower third of grid """
+    third = len(grid) // 3
+    return grid[2 * third + (len(grid) % 3 != 0):]
+
+
+def left_third(grid: Grid) -> Grid:
+    """ Left third of grid """
+    return rot270(upper_third(rot90(grid)))
+
+
+def center_third(grid: Grid) -> Grid:
+    """ Center third of grid """
+    return rot270(middle_third(rot90(grid)))
+
+
+def right_third(grid: Grid) -> Grid:
+    """ Right third of grid """
+    return rot270(lower_third(rot90(grid)))
 
 def rot270(
     grid: Grid

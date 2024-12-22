@@ -24,4 +24,7 @@ Patch = Union[Object, Indices]
 Element = Union[Object, Grid]
 Piece = Union[Grid, Patch]
 TupleTuple = Tuple[Tuple]
-ContainerContainer = Container[Container]
+# Container = Union[Piece, Element]
+# ...existing code...
+Container = Union[Piece, Element]
+ContainerContainer = Union[Container, Tuple[Container, ...]]

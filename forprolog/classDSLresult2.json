@@ -276,6 +276,12 @@
     "(('grid',), 'grid')": [
         "rot90",
         "rot180",
+        "upper_third",
+        "middle_third",
+        "lower_third",
+        "left_third",
+        "center_third",
+        "right_third",
         "rot270",
         "trim",
         "tophalf",
