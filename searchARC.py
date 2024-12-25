@@ -323,6 +323,9 @@ def compute_difference(data1, data2):
     """
     计算两个状态的数据差异。
     """
+    ## is check, object 对象，color相关 函数，shape,positon, same shape point, same color point,
+    ## 两个grid的差异，两个object的差异  旋转对象是一类，镜像对象是一类，填充对象是一类，颜色变换是一类，形状变换是一类，位置变换是一类，大小变换是一类，合并对象是一类，分割对象是一类，删除对象是一类，增加对象是一类，交换对象是一类，重复对象是一类， 
+
     if isinstance(data1, list) and isinstance(data2, list):
         # 假设是grid，计算不同元素的数量
         diff = sum(1 for row1, row2 in zip(data1, data2) for v1, v2 in zip(row1, row2) if v1 != v2)
@@ -481,7 +484,7 @@ if __name__ == '__main__':
 
     for i, key in enumerate(solver_functions_name, start=1):  # 使用 solver_functions
 
-        key = '32597951'
+        key = '97a05b5b'
         if i != 1:
             break
 
@@ -517,7 +520,8 @@ if __name__ == '__main__':
         # difference_analyzer = DifferenceAnalyzer()
 
         whitelist = is_checking(task)
-        whitelist = (2, ['ofcolor','delta', 'fill']) #(2, ['hconcat', 'vconcat', 'mirror', 'return', 'vmirror', 'concat', 'hmirror'])
+        if key == '32597951':
+            whitelist = (2, ['ofcolor','delta', 'fill']) #(2, ['hconcat', 'vconcat', 'mirror', 'return', 'vmirror', 'concat', 'hmirror'])
 
         ## classified_functions_file = '/home/zdx/github/VSAHDC/arc-dsl/forprolog/classDSLresult2.json'
         classified_functions_file = '/Users/zhangdexiang/github/VSAHDC/arc-dsl/forprolog/classDSLresult2.json'

@@ -2,6 +2,13 @@ from dsl import *
 from constants import *
 import dsl2
 
+def is_mirror(grid1: Grid, grid2: Grid) -> bool:
+    return grid1 == grid2.hmirror().vmirror()????
+
+def is_move_object(grid1: Grid, grid2: Grid) -> bool:
+    return grid1 == grid2.move_object()????
+
+def
 
 # 第 1 个函数  d10ecb37
 def solve_d10ecb37(I):
@@ -13,7 +20,7 @@ def is_upscale(grid1: Grid, grid2: Grid) -> bool:
     x2 = upscale(grid1,x1)
     return grid2 == x2
 
-def is_out_is_is_subgrid(grid2: Grid, grid1: Grid) -> bool:
+def is_out_is_in_subgrid(grid2: Grid, grid1: Grid) -> bool:
     """
     检查 grid1 是否是 grid2 的子网格。
 
