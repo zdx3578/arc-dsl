@@ -2,13 +2,8 @@ from dsl import *
 from constants import *
 import dsl2
 
-def is_mirror(grid1: Grid, grid2: Grid) -> bool:
-    return grid1 == grid2.hmirror().vmirror()????
 
-def is_move_object(grid1: Grid, grid2: Grid) -> bool:
-    return grid1 == grid2.move_object()????
 
-def
 
 # 第 1 个函数  d10ecb37
 def solve_d10ecb37(I):

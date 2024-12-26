@@ -140,7 +140,7 @@ class SearchStrategy:
         min_solution_length = float('inf')
 
         # 对每个训练数据对进行搜索
-        for pair in task['train']:
+        for pair in [task['train'][2]]:  #task['train']
             pair_solutions = []  # 存储当前数据对的所有可能解决方案
             start_state = State(pair['input'], 'grid')
             goal_state = State(pair['output'], 'grid')
@@ -216,8 +216,8 @@ class SearchStrategy:
              State((2, 2), 'integertuple', weight=10),
              State((3, 3), 'integertuple', weight=10)])
         # basic_states = ([State(i, 'integer', weight=9)for i in [3,8]])
+        # current_states.extend(basic_states)
 
-        current_states.extend(basic_states)
         def create_state_from_arg(arg, weight=0):
             """根据参数类型创建对应的State对象"""
             if isinstance(arg, tuple):

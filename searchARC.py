@@ -324,7 +324,7 @@ def compute_difference(data1, data2):
     计算两个状态的数据差异。
     """
     ## is check, object 对象，color相关 函数，shape,positon, same shape point, same color point,
-    ## 两个grid的差异，两个object的差异  旋转对象是一类，镜像对象是一类，填充对象是一类，颜色变换是一类，形状变换是一类，位置变换是一类，大小变换是一类，合并对象是一类，分割对象是一类，删除对象是一类，增加对象是一类，交换对象是一类，重复对象是一类， 
+    ## 两个grid的差异，两个object的差异  旋转对象是一类，镜像对象是一类，填充对象是一类，颜色变换是一类，形状变换是一类，位置变换是一类，大小变换是一类，合并对象是一类，分割对象是一类，删除对象是一类，增加对象是一类，交换对象是一类，重复对象是一类，
 
     if isinstance(data1, list) and isinstance(data2, list):
         # 假设是grid，计算不同元素的数量

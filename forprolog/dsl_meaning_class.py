@@ -1,20 +1,8 @@
-
-
 from dsl import *
 
-
-
----------------------------------------------
-
-
-
-
 #1.两个grid的差异
-
 cellwise#网格单元格差异
 difference
-
-
 
 #2.两个object的差异
 difference
