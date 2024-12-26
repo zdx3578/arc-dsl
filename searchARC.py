@@ -412,6 +412,45 @@ class DSLFunctionRegistry:
                 return output_type
         return None
 
+    def create_bidirectional_search(self):
+        """创建双向搜索实例"""
+        from searchStra2 import BidirectionalSearch
+        return BidirectionalSearch(self)
+
+def run_search(task, classified_functions_file):
+    """主搜索入口函数"""
+    # 初始化DSL注册器
+    dsl_registry = DSLFunctionRegistry(classified_functions_file)
+
+    # 检查是否有可用的特化函数
+    whitelist = is_checking(task)
+    if whitelist:
+        # 使用特化函数进行搜索
+        search_strategy = SearchStrategy(dsl_registry, enable_whitelist=False, whitelist=whitelist)
+        result = search_strategy.search(task)
+        if result:
+            return result
+
+    # 如果特化搜索失败,尝试双向树搜索
+    print("Trying bidirectional tree search...")
+    for pair in task['train']:
+        # 创建初始状态和目标状态
+        input_state = State(pair['input'], 'grid')
+        output_state = State(pair['output'], 'grid')
+
+        # 创建双向搜索实例
+        search = dsl_registry.create_bidirectional_search()
+
+        # 执行搜索
+        solution = search.find_path(input_state, output_state)
+        if solution:
+            # 验证解决方案
+            if search.validate_solution(task, solution):
+                print("Found valid solution via tree search!")
+                return solution
+
+    return None
+
 class Controller:
     def __init__(self, operator_layer, search_algorithm, difference_analyzer):
         self.operator_layer = operator_layer
@@ -468,82 +507,36 @@ def get_data(train=True):
         } for e in v['test']] for k, v in data.items()}
     }
 
-
-
-if __name__ == '__main__':
-    data = get_data(train=True)
-
+def get_solver_functions():
     with open('solvers.py', 'r', encoding='utf-8') as file:
         code = file.read()
     pattern = r"def solve_([a-fA-F0-9]+)\(I\):"
     import re
     # 获取所有匹配的函数名
     solver_functions_name = re.findall(pattern, code)  # 修改变量名为 solver_functions
+    return solver_functions_name
 
-    # success = 0
+if __name__ == '__main__':
+    data = get_data(train=True)
 
-    for i, key in enumerate(solver_functions_name, start=1):  # 使用 solver_functions
+    # 获取所有需要处理的任务ID
+    solver_functions_name = get_solver_functions()
 
-        key = '97a05b5b'
-        if i != 1:
-            break
+    for i, key in enumerate(solver_functions_name, start=1):
+        print(f"\nProcessing task {i}: {key}")
 
+        # 构建任务
+        task = {
+            'train': data['train'][key],
+            'test': data['test'][key]
+        }
 
-
-        print("\n\n\n")
-        print(i, key)
-
-        # if key == '32597951':
-        #     continue
-
-        if i % 25 == 0:
-            print()
-
-        task = {}
-        task['train'] = data['train'][key]
-        task['test'] = data['test'][key]
-
-
-
-        # Configuration management
-        # config_manager = ConfigManager('config.py')
-        # proper_functions = config_manager.get_proper_functions()
-        # operator_layer = OperatorLayer.from_config(proper_functions)
-
-        # Search algorithm selection
-        # search_algorithm_name = config_manager.get_search_algorithm()
-        # if search_algorithm_name == 'BFS':
-        #     search_algorithm = BFS(operator_layer)
-
-
-        # Difference analyzer
-        # difference_analyzer = DifferenceAnalyzer()
-
-        whitelist = is_checking(task)
-        if key == '32597951':
-            whitelist = (2, ['ofcolor','delta', 'fill']) #(2, ['hconcat', 'vconcat', 'mirror', 'return', 'vmirror', 'concat', 'hmirror'])
-
-        ## classified_functions_file = '/home/zdx/github/VSAHDC/arc-dsl/forprolog/classDSLresult2.json'
+        # 运行搜索
         classified_functions_file = '/Users/zhangdexiang/github/VSAHDC/arc-dsl/forprolog/classDSLresult2.json'
-        dsl_registry = DSLFunctionRegistry(classified_functions_file)
+        solution = run_search(task, classified_functions_file)
 
-        # search_algorithm = SearchStrategy(dsl_registry)
-        if whitelist :
-            search_algorithm = SearchStrategy(dsl_registry, enable_whitelist=False, whitelist = whitelist)
+        if solution:
+            print(f"Success! Found solution for task {key}")
+            print("Solution:", solution)
         else:
-            search_algorithm = SearchStrategy(dsl_registry, enable_whitelist=True,)
-        search_algorithm.search(task)
-
-
-        # Controller
-        # controller = Controller(operator_layer, search_algorithm, difference_analyzer, dsl_registry)
-
-        # # Run the search
-        # success = controller.run(task)
-        # if success:
-        #     print("All training pairs successfully transformed.")
-        # else:
-        #     print("Failed to transform some training pairs.")
-
-
-        # assert solution == task['test'][0]['output']
+            print(f"Failed to find solution for task {key}")
