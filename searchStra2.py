@@ -12,6 +12,18 @@ class StateNode:
         self.generation_func = None # 生成该状态的函数
         self.gen_params = []        # 生成参数
         self.matched_node = None    # 映射到目标树的节点
+        self.computation_trace = {  # 从searchStrategy借鉴,记录计算过程
+            'inputs': [],
+            'function': None,
+            'args': [],
+            'result': None,
+            'source_states': []
+        }
+        self.value_source = {  # 记录值的来源
+            'type': None,  # 'input_direct' | 'computed' | 'constant'
+            'origin': None,
+            'computation': None
+        }
 
     def add_child(self, child_state, func=None, params=None):
         """添加子节点"""
@@ -52,7 +64,22 @@ class StateTree:
                 result = func(node.state.data)
                 if result is not None and result not in visited_states:
                     new_state = State(result, 'grid')
+                    # 记录计算过程
+                    computation_trace = {
+                        'inputs': [node.state.data],
+                        'function': func_name,
+                        'args': [node.state.data],
+                        'result': result,
+                        'source_states': [node.state]
+                    }
+
                     child = node.add_child(new_state, func_name, [node.state])
+                    child.computation_trace = computation_trace
+                    child.value_source = {
+                        'type': 'computed',
+                        'origin': f"Computed by {func_name}",
+                        'computation': computation_trace
+                    }
                     self.all_nodes[new_state] = child
                     self.leaf_nodes.add(child)
                     self.leaf_nodes.discard(node)
@@ -120,21 +147,67 @@ class BidirectionalSearch:
         # 获取反向路径
         backward_path = backward_node.get_path_to_root()[::-1]
 
-        # 构造完整的转换序列
-        transformations = []
+        # 构造转换序列,采用searchStrategy的格式
+        actions = []
+        var_mapping = {}
+        var_counter = 1
+
+        def add_node_action(node, is_forward=True):
+            if node.parent:
+                # 为节点创建变量名
+                var_name = f'x{var_counter}'
+                var_mapping[node] = var_name
+
+                # 获取参数变量名
+                param_vars = []
+                for param in node.gen_params:
+                    if param not in var_mapping:
+                        const_name = f'const_{len(var_mapping) + 1}'
+                        var_mapping[param] = const_name
+                        # 添加常量定义
+                        if param.value_source['type'] == 'computed':
+                            # 使用计算过程生成常量
+                            comp = param.computation_trace
+                            args = [var_mapping[s] for s in comp['source_states']]
+                            actions.append(f"{const_name} = {comp['function']}({', '.join(args)})")
+                        else:
+                            # 使用值的实际来源
+                            actions.append(f"{const_name} = {param.value_source['origin']}")
+                    param_vars.append(var_mapping[param])
+
+                # 添加函数调用
+                actions.append(f"{var_name} = {node.generation_func}({', '.join(param_vars)})")
+                var_counter += 1
 
         # 添加正向转换
-        for node in forward_path[1:]:  # 跳过根节点
-            transformations.append({
-                'function': node.generation_func,
-                'params': [p.data for p in node.gen_params]
-            })
+        for node in forward_path[1:]:
+            add_node_action(node, True)
 
         # 添加反向转换
-        for node in backward_path[1:]:  # 跳过根节点
-            transformations.append({
-                'function': node.generation_func,
-                'params': [p.data for p in node.gen_params]
-            })
+        for node in backward_path[1:]:
+            add_node_action(node, False)
 
-        return transformations
+        # 添加最终输出赋值
+        actions.append(f"O = {var_mapping[forward_path[-1]]}")
+
+        return actions
+
+    def validate_solution(self, task, actions):
+        """验证解决方案,采用searchStrategy的验证逻辑"""
+        def validate_single_pair(I, expected_output, actions):
+            func_code = ['def solve(I):']
+            for line in actions:
+                func_code.append('    ' + line)
+            func_code.append('    return O')
+
+            local_vars = {}
+            exec('\n'.join(func_code), globals(), local_vars)
+            solve = local_vars['solve']
+            output = solve(I)
+            return output == expected_output
+
+        # 验证所有测试数据
+        for pair in task['train'] + task.get('test', []):
+            if not validate_single_pair(pair['input'], pair['output'], actions):
+                return False
+        return True
