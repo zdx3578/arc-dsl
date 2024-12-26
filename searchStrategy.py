@@ -10,6 +10,8 @@ class State:
         self.data = data
         self.types = type_extractor.extract_types(type)
         self.types.append('container')# 修改：支持多个类型
+        self.types.append('object')
+        self.types.append('objects')
         self.parent = parent      # 新增：记录父状态
         self.action = action      # 新增：记录产生该状态的操作符
         self.parameters = parameters if parameters else []
@@ -327,9 +329,57 @@ class SearchStrategy:
         output = solve(I)
         return output == expected_output
 
+    def get_neighbors(self, current_states, start_state):
+        """生成下一层的邻居状态，支持多参数函数和状态组合。"""
+        neighbors = []
+        input_type_state = defaultdict(list)
+        original_state = start_state
+
+        for state in current_states:
+            for t in state.get_type():
+                input_type_state[t].append(state)
+        func_list = defaultdict(list)
 
 
-    def get_neighbors(self, current_states, start_state, visited, goal_state=None, task=None, came_from=None):
+        func_type_map = {}
+
+        # 遍历并记录函数类型信息
+        for key, func_names in self.dsl_registry.classified_functions.items():
+            input_types, output_type = key
+            for input_type in input_types:
+                if input_type in input_type_state:
+                    for name in func_names:
+                        if name not in func_list[input_type]:  # 检查是否已存在
+                            func_list[input_type].append(name)
+                    # 记录函数的输入输出类型
+                    for func_name in func_names:
+                        func_type_map[func_name] = (input_types, output_type)
+
+        # 处理grid类型的函数
+        for func_name in func_list.get('grid', []):
+            if (func_name in self.dsl_registry.dsl_functions and
+                func_name != 'extract_all_boxes'):
+
+                func = self.dsl_registry.dsl_functions[func_name]
+                input_types, output_type = func_type_map.get(func_name, (None, None))
+
+                # 优先处理单参数函数
+                if len(input_types) == 1:
+                    try:
+                        new_data = func(state.data)
+                        if new_data is not None:
+                            new_state = State(new_data, output_type,
+                                        parent=state,
+                                        action=func_name)
+                            neighbors.append(new_state)
+                    except Exception as e:
+                        logging.debug(f"Function {func_name} failed: {str(e)}")
+                        continue
+
+        return neighbors
+
+
+    def get_neighbors0(self, current_states, start_state, visited, goal_state=None, task=None, came_from=None):
         """修改版本: 支持状态权重动态提升"""
         neighbors = []
         state_type_map = defaultdict(list)
@@ -367,6 +417,8 @@ class SearchStrategy:
             # frequency_bonus = min(frequency * 2, 3)  # 最多提升10
             # return base_weight - frequency * 2
 
+        lenlog=0
+
         # 按权重从低到高处理状态和函数
         for weight in sorted(weight_groups.keys()):  # 删除 reverse=True
             # 获取当前权重下可用的函数
@@ -398,6 +450,9 @@ class SearchStrategy:
 
                 from itertools import product
                 for states_combination in product(*possible_states_lists):
+                    if len(states_combination) > lenlog :
+                        print('len states_combination',len(states_combination))
+                        lenlog=len(states_combination)
                     args = [state.data for state in states_combination]
                     max_input_weight = max(state.weight for state in states_combination)
 
