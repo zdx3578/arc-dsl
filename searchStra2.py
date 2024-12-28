@@ -50,8 +50,9 @@ class StateTree:
         self.leaf_nodes = set([self.root])
         self.max_depth = 5
 
+
     def expand_node(self, node, dsl_funcs, visited_states=None):
-        """扩展节点"""
+        """扩展节点,借鉴 searchStrategy 中的函数分组处理逻辑"""
         if visited_states is None:
             visited_states = set()
 
@@ -59,35 +60,133 @@ class StateTree:
             return []
 
         new_nodes = []
-        for func_name, func in dsl_funcs.items():
-            try:
-                result = func(node.state.data)
-                if result is not None and result not in visited_states:
-                    new_state = State(result, 'grid')
-                    # 记录计算过程
-                    computation_trace = {
-                        'inputs': [node.state.data],
-                        'function': func_name,
-                        'args': [node.state.data],
-                        'result': result,
-                        'source_states': [node.state]
-                    }
+        state_type_map = defaultdict(list)
+        attempted_combinations = set()
 
-                    child = node.add_child(new_state, func_name, [node.state])
-                    child.computation_trace = computation_trace
-                    child.value_source = {
-                        'type': 'computed',
-                        'origin': f"Computed by {func_name}",
-                        'computation': computation_trace
-                    }
-                    self.all_nodes[new_state] = child
-                    self.leaf_nodes.add(child)
-                    self.leaf_nodes.discard(node)
-                    visited_states.add(result)
-                    new_nodes.append(child)
-            except:
+        # 按类型对函数分组
+        function_groups = defaultdict(list)
+        for key, func_names in dsl_funcs.classified_functions.items():
+            input_types, output_type = key
+            # 检查函数类型是否匹配当前节点
+            if any(t in node.state.get_type() for t in input_types):
+                for func_name in func_names:
+                    function_groups[input_types].append((func_name, output_type))
+
+        # 按优先级处理不同类型的函数
+        priority_order = [
+            ('grid',),           # 基础网格操作
+            ('object',),         # 对象操作
+            ('grid', 'grid'),    # 双网格操作
+            ('object', 'grid'),  # 对象-网格组合操作
+            ('grid', 'integer'), # 网格-数值组合操作
+        ]
+
+        # 按优先级处理函数组
+        for type_key in priority_order:
+            if type_key not in function_groups:
                 continue
+
+            for func_name, output_type in function_groups[type_key]:
+                try:
+                    # 获取函数实例
+                    func = dsl_funcs.dsl_functions.get(func_name)
+                    if not func:
+                        continue
+
+                    # 根据函数类型准备参数
+                    if len(type_key) == 1:  # 单参数函数
+                        result = func(node.state.data)
+                        if result is not None and result not in visited_states:
+                            # 记录计算过程
+                            computation_trace = {
+                                'inputs': [node.state.data],
+                                'function': func_name,
+                                'args': [node.state.data],
+                                'result': result,
+                                'source_states': [node.state]
+                            }
+
+                            child = self.create_child_node(
+                                node, result, output_type,
+                                func_name, [node.state],
+                                computation_trace
+                            )
+
+                            if child and self.is_valid_state(child):
+                                self.add_node(child)
+                                new_nodes.append(child)
+                                visited_states.add(result)
+
+                    else:  # 多参数函数
+                        # 获取其他参数的可能值
+                        additional_args = self.get_additional_args(type_key[1:])
+                        for args in additional_args:
+                            all_args = [node.state.data] + args
+                            if (func_name, tuple(all_args)) in attempted_combinations:
+                                continue
+
+                            attempted_combinations.add((func_name, tuple(all_args)))
+                            try:
+                                result = func(*all_args)
+                                if result is not None and result not in visited_states:
+                                    # 记录完整的计算过程
+                                    computation_trace = {
+                                        'inputs': all_args,
+                                        'function': func_name,
+                                        'args': all_args,
+                                        'result': result,
+                                        'source_states': [node.state] + [arg for arg in args]
+                                    }
+
+                                    child = self.create_child_node(
+                                        node, result, output_type,
+                                        func_name, computation_trace['source_states'],
+                                        computation_trace
+                                    )
+
+                                    if child and self.is_valid_state(child):
+                                        self.add_node(child)
+                                        new_nodes.append(child)
+                                        visited_states.add(result)
+
+                            except Exception:
+                                continue
+
+                except Exception:
+                    continue
+
         return new_nodes
+
+    def create_child_node(self, parent, data, type_name, func_name, source_states, computation_trace):
+        """创建子节点并设置相关属性"""
+        child = parent.add_child(State(data, type_name), func_name, source_states)
+        child.computation_trace = computation_trace
+        child.value_source = {
+            'type': 'computed',
+            'origin': f"Computed by {func_name}",
+            'computation': computation_trace
+        }
+        return child
+
+    def is_valid_state(self, state):
+        """验证状态是否有效"""
+        # 可以添加更多验证规则
+        return True
+
+    def get_additional_args(self, required_types):
+        """获取额外参数的可能值"""
+        # 实现获取其他参数的逻辑
+        return []
+
+    def add_node(self, node):
+        """将节点添加到树中"""
+        self.all_nodes[node.state] = node
+        self.leaf_nodes.add(node)
+        if node.parent:
+            self.leaf_nodes.discard(node.parent)
+
+
+
 
 class BidirectionalSearch:
     """双向搜索"""
