@@ -130,30 +130,33 @@ class BidirectionalSearch:
     def analyze_output_components(self, output_state):
         """分析输出状态中的子模块"""
         self.required_connections = []
+        grid = output_state.data
 
-        # 获取grid的基本属性
-        if isinstance(output_state.data, (list, tuple)):
-            height = len(output_state.data)
-            width = len(output_state.data[0]) if height > 0 else 0
-
-            # 添加基本维度要求
+        # 获取grid的基本维度信息
+        if isinstance(grid, (list, tuple)):
+            height = len(grid)
+            width = len(grid[0]) if height > 0 else 0
             self.required_connections.append({
                 'type': 'dimension',
                 'height': height,
                 'width': width
             })
 
-        # 识别对象/颜色块
-        objects = self.extract_objects(output_state.data)
-        for obj in objects:
+        # 使用 dsl.objects 提取对象
+        extracted_objects = dsl.objects(grid,
+                                     univalued=True,  # 单一颜色的对象
+                                     diagonal=False,   # 不考虑对角连接
+                                     without_bg=True)  # 忽略背景
+
+        for obj in extracted_objects:
             self.required_connections.append({
                 'type': 'object',
                 'data': obj,
                 'connected': False
             })
 
-        # 识别其他特征(如颜色分布、对称性等)
-        features = self.extract_features(output_state.data)
+        # 识别其他特征
+        features = self.extract_features(grid)
         for feature in features:
             self.required_connections.append({
                 'type': 'feature',
@@ -161,61 +164,84 @@ class BidirectionalSearch:
                 'connected': False
             })
 
-    def extract_objects(self, grid):
-        """从grid中提取独立对象"""
-        objects = []
-        visited = set()
-
-        for i in range(len(grid)):
-            for j in range(len(grid[0])):
-                if (i,j) not in visited and grid[i][j] != 0:
-                    obj = self.flood_fill(grid, i, j, visited)
-                    if obj:
-                        objects.append(obj)
-        return objects
-
-    def flood_fill(self, grid, i, j, visited):
-        """使用flood fill算法提取连通对象"""
-        if not (0 <= i < len(grid) and 0 <= j < len(grid[0])):
-            return None
-
-        if (i,j) in visited or grid[i][j] == 0:
-            return None
-
-        object_points = [(i,j)]
-        visited.add((i,j))
-        color = grid[i][j]
-
-        # 遍历相邻点
-        for ni, nj in [(i+1,j), (i-1,j), (i,j+1), (i,j-1)]:
-            if (ni,nj) not in visited and \
-               0 <= ni < len(grid) and \
-               0 <= nj < len(grid[0]) and \
-               grid[ni][nj] == color:
-                sub_obj = self.flood_fill(grid, ni, nj, visited)
-                if sub_obj:
-                    object_points.extend(sub_obj)
-
-        return object_points
-
     def extract_features(self, grid):
-        """提取grid的特征"""
+        """提取 grid 的完整特征"""
         features = []
 
-        # 颜色分布
-        color_counts = defaultdict(int)
-        for row in grid:
-            for cell in row:
-                color_counts[cell] += 1
-        features.append(('color_distribution', color_counts))
+        # 1. 颜色相关特征
+        features.extend([
+            ('color_distribution', dsl.colorcount(grid, color))
+            for color in dsl.palette(grid)
+        ])
+        features.append(('most_color', dsl.mostcolor(grid)))
+        features.append(('least_color', dsl.leastcolor(grid)))
+        features.append(('num_colors', dsl.numcolors(grid)))
 
-        # 对称性
-        if self.check_symmetry(grid, 'horizontal'):
-            features.append(('symmetry', 'horizontal'))
-        if self.check_symmetry(grid, 'vertical'):
-            features.append(('symmetry', 'vertical'))
+        # 2. 形状相关特征
+        features.append(('shape', dsl.shape(grid)))
+        features.append(('height', dsl.height(grid)))
+        features.append(('width', dsl.width(grid)))
+        features.append(('hw_ratio', dsl.hwratio(grid)))
+        features.append(('is_square', dsl.is_square(grid)))
+        features.append(('is_portrait', dsl.portrait(grid)))
+
+        # 3. 对称性特征
+        features.append(('vmirror_symmetric', grid == dsl.vmirror(grid)))
+        features.append(('hmirror_symmetric', grid == dsl.hmirror(grid)))
+        features.append(('dmirror_symmetric', grid == dsl.dmirror(grid)))
+
+        # 4. 对象分析
+        objects = dsl.objects(grid, univalued=True, diagonal=False, without_bg=True)
+        for obj in objects:
+            obj_features = {
+                'color': dsl.color(obj),
+                'size': len(obj),
+                'box': dsl.is_box(obj),
+                'position': dsl.centerofmass(obj),
+                'borders': dsl.bordering(obj, grid),
+                'is_line': dsl.hline(obj) or dsl.vline(obj)
+            }
+            features.append(('object', obj_features))
+
+        # 5. 周期性特征
+        if len(objects) > 0:
+            for obj in objects:
+                features.append(('hperiod', dsl.hperiod(obj)))
+                features.append(('vperiod', dsl.vperiod(obj)))
+
+        # 6. 结构特征
+        features.append(('has_frontiers', bool(dsl.frontiers(grid))))
+
+        # 7. 分区特征
+        features.extend([
+            ('upper_third', dsl.upper_third(grid)),
+            ('middle_third', dsl.middle_third(grid)),
+            ('lower_third', dsl.lower_third(grid)),
+            ('left_third', dsl.left_third(grid)),
+            ('center_third', dsl.center_third(grid)),
+            ('right_third', dsl.right_third(grid))
+        ])
 
         return features
+
+    def match_feature(self, feature1, feature2):
+        """增强特征匹配逻辑"""
+        feature_type1, data1 = feature1
+        feature_type2, data2 = feature2
+
+        if feature_type1 != feature_type2:
+            return False
+
+        if feature_type1 == 'color_distribution':
+            return data1 == data2
+        elif feature_type1 == 'object':
+            # 对象特征的匹配需要考虑多个属性
+            return (data1['color'] == data2['color'] and
+                   data1['size'] == data2['size'] and
+                   data1['box'] == data2['box'] and
+                   data1['is_line'] == data2['is_line'])
+        else:
+            return data1 == data2
 
     def check_all_connections_found(self, connections):
         """检查是否所有必需的连接都已找到"""
