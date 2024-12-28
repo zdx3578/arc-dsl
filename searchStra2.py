@@ -95,28 +95,152 @@ class BidirectionalSearch:
         self.dsl_registry = dsl_registry
         self.forward_tree = None   # 从输入开始的树
         self.backward_tree = None  # 从输出开始的树
+        self.required_connections = []  # 新增:记录需要连接的所有子模块
 
     def find_path(self, input_state, output_state):
         """寻找输入到输出的路径"""
+        # 分析输出状态,获取所有需要连接的子模块
+        self.analyze_output_components(output_state)
+
         self.forward_tree = StateTree(input_state)
         self.backward_tree = StateTree(output_state)
 
         visited_forward = set()
         visited_backward = set()
+        found_connections = {}  # 记录已找到的连接
 
         while self.forward_tree.leaf_nodes and self.backward_tree.leaf_nodes:
-            # 交替扩展两棵树
             if len(self.forward_tree.leaf_nodes) <= len(self.backward_tree.leaf_nodes):
-                connection = self.expand_tree(self.forward_tree, self.backward_tree,
-                                           visited_forward, is_forward=True)
+                new_connections = self.expand_tree(
+                    self.forward_tree, self.backward_tree,
+                    visited_forward, is_forward=True)
             else:
-                connection = self.expand_tree(self.backward_tree, self.forward_tree,
-                                           visited_backward, is_forward=False)
+                new_connections = self.expand_tree(
+                    self.backward_tree, self.forward_tree,
+                    visited_backward, is_forward=False)
 
-            if connection:
-                return self.construct_solution(connection)
+            if new_connections:
+                found_connections.update(new_connections)
+                # 检查是否所有必需的连接都找到了
+                if self.check_all_connections_found(found_connections):
+                    return self.construct_complete_solution(found_connections)
 
         return None
+
+    def analyze_output_components(self, output_state):
+        """分析输出状态中的子模块"""
+        self.required_connections = []
+
+        # 获取grid的基本属性
+        if isinstance(output_state.data, (list, tuple)):
+            height = len(output_state.data)
+            width = len(output_state.data[0]) if height > 0 else 0
+
+            # 添加基本维度要求
+            self.required_connections.append({
+                'type': 'dimension',
+                'height': height,
+                'width': width
+            })
+
+        # 识别对象/颜色块
+        objects = self.extract_objects(output_state.data)
+        for obj in objects:
+            self.required_connections.append({
+                'type': 'object',
+                'data': obj,
+                'connected': False
+            })
+
+        # 识别其他特征(如颜色分布、对称性等)
+        features = self.extract_features(output_state.data)
+        for feature in features:
+            self.required_connections.append({
+                'type': 'feature',
+                'data': feature,
+                'connected': False
+            })
+
+    def extract_objects(self, grid):
+        """从grid中提取独立对象"""
+        objects = []
+        visited = set()
+
+        for i in range(len(grid)):
+            for j in range(len(grid[0])):
+                if (i,j) not in visited and grid[i][j] != 0:
+                    obj = self.flood_fill(grid, i, j, visited)
+                    if obj:
+                        objects.append(obj)
+        return objects
+
+    def flood_fill(self, grid, i, j, visited):
+        """使用flood fill算法提取连通对象"""
+        if not (0 <= i < len(grid) and 0 <= j < len(grid[0])):
+            return None
+
+        if (i,j) in visited or grid[i][j] == 0:
+            return None
+
+        object_points = [(i,j)]
+        visited.add((i,j))
+        color = grid[i][j]
+
+        # 遍历相邻点
+        for ni, nj in [(i+1,j), (i-1,j), (i,j+1), (i,j-1)]:
+            if (ni,nj) not in visited and \
+               0 <= ni < len(grid) and \
+               0 <= nj < len(grid[0]) and \
+               grid[ni][nj] == color:
+                sub_obj = self.flood_fill(grid, ni, nj, visited)
+                if sub_obj:
+                    object_points.extend(sub_obj)
+
+        return object_points
+
+    def extract_features(self, grid):
+        """提取grid的特征"""
+        features = []
+
+        # 颜色分布
+        color_counts = defaultdict(int)
+        for row in grid:
+            for cell in row:
+                color_counts[cell] += 1
+        features.append(('color_distribution', color_counts))
+
+        # 对称性
+        if self.check_symmetry(grid, 'horizontal'):
+            features.append(('symmetry', 'horizontal'))
+        if self.check_symmetry(grid, 'vertical'):
+            features.append(('symmetry', 'vertical'))
+
+        return features
+
+    def check_all_connections_found(self, connections):
+        """检查是否所有必需的连接都已找到"""
+        for req in self.required_connections:
+            if req['type'] == 'object':
+                if not any(self.match_object(req['data'], conn)
+                          for conn in connections.values()):
+                    return False
+            elif req['type'] == 'feature':
+                if not any(self.match_feature(req['data'], conn)
+                          for conn in connections.values()):
+                    return False
+        return True
+
+    def construct_complete_solution(self, connections):
+        """构造完整的解决方案"""
+        # 按依赖关系排序连接
+        ordered_connections = self.order_connections(connections)
+
+        actions = []
+        for conn in ordered_connections:
+            sub_actions = self.construct_sub_solution(conn)
+            actions.extend(sub_actions)
+
+        return actions
 
     def expand_tree(self, tree_to_expand, other_tree, visited, is_forward):
         """扩展一棵树并检查是否可以连接到另一棵树"""
