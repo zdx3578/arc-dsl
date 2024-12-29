@@ -43,13 +43,124 @@ class StateNode:
             current = current.parent
         return path[::-1]
 
+
+
 class StateTree:
-    """状态树结构"""
+    """状态树结构,支持按类型组织和搜索状态"""
     def __init__(self, root_state):
         self.root = StateNode(root_state)
         self.all_nodes = {root_state: self.root}
         self.leaf_nodes = set([self.root])
         self.max_depth = 5
+
+        # 按类型索引状态
+        self.type_index = defaultdict(list)  # 类型 -> [状态]
+        # 记录每个类型的实例数量
+        self.type_counts = defaultdict(int)
+        self.add_to_type_index(root_state)
+
+    def add_to_type_index(self, state):
+        """将状态添加到类型索引中"""
+        for type_name in state.types:
+            self.type_index[type_name].append(state)
+            self.type_counts[type_name] += 1
+
+    def get_states_by_type(self, type_name, max_count=None):
+        """获取指定类型的所有状态"""
+        states = self.type_index.get(type_name, [])
+        if max_count:
+            return states[:max_count]
+        return states
+
+    def get_additional_args(self, required_types):
+        """智能获取符合类型要求的参数组合"""
+        args_candidates = []
+        for type_name in required_types:
+            # 获取该类型的所有可用状态
+            type_states = self.get_states_by_type(type_name)
+            if not type_states:
+                continue
+
+            # 按照状态特征进行排序
+            sorted_states = self.rank_states(type_states, type_name)
+            args_candidates.append(sorted_states)
+
+        # 生成参数组合
+        from itertools import product
+        max_combinations = 10  # 限制组合数量
+        return list(product(*args_candidates))[:max_combinations]
+
+    def rank_states(self, states, type_name):
+        """对状态进行排序"""
+        if type_name == 'grid':
+            # 网格类型按大小排序
+            return sorted(states, key=lambda s: len(s.data) * len(s.data[0]) if s.data else 0)
+        elif type_name == 'integer':
+            # 整数类型按值排序
+            return sorted(states, key=lambda s: abs(s.data))
+        elif type_name == 'object':
+            # 对象类型按复杂度排序
+            return sorted(states, key=lambda s: len(s.data))
+        else:
+            return states
+
+    def add_node(self, node):
+        """添加新节点时同时更新类型索引"""
+        self.all_nodes[node.state] = node
+        self.leaf_nodes.add(node)
+        if node.parent:
+            self.leaf_nodes.discard(node.parent)
+        self.add_to_type_index(node.state)
+
+    def get_type_stats(self):
+        """获取类型统计信息"""
+        return {
+            'type_counts': dict(self.type_counts),
+            'total_nodes': len(self.all_nodes),
+            'leaf_nodes': len(self.leaf_nodes)
+        }
+
+    def find_similar_states(self, state, threshold=0.8):
+        """查找相似状态"""
+        similar_states = []
+        state_types = set(state.types)
+
+        # 首先在相同类型中查找
+        for type_name in state_types:
+            candidates = self.get_states_by_type(type_name)
+            for candidate in candidates:
+                if self.compute_similarity(state, candidate) >= threshold:
+                    similar_states.append(candidate)
+
+        return similar_states
+
+    def compute_similarity(self, state1, state2):
+        """计算两个状态的相似度"""
+        # 类型相似度
+        type_similarity = len(set(state1.types) & set(state2.types)) / len(set(state1.types) | set(state2.types))
+
+        # 数据相似度
+        data_similarity = 0.0
+        if isinstance(state1.data, type(state2.data)):
+            if isinstance(state1.data, (list, tuple)):
+                # 对于网格类型,计算重叠率
+                data_similarity = self.compute_grid_similarity(state1.data, state2.data)
+            else:
+                # 对于其他类型,使用简单比较
+                data_similarity = 1.0 if state1.data == state2.data else 0.0
+
+        # 综合相似度
+        return (type_similarity + data_similarity) / 2
+
+    def compute_grid_similarity(self, grid1, grid2):
+        """计算两个网格的相似度"""
+        if not grid1 or not grid2:
+            return 0.0
+
+        # 计算共同元素的比例
+        common = sum(r1.count(v) for r1 in grid1 for v in r1 if any(r2.count(v) for r2 in grid2))
+        total = sum(len(r) for r in grid1) + sum(len(r) for r in grid2)
+        return 2 * common / total if total else 0.0
 
 
     def expand_node(self, node, dsl_reg, visited_states=None):
@@ -185,19 +296,6 @@ class StateTree:
         """验证状态是否有效"""
         # 可以添加更多验证规则
         return True
-
-    def get_additional_args(self, required_types):
-        """获取额外参数的可能值"""
-        # 实现获取其他参数的逻辑
-        return []
-
-    def add_node(self, node):
-        """将节点添加到树中"""
-        self.all_nodes[node.state] = node
-        self.leaf_nodes.add(node)
-        if node.parent:
-            self.leaf_nodes.discard(node.parent)
-
 
 
 
