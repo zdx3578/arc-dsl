@@ -523,6 +523,9 @@ if __name__ == '__main__':
     solver_functions_name = get_solver_functions()
 
     for i, key in enumerate(solver_functions_name, start=1):
+        key = '97a05b5b'
+        if i != 1:
+            break
         print(f"\nProcessing task {i}: {key}")
 
         # 构建任务

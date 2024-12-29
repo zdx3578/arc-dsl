@@ -1,6 +1,7 @@
 from searchARC import *
 import searchARC
 from dsl import *
+from searchStrategy import *
 
 class StateNode:
     """状态树的节点"""
@@ -51,7 +52,7 @@ class StateTree:
         self.max_depth = 5
 
 
-    def expand_node(self, node, dsl_funcs, visited_states=None):
+    def expand_node(self, node, dsl_reg, visited_states=None):
         """扩展节点,借鉴 searchStrategy 中的函数分组处理逻辑"""
         if visited_states is None:
             visited_states = set()
@@ -65,7 +66,7 @@ class StateTree:
 
         # 按类型对函数分组
         function_groups = defaultdict(list)
-        for key, func_names in dsl_funcs.classified_functions.items():
+        for key, func_names in dsl_reg.classified_functions.items():
             input_types, output_type = key
             # 检查函数类型是否匹配当前节点
             if any(t in node.state.get_type() for t in input_types):
@@ -75,10 +76,13 @@ class StateTree:
         # 按优先级处理不同类型的函数
         priority_order = [
             ('grid',),           # 基础网格操作
+            ('patch',),
+            ('element',),
             ('object',),         # 对象操作
             ('grid', 'grid'),    # 双网格操作
             ('object', 'grid'),  # 对象-网格组合操作
             ('grid', 'integer'), # 网格-数值组合操作
+
         ]
 
         # 按优先级处理函数组
@@ -89,33 +93,38 @@ class StateTree:
             for func_name, output_type in function_groups[type_key]:
                 try:
                     # 获取函数实例
-                    func = dsl_funcs.dsl_functions.get(func_name)
+                    func = dsl_reg.dsl_functions.get(func_name)
                     if not func:
                         continue
 
                     # 根据函数类型准备参数
                     if len(type_key) == 1:  # 单参数函数
-                        result = func(node.state.data)
-                        if result is not None and result not in visited_states:
-                            # 记录计算过程
-                            computation_trace = {
-                                'inputs': [node.state.data],
-                                'function': func_name,
-                                'args': [node.state.data],
-                                'result': result,
-                                'source_states': [node.state]
-                            }
+                        try:
+                            result = func(node.state.data)
+                            if result is not None and result not in visited_states:
+                                # 记录计算过程
+                                computation_trace = {
+                                    'inputs': [node.state.data],
+                                    'function': func_name,
+                                    'args': [node.state.data],
+                                    'result': result,
+                                    'source_states': [node.state]
+                                }
 
-                            child = self.create_child_node(
-                                node, result, output_type,
-                                func_name, [node.state],
-                                computation_trace
-                            )
+                                child = self.create_child_node(
+                                    node, result, output_type,
+                                    func_name, [node.state],
+                                    computation_trace
+                                )
 
-                            if child and self.is_valid_state(child):
-                                self.add_node(child)
-                                new_nodes.append(child)
-                                visited_states.add(result)
+                                if child and self.is_valid_state(child):
+                                    self.add_node(child)
+                                    new_nodes.append(child)
+                                    visited_states.add(result)
+                        except Exception as e:
+                                logging.error("捕获到异常：%s", e)
+                                logging.error("详细错误信息：\n%s", traceback.format_exc())
+                                continue
 
                     else:  # 多参数函数
                         # 获取其他参数的可能值
@@ -149,10 +158,14 @@ class StateTree:
                                         new_nodes.append(child)
                                         visited_states.add(result)
 
-                            except Exception:
+                            except Exception as e:
+                                logging.error("捕获到异常：%s", e)
+                                logging.error("详细错误信息：\n%s", traceback.format_exc())
                                 continue
 
-                except Exception:
+                except Exception as e:
+                    logging.error("捕获到异常：%s", e)
+                    logging.error("详细错误信息：\n%s", traceback.format_exc())
                     continue
 
         return new_nodes
@@ -371,7 +384,7 @@ class BidirectionalSearch:
         """扩展一棵树并检查是否可以连接到另一棵树"""
         current_leaves = list(tree_to_expand.leaf_nodes)
         for leaf in current_leaves:
-            new_nodes = tree_to_expand.expand_node(leaf, self.dsl_registry.dsl_functions, visited)
+            new_nodes = tree_to_expand.expand_node(leaf, self.dsl_registry, visited)
 
             # 检查新节点是否可以连接到另一棵树
             for new_node in new_nodes:
