@@ -175,43 +175,53 @@ class StateTree:
         state_type_map = defaultdict(list)
         attempted_combinations = set()
 
-        # 按类型对函数分组
+        # # 按类型对函数分组
         function_groups = defaultdict(list)
+        # for key, func_names in dsl_reg.classified_functions.items():
+        #     input_types, output_type = key
+        #     # 检查函数类型是否匹配当前节点
+        #     if any(t in node.state.get_type() for t in input_types):
+        #         for func_name in func_names:
+        #             function_groups[input_types].append((func_name, output_type))
+        meaning_fun = set()
+
+        # 读取文件并提取函数名
+        with open('/Users/zhangdexiang/github/VSAHDC/arc-dsl/forprolog/dsl_meaning_class.py', 'r') as file:
+            for line in file:
+                line = line.strip()
+                if line and not line.startswith('#') and not line.startswith('from') and not line.startswith('import'):
+                    func_name = line.split('#')[0].strip()  # 去掉注释部分
+                    meaning_fun.add(func_name)
+
+        # 大模型改进这段，meaning file 提取函数
         for key, func_names in dsl_reg.classified_functions.items():
             input_types, output_type = key
             # 检查函数类型是否匹配当前节点
             if any(t in node.state.get_type() for t in input_types):
                 for func_name in func_names:
-                    function_groups[input_types].append((func_name, output_type))
-
-        # 大模型改进这段，meaning file 提取函数
-        for key, func_names in dsl_reg.meaning_classified_functions.items():
-            input_types, output_type = key
-            # 检查函数类型是否匹配当前节点
-            if any(t in node.state.get_type() for t in input_types):
-                for func_name in func_names:
-                    function_groups[input_types].append((func_name, output_type))
+                    if func_name in meaning_fun:  #
+                        function_groups[input_types].append((func_name, output_type))
 
         # 按优先级处理不同类型的函数
-        priority_order = [
-            ('grid',),           # 基础网格操作
-            ('patch',),
-            ('element',),
-            ('object',),         # 对象操作
-            ('grid', 'grid'),    # 双网格操作
-            ('object', 'grid'),  # 对象-网格组合操作
-            ('grid', 'integer'), # 网格-数值组合操作
+        # priority_order = [
+        #     ('grid',),           # 基础网格操作
+        #     ('patch',),
+        #     ('element',),
+        #     ('object',),         # 对象操作
+        #     ('grid', 'grid'),    # 双网格操作
+        #     ('object', 'grid'),  # 对象-网格组合操作
+        #     ('grid', 'integer'), # 网格-数值组合操作
 
-        ]
+        # ]
 
         # 按优先级处理函数组
-        for type_key in priority_order:
-            if type_key not in function_groups:
-                continue
+        # for type_key in priority_order:
+        #     if type_key not in function_groups:
+        #         continue
 
-            for func_name, output_type in meaning_function_groups[type_key]:
+        for type_key, funcs in function_groups.items():
 
-            for func_name, output_type in function_groups[type_key]:
+            for func_name, output_type in funcs:
                 try:
                     # 获取函数实例
                     func = dsl_reg.dsl_functions.get(func_name)
@@ -374,7 +384,7 @@ class BidirectionalSearch:
                                      without_bg=True)  # 忽略背景
 
         for obj in extracted_objects:
-            self.extract_obj_feature(obj)
+            # self.extract_obj_feature(obj)
 
 
             self.required_connections.append({
@@ -392,8 +402,8 @@ class BidirectionalSearch:
                 'connected': False
             })
 
-    def extract_obj_feature(self, obj):
-        obj_type_input_fun = findfun(meaningfun,typeobj,)
+    # def extract_obj_feature(self, obj):
+        # obj_type_input_fun = findfun(meaningfun,typeobj,)
 
 
     def extract_features(self, grid):

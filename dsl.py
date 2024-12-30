@@ -664,6 +664,14 @@ def colorcount(
         return sum(row.count(value) for row in element)
     return sum(v == value for v, _ in element)
 
+from collections import Counter
+
+def all_colorcount(element: Element) -> dict:
+    """计算所有颜色的出现次数"""
+    # 提取所有颜色值
+    values = [v for r in element for v in r] if isinstance(element, tuple) else [v for v, _ in element]
+    # 计算颜色出现次数
+    return dict(Counter(values))
 
 def colorfilter(
     objs: Objects,
