@@ -184,6 +184,14 @@ class StateTree:
                 for func_name in func_names:
                     function_groups[input_types].append((func_name, output_type))
 
+        # 大模型改进这段，meaning file 提取函数
+        for key, func_names in dsl_reg.meaning_classified_functions.items():
+            input_types, output_type = key
+            # 检查函数类型是否匹配当前节点
+            if any(t in node.state.get_type() for t in input_types):
+                for func_name in func_names:
+                    function_groups[input_types].append((func_name, output_type))
+
         # 按优先级处理不同类型的函数
         priority_order = [
             ('grid',),           # 基础网格操作
@@ -200,6 +208,8 @@ class StateTree:
         for type_key in priority_order:
             if type_key not in function_groups:
                 continue
+
+            for func_name, output_type in meaning_function_groups[type_key]:
 
             for func_name, output_type in function_groups[type_key]:
                 try:
@@ -337,6 +347,11 @@ class BidirectionalSearch:
 
         return None
 
+    # same as expand tree !!!!!!!!!
+    def analyze_input_components(self, input_state):
+        result = self.analyze_output_components(input_state)
+        return result
+
     def analyze_output_components(self, output_state):
         """分析输出状态中的子模块"""
         self.required_connections = []
@@ -359,6 +374,9 @@ class BidirectionalSearch:
                                      without_bg=True)  # 忽略背景
 
         for obj in extracted_objects:
+            self.extract_obj_feature(obj)
+
+
             self.required_connections.append({
                 'type': 'object',
                 'data': obj,
@@ -373,6 +391,10 @@ class BidirectionalSearch:
                 'data': feature,
                 'connected': False
             })
+
+    def extract_obj_feature(self, obj):
+        obj_type_input_fun = findfun(meaningfun,typeobj,)
+
 
     def extract_features(self, grid):
         """提取 grid 的完整特征"""
@@ -453,6 +475,7 @@ class BidirectionalSearch:
         else:
             return data1 == data2
 
+    # 大模型改进这段，树结构的parent reach no leaf node的检查
     def check_all_connections_found(self, connections):
         """检查是否所有必需的连接都已找到"""
         for req in self.required_connections:
