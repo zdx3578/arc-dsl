@@ -152,56 +152,80 @@ def is_same_shape_shift_parameters(patch1: Patch, patch2: Patch) -> Tuple[Option
     shifts = set()
 
     # 提取 patch1 的坐标
-    coords1 = set()
-    for elem in patch1:
-        if isinstance(elem, tuple) and isinstance(elem[1], tuple):
-            _, (i, j) = elem
-            coords1.add((i, j))
-        else:
-            i, j = elem
-            coords1.add((i, j))
+    # coords1: Indices = asindices_patch(patch1)
+    coords2: Indices = asindices_patch(patch2)
 
-    # 提取 patch2 的坐标
-    coords2 = set()
-    for elem in patch2:
-        if isinstance(elem, tuple) and isinstance(elem[1], tuple):
-            _, (i, j) = elem
-            coords2.add((i, j))
-        else:
-            i, j = elem
-            coords2.add((i, j))
+    transformations = [
+        ("original", lambda p: p),
+        ("rot90", rot90),
+        ("rot180", rot180),
+        ("rot270", rot270),
+        # 单一镜像
+        ("hmirror", hmirror),
+        ("vmirror", vmirror),
+        ("cmirror", cmirror),
+        ("dmirror", dmirror),
+        # hmirror组合
+        ("hmirror_rot90", lambda p: rot90(hmirror(p))),
+        ("hmirror_rot180", lambda p: rot180(hmirror(p))),
+        ("hmirror_rot270", lambda p: rot270(hmirror(p))),
+        # vmirror组合
+        ("vmirror_rot90", lambda p: rot90(vmirror(p))),
+        ("vmirror_rot180", lambda p: rot180(vmirror(p))),
+        ("vmirror_rot270", lambda p: rot270(vmirror(p))),
+        # cmirror组合
+        ("cmirror_rot90", lambda p: rot90(cmirror(p))),
+        ("cmirror_rot180", lambda p: rot180(cmirror(p))),
+        ("cmirror_rot270", lambda p: rot270(cmirror(p))),
+        # dmirror组合
+        ("dmirror_rot90", lambda p: rot90(dmirror(p))),
+        ("dmirror_rot180", lambda p: rot180(dmirror(p))),
+        ("dmirror_rot270", lambda p: rot270(dmirror(p)))
+    ]
+    for transform_name, transform_func in transformations:
+        transformed_patch1 = transform_func(patch1)
+        coords1: Indices = asindices_patch(transformed_patch1)
 
     # 如果两个补丁的点数不同，形状必然不同
-    if len(coords1) != len(coords2):
-        return (None, "shapes are different")
-
-    # 如果 patch1 或 patch2 为空
-    if not coords1 or not coords2:
-        if coords1 == coords2:
-            return ((0, 0), "patches are identical (both empty or same)")
-        else:
+        if len(coords1) != len(coords2):
             return (None, "shapes are different")
 
-    # 选择一个参考点
-    ref1 = next(iter(coords1))
-    ref2 = next(iter(coords2))
-    di = ref1[0] - ref2[0]
-    dj = ref1[1] - ref2[1]
-    shift_distance = (di, dj)
+        # 如果 patch1 或 patch2 为空
+        if not coords1 or not coords2:
+            if coords1 == coords2:
+                return ((0, 0), "patches are identical (both empty or same)")
+            else:
+                return (None, "shapes are different")
 
-    # 验证所有点是否都遵循相同的移动距离
-    for (i1, j1) in coords1:
-        corresponding_point = (i1 - di, j1 - dj)
-        if corresponding_point not in coords2:
-            return (None, "shapes are different")
+        # 选择一个参考点
+        # 计算移动参数
+        try:
+            ref1 = next(iter(coords1))
+            ref2 = next(iter(coords2))
+            di = ref1[0] - ref2[0]
+            dj = ref1[1] - ref2[1]
+            shift_distance = (di, dj)
 
-    return (shift_distance, "shapes are the same")
+            # 验证所有点
+            match = all((i1 - di, j1 - dj) in coords2
+                       for (i1, j1) in coords1)
+
+            if match:
+                return (shift_distance, "shapes are the same", {
+                    "transformation": transform_name,
+                    "transformed_patch": transformed_patch1
+                })
+
+        except StopIteration:
+            continue
+
+    return (None, "shapes are different", {"transformation": None})
 
 
 def is_complete_change_color(grid1: Grid, grid2: Grid) -> bool:
     I = grid1
     for color in range(10):
-        x1 = ofcolor(I, EIGHT)
+        x1 = ofcolor(I, color)
         x2 = delta(x1)
         for i in range(10):
             O = fill(I, i, x2)
