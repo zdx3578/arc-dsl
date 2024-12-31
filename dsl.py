@@ -325,18 +325,18 @@ def positive(
     return x > 0
 
 
-def toivec(
-    i: Integer
-) -> IntegerTuple:
-    """ vector pointing vertically """
-    return (i, 0)
+# def toivec(
+#     i: Integer
+# ) -> IntegerTuple:
+#     """ vector pointing vertically """
+#     return (i, 0)
 
 
-def tojvec(
-    j: Integer
-) -> IntegerTuple:
-    """ vector pointing horizontally """
-    return (0, j)
+# def tojvec(
+#     j: Integer
+# ) -> IntegerTuple:
+#     """ vector pointing horizontally """
+#     return (0, j)
 
 
 def sfilter(
@@ -688,6 +688,28 @@ def sizefilter(
     """ filter items by size """
     return frozenset(item for item in container if len(item) == n)
 
+from typing import Set, Tuple, Union, FrozenSet
+from arc_types import Patch, IntegerTuple, Indices
+
+def asindices_patch(patch: Patch) -> Indices:
+    """
+    提取 Patch 中所有的坐标。
+
+    Args:
+        patch (Patch): 要提取坐标的 Patch。
+
+    Returns:
+        Indices: 提取出的坐标集合。
+    """
+    coords: Set[Tuple[int, int]] = set()
+    for elem in patch:
+        if isinstance(elem, tuple) and isinstance(elem[1], tuple):
+            _, (i, j) = elem
+            coords.add((i, j))
+        else:
+            i, j = elem
+            coords.add((i, j))
+    return frozenset(coords)
 
 def asindices(
     grid: Grid

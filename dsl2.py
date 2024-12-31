@@ -778,11 +778,7 @@ def object_to_rectangle(obj: Object) -> Grid:
     return tuple(tuple(row) for row in rectangle)
 
 
-def get_first_object(I):
-    x1 = objects(I, T, T, T)
-    x2 = first(x1)
-    O = subgrid(x2, I)
-    return O
+
 
 
 def firstobj_is_outputhalf(I, O):

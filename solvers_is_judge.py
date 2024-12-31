@@ -3,17 +3,217 @@ from constants import *
 import dsl2
 
 
+def is_mirror(grid1: Grid, grid2: Grid) -> bool:
+    # 检查两个网格是否是镜像
+    return grid1 == dmirror(grid2) or grid1 == hmirror(grid2) or grid1 == vmirror(grid2) or grid1 == cmirror(grid2)
 
+def is_rote(grid1: Grid, grid2: Grid) -> bool:
+    # 检查两个网格是否是旋转
+    return grid1 == rot90(grid2) or grid1 == rot180(grid2) or grid1 == rot270(grid2)
+
+def is_sclae(grid1: Grid, grid2: Grid) -> bool:
+    # 检查两个网格是否是缩放
+    scalesh = height(grid1) / height(grid2)
+    scales = width(grid1) / width(grid2)
+    return grid1 == upscale(grid2, scales) or grid1 == downscale(grid2, scales) or grid1 == hupscale(grid2, scalesh) or grid1 == vupscale(grid2, scales)
+
+def is_concat_mirror(I, O):
+    # 遍历镜像和拼接操作的组合
+    for mirror in [hmirror, vmirror, cmirror, dmirror]:
+        mirrored_matrix = mirror(I)  # 应用镜像操作
+        for concat in [hconcat, vconcat]:
+            try:
+                # 检查两种拼接顺序
+                if concat(I, mirrored_matrix) == O or concat(mirrored_matrix, I) == O:
+                    return (True)
+            except Exception:
+                # 防止操作不匹配导致错误
+                continue
+    # 如果没有匹配的组合，返回 False
+    return (False)
+def is_concat_rot(I, O):
+    # 遍历旋转和拼接操作的组合
+    for rotate in [rot90, rot180, rot270]:
+        rotated_matrix = rotate(I)
+        for concat in [hconcat, vconcat]:
+            try:
+                # 检查两种拼接顺序
+                if concat(I, rotated_matrix) == O or concat(rotated_matrix, I) == O:
+                    return (True)
+            except Exception:
+                # 防止操作不匹配导致错误
+                continue
+    # 如果没有匹配的组合，返回 False
+    return (False)
+def is_concat_mirror_rot(I, O):
+    # 遍历镜像、旋转和拼接操作的组合
+    for mirror in [hmirror, vmirror, cmirror, dmirror]:
+        mirrored_matrix = mirror(I)
+        for rotate in [rot90, rot180, rot270]:
+            rotated_mirrored_matrix = rotate(mirrored_matrix)
+            for concat in [hconcat, vconcat]:
+                try:
+                    # 检查两种拼接顺序
+                    if concat(I, rotated_mirrored_matrix) == O or concat(rotated_mirrored_matrix, I) == O:
+                        return (True)
+                except Exception:
+                    # 防止操作不匹配导致错误
+                    continue
+    # 如果没有匹配的组合，返回 False
+    return (False)
+def is_concat(I, O):
+    # 检查水平拼接
+    if hconcat(I, I) == O:
+        return (True)
+    # 检查垂直拼接
+    if vconcat(I, I) == O:
+        return (True)
+    # 如果没有匹配的组合，返回 False
+    return (False)
+
+
+def is_split_one_n1(I, O):
+    split = [hsplit, vsplit]
+    for s in split:
+        try:
+            # 尝试分割输入
+            split_result = s(I)
+            # 检查分割后的每一部分是否等于输出
+            for split_matrix in split_result:
+                if split_matrix == O:
+                    return (True)
+        except Exception:
+            # 防止操作不匹配导致错误
+            continue
+    # 如果没有匹配的组合，返回 False
+    return (False)
+
+
+def is_get_first_object(I):
+    x1 = objects(I, T, T, T)
+    x2 = first(x1)
+    O = subgrid(x2, I)
+    return O
+
+def is_replace(I, O):
+    # if is_diff_positon_color(I, O):
+    # 检查替换操作
+    for color1 in range(10):
+        for color2 in range(10):
+            if replace(I, color1, color2) == O:
+                return (True)
+    # 如果没有匹配的组合，返回 False
+    return (False)
+
+def is_switch(I, O):
+    # 检查交换操作
+    for color1 in range(10):
+        for color2 in range(10):
+            if switch(I, color1, color2) == O:
+                return (True)
+    # 如果没有匹配的组合，返回 False
+    return (False)
 
 # 第 1 个函数  d10ecb37
 def solve_d10ecb37(I):
     O = crop(I, ORIGIN, TWO_BY_TWO)
     return O
 
-def is_upscale(grid1: Grid, grid2: Grid) -> bool:
-    x1 = hratio(grid1,grid2)
-    x2 = upscale(grid1,x1)
-    return grid2 == x2
+# def is_upscale(grid1: Grid, grid2: Grid) -> bool:
+#     x1 = hratio(grid1,grid2)
+#     x2 = upscale(grid1,x1)
+#     return grid2 == x2
+
+def is_fill_I_box_color(I,O,color=8):
+    # x1 = asindices(I)
+    # # x0 = outbox(x1)
+    # x2 = box(x1)
+    return (O == fill(I, color, box(asindices(I))))
+
+
+from typing import List, Tuple, Union, Set, Optional
+from arc_types import *
+# 假设 Patch 和 IntegerTuple 的类型定义
+# Patch = Set[Union[Tuple[int, Tuple[int, int]], Tuple[int, int]]]
+IntegerTuple = Tuple[int, int]
+
+def is_same_shape_shift_parameters(patch1: Patch, patch2: Patch) -> Tuple[Optional[IntegerTuple], str]:
+    """
+    计算将 patch2 移动到与 patch1 合并所需的 (di, dj) 移动距离，并判断形状是否相同。
+
+    Args:
+        patch1 (Patch): 目标补丁。
+        patch2 (Patch): 需要移动的补丁。
+
+    Returns:
+        Tuple[Optional[IntegerTuple], str]: 如果可以对齐，返回 (di, dj) 和成功消息；
+                                            如果形状不同，返回 (None, 'shapes are different')。
+    """
+    shifts = set()
+
+    # 提取 patch1 的坐标
+    coords1 = set()
+    for elem in patch1:
+        if isinstance(elem, tuple) and isinstance(elem[1], tuple):
+            _, (i, j) = elem
+            coords1.add((i, j))
+        else:
+            i, j = elem
+            coords1.add((i, j))
+
+    # 提取 patch2 的坐标
+    coords2 = set()
+    for elem in patch2:
+        if isinstance(elem, tuple) and isinstance(elem[1], tuple):
+            _, (i, j) = elem
+            coords2.add((i, j))
+        else:
+            i, j = elem
+            coords2.add((i, j))
+
+    # 如果两个补丁的点数不同，形状必然不同
+    if len(coords1) != len(coords2):
+        return (None, "shapes are different")
+
+    # 如果 patch1 或 patch2 为空
+    if not coords1 or not coords2:
+        if coords1 == coords2:
+            return ((0, 0), "patches are identical (both empty or same)")
+        else:
+            return (None, "shapes are different")
+
+    # 选择一个参考点
+    ref1 = next(iter(coords1))
+    ref2 = next(iter(coords2))
+    di = ref1[0] - ref2[0]
+    dj = ref1[1] - ref2[1]
+    shift_distance = (di, dj)
+
+    # 验证所有点是否都遵循相同的移动距离
+    for (i1, j1) in coords1:
+        corresponding_point = (i1 - di, j1 - dj)
+        if corresponding_point not in coords2:
+            return (None, "shapes are different")
+
+    return (shift_distance, "shapes are the same")
+
+
+def is_complete_change_color(grid1: Grid, grid2: Grid) -> bool:
+    I = grid1
+    for color in range(10):
+        x1 = ofcolor(I, EIGHT)
+        x2 = delta(x1)
+        for i in range(10):
+            O = fill(I, i, x2)
+            if O == grid2:
+                return True
+    return False
+
+
+
+def is_in_is_out_subgrid(grid1: Grid, grid2: Grid) -> bool:
+    return is_out_is_in_subgrid(grid2, grid1)
+
 
 def is_out_is_in_subgrid(grid2: Grid, grid1: Grid) -> bool:
     """
@@ -168,11 +368,7 @@ def solve_6f8cd79b00(I):
     O = fill(I, EIGHT, x4)
     return O
 
-def is_fill_I_box_color(I,O,color=8):
-    # x1 = asindices(I)
-    # # x0 = outbox(x1)
-    # x2 = box(x1)
-    return (O == fill(I, color, box(asindices(I))))
+
 
 
 
@@ -1181,20 +1377,7 @@ solve_6fa7a44f = solve_4c4377d9
 # 8be77c9e(I) 合并到 4c4377d9
 solve_8be77c9e = solve_4c4377d9
 
-def is_concat_mirror(I, O):
-    # 遍历镜像和拼接操作的组合
-    for mirror in [hmirror, vmirror]:
-        mirrored_matrix = mirror(I)  # 应用镜像操作
-        for concat in [hconcat, vconcat]:
-            try:
-                # 检查两种拼接顺序
-                if concat(I, mirrored_matrix) == O or concat(mirrored_matrix, I) == O:
-                    return (True)
-            except Exception:
-                # 防止操作不匹配导致错误
-                continue
-    # 如果没有匹配的组合，返回 False
-    return (False)
+
 
 
 

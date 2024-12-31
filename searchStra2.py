@@ -521,9 +521,14 @@ class BidirectionalSearch:
             for new_node in new_nodes:
                 for other_node in other_tree.all_nodes.values():
                     if self.can_connect(new_node, other_node, is_forward):
-                        return (new_node, other_node) if is_forward else (other_node, new_node)
+                        # 返回一个字典而不是元组
+                        connection_id = f"connection_{len(visited)}"
+                        if is_forward:
+                            return {connection_id: (new_node, other_node)}
+                        else:
+                            return {connection_id: (other_node, new_node)}
 
-        return None
+        return {}  # 如果没有找到连接，返回空字典
 
     def can_connect(self, node1, node2, is_forward):
         """检查两个节点是否可以连接"""
