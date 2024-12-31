@@ -11,6 +11,9 @@ hmatching#行匹配判断两个patch是否在行上有重叠
 vmatching#列匹配
 manhattan#曼哈顿距离
 objects
+partition
+fgpartition
+frontiers
 delta
 
 tophalf
@@ -149,6 +152,9 @@ downscale
 hupscale
 vupscale
 
+size
+sizefilter
+
 
 #10.合并对象
 
@@ -168,6 +174,8 @@ split
 subgrid
 intersection
 
+first
+last
 
 
 #12.删除对象

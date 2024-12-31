@@ -2,6 +2,31 @@ from dsl import *
 from constants import *
 import dsl2
 
+from arc_types import *
+
+def objproperty(I, O):
+    is_same_shape_shift_parameters
+    shape
+    color
+    palette
+    numcolors
+    size
+    is_mirror
+
+
+
+
+def is_partition_obj(I, O):
+    obj = partition(I)
+    return objproperty(I, O)
+
+def is_part_oflargeproperty(I, O):
+    is_same_shape_shift_parameters(shape(ofcolor(I, ZERO)), shape(O))
+
+
+def is_part_ofzeroofbigpicture(I, O):
+    return shape(O) == shape(ofcolor(I, ZERO))
+
 
 def is_mirror(grid1: Grid, grid2: Grid) -> bool:
     # 检查两个网格是否是镜像
@@ -131,11 +156,12 @@ def is_fill_I_box_color(I,O,color=8):
     return (O == fill(I, color, box(asindices(I))))
 
 
+
 from typing import List, Tuple, Union, Set, Optional
 from arc_types import *
 # 假设 Patch 和 IntegerTuple 的类型定义
 # Patch = Set[Union[Tuple[int, Tuple[int, int]], Tuple[int, int]]]
-IntegerTuple = Tuple[int, int]
+# IntegerTuple = Tuple[int, int]
 
 def is_same_shape_shift_parameters(patch1: Patch, patch2: Patch) -> Tuple[Optional[IntegerTuple], str]:
     """
@@ -213,13 +239,14 @@ def is_same_shape_shift_parameters(patch1: Patch, patch2: Patch) -> Tuple[Option
             if match:
                 return (shift_distance, "shapes are the same", {
                     "transformation": transform_name,
-                    "transformed_patch": transformed_patch1
+                    "transformed_patch": 'PASS'
                 })
 
         except StopIteration:
             continue
 
     return (None, "shapes are different", {"transformation": None})
+
 
 
 def is_complete_change_color(grid1: Grid, grid2: Grid) -> bool:

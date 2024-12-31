@@ -1449,7 +1449,8 @@ def position(
         return (-1, 1 if ja < jb else -1)
 
 
-def index(
+# def index(
+def color_at_location(
     grid: Grid,
     loc: IntegerTuple
 ) -> Integer:

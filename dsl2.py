@@ -372,7 +372,7 @@ def cut_background(grid: Grid) -> Grid:
 
 
 def get_mirror_hole(I, color=0):
-    # need judge is !! mirror,half is mirrir otherhalf not mirror
+    # 9ecd008a need judge is !! mirror,half is mirrir otherhalf not mirror
     # color is size big obj obj(I,T,T,F)  default zero,hole in the not mirror part
     x1 = vmirror(I)
     x2 = ofcolor(I, color)

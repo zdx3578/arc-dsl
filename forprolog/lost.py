@@ -24,8 +24,8 @@ either
 equality
 even
 extract
-fgpartition
-first
+
+
 flip
 fork
 
@@ -37,13 +37,13 @@ halve
 identity
 inbox0
 increment
-index
+
 
 initset
 
 interval
 invert
-last
+
 lbind
 leastcommon
 
@@ -62,7 +62,7 @@ other
 pair
 papply
 
-partition
+
 positive
 power
 prapply
@@ -72,13 +72,12 @@ rbind
 sfilter
 shoot
 sign
-size
-sizefilter
+
+
 sorted_frozenset
 
 subtract
-toivec
-tojvec
+
 totuple
 trim
 
