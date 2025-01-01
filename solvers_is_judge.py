@@ -1,17 +1,44 @@
 from dsl import *
 from constants import *
 import dsl2
-
+import inspect
 from arc_types import *
 
-def objproperty(I, O):
+def search(I, O):
+    hwratio
+    hratio
+    is_out_is_in_subgrid
+    is_in_is_out_subgrid
+    objects
+
+
+def grid_property(I, O):
+
+def diff_property(I, O):
+
+
+def process_objproperty(I: Grid) -> List[Set[Object]]:
+    """处理输入网格中的对象分组"""
+    objs = objects(I)  # 假设objects函数返回网格中的所有对象
+    group_adjacent_obj = group_adjacent_objects(objs, diagonal=True)  # 支持对角线相邻
+
     is_same_shape_shift_parameters
+    is_same_obj_shift_parameters
+
     shape
-    color
+
+    all_colorcount
     palette
     numcolors
+    numcolors_nozero = numcolors - 1
+    all_colorcount
+    leastcolor #！！！！！！
+
     size
     is_mirror
+
+    object adjacent
+
 
 
 
@@ -20,8 +47,99 @@ def is_partition_obj(I, O):
     obj = partition(I)
     return objproperty(I, O)
 
-def is_part_oflargeproperty(I, O):
-    is_same_shape_shift_parameters(shape(ofcolor(I, ZERO)), shape(O))
+
+def is_upsacle_proper_colorcount(I, O):
+    return
+
+
+
+
+
+# 33 c909285e ??
+
+
+
+
+def is_has_frontier(I, O):
+    return  frontiers(I)
+
+def is_adjacent(p1,p2):
+    return adjacent(p1,p2)
+
+def is_upscale_numcolors(I, O):
+    return O == upscale(I, numcolors(I))
+
+def is_is_part_oflargeproperty(I, O):
+    movevec = is_same_shape_shift_parameters(shape(ofcolor(I, ZERO)), shape(O))
+    x1 = move(I,O,movevec)
+    #x1isproperofthisfileotherproper #x1 is proper of this file other is fun proper
+    # 获取当前模块所有函数
+    current_module = inspect.currentframe().f_globals
+    is_functions = [
+        func for name, func in current_module.items()
+        if callable(func) and
+           name.startswith('is_') and
+           not name.startswith('is_is_')
+    ]
+
+    # 遍历所有符合条件的函数
+    for fun in is_functions:
+        if fun != is_is_part_oflargeproperty:  # 避免自身调用
+            try:
+                if fun(x1, x1):
+                    return True
+            except Exception:
+                continue
+
+    return False
+
+from typing import List, Set
+from collections import defaultdict
+
+def group_adjacent_objects(objects: Objects, diagonal: bool = True) -> List[Set[Object]]:
+    """
+    将相邻的对象归为一组
+
+    Args:
+        objects: 所有对象集合
+        diagonal: 是否考虑对角线相邻
+
+    Returns:
+        分组后的对象列表，每组是一个集合
+    """
+    # 构建邻接图
+    graph = defaultdict(set)
+    objects_list = list(objects)
+
+    # 构建邻接关系
+    for i, obj1 in enumerate(objects_list):
+        for j, obj2 in enumerate(objects_list[i+1:], i+1):
+            if adjacent(obj1, obj2, diagonal=diagonal):
+                graph[i].add(j)
+                graph[j].add(i)
+
+    # DFS找出连通分量
+    def dfs(node: int, visited: Set[int], component: Set[int]):
+        visited.add(node)
+        component.add(node)
+        for neighbor in graph[node]:
+            if neighbor not in visited:
+                dfs(neighbor, visited, component)
+
+    # 获取所有连通分量
+    visited = set()
+    components = []
+
+    for node in range(len(objects_list)):
+        if node not in visited:
+            current_component = set()
+            dfs(node, visited, current_component)
+            # 将索引转换回实际对象
+            components.append({objects_list[i] for i in current_component})
+
+    return components
+
+
 
 
 def is_part_ofzeroofbigpicture(I, O):
@@ -247,7 +365,7 @@ def is_same_shape_shift_parameters(patch1: Patch, patch2: Patch) -> Tuple[Option
 
     return (None, "shapes are different", {"transformation": None})
 
-def is_same_shape_shift_parameters(patch1: Patch, patch2: Patch) -> Tuple[Optional[IntegerTuple], str]:
+def is_same_obj_shift_parameters(patch1: Patch, patch2: Patch) -> Tuple[Optional[IntegerTuple], str]:
     """
     计算将 patch2 移动到与 patch1 合并所需的 (di, dj) 移动距离，并判断形状是否相同。
 
@@ -317,8 +435,26 @@ def is_same_shape_shift_parameters(patch1: Patch, patch2: Patch) -> Tuple[Option
             shift_distance = (di, dj)
 
             # 验证所有点
-            match = all((i1 - di, j1 - dj) in coords2
-                       for (i1, j1) in coords1)
+            value_map1 = {}
+            value_map2 = {}
+
+            for elem in transformed_patch1:
+                if isinstance(elem, tuple) and isinstance(elem[1], tuple):
+                    value, (i, j) = elem
+                    value_map1[(i, j)] = value
+
+            for elem in patch2:
+                if isinstance(elem, tuple) and isinstance(elem[1], tuple):
+                    value, (i, j) = elem
+                    value_map2[(i, j)] = value
+
+            # 修改匹配逻辑，同时验证位置和值
+            match = all(
+                (i1 - di, j1 - dj) in coords2 and
+                (not value_map1 or  # 如果没有值映射，只检查位置
+                value_map1.get((i1, j1)) == value_map2.get((i1 - di, j1 - dj)))
+                for (i1, j1) in coords1
+            )
 
             if match:
                 return (shift_distance, "shapes are the same", {

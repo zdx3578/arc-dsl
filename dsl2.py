@@ -387,19 +387,19 @@ def get_partition_min_subgrid(I):
     return O
 
 
-def frontiers2(
-    grid: Grid
-) -> Objects:
-    """ set of frontiers """
-    h, w = len(grid), len(grid[0])
-    row_indices = tuple(i for i, r in enumerate(grid) if len(set(r)) == 1)
-    column_indices = tuple(j for j, c in enumerate(
-        dmirror(grid)) if len(set(c)) == 1)
-    hfrontiers = frozenset(
-        {frozenset({(grid[i][j], (i, j)) for j in range(w)}) for i in row_indices})
-    vfrontiers = frozenset(
-        {frozenset({(grid[i][j], (i, j)) for i in range(h)}) for j in column_indices})
-    return hfrontiers, vfrontiers
+# def frontiers2(
+#     grid: Grid
+# ) -> Objects:
+#     """ set of frontiers """
+#     h, w = len(grid), len(grid[0])
+#     row_indices = tuple(i for i, r in enumerate(grid) if len(set(r)) == 1)
+#     column_indices = tuple(j for j, c in enumerate(
+#         dmirror(grid)) if len(set(c)) == 1)
+#     hfrontiers = frozenset(
+#         {frozenset({(grid[i][j], (i, j)) for j in range(w)}) for i in row_indices})
+#     vfrontiers = frozenset(
+#         {frozenset({(grid[i][j], (i, j)) for i in range(h)}) for j in column_indices})
+#     return hfrontiers, vfrontiers
 
 ##############################################################
 
@@ -504,13 +504,7 @@ def split_grid_by_indices(grid,  include_lines=False):
     return tuple(sub_grids)
 
 
-def do_numb_color_upscale(I):
-    x1 = numcolors(I)
-    if x1 == 2:
-        return False
-    x2 = decrement(x1)
-    O = upscale(I, x2)
-    return O
+
 
 
 def box_cut(I):

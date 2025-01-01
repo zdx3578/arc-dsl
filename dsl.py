@@ -655,6 +655,7 @@ def portrait(
     return height(piece) > width(piece)
 
 
+
 def colorcount(
     element: Element,
     value: Integer
@@ -664,9 +665,14 @@ def colorcount(
         return sum(row.count(value) for row in element)
     return sum(v == value for v, _ in element)
 
+samecolorElemCount = colorcount
+
 from collections import Counter
 
-def all_colorcount(element: Element) -> dict:
+#same as ?
+def all_colorcount(
+    element: Element
+) -> dict:
     """计算所有颜色的出现次数"""
     # 提取所有颜色值
     values = [v for r in element for v in r] if isinstance(element, tuple) else [v for v, _ in element]
@@ -1030,18 +1036,47 @@ def vmatching(
 
 def manhattan(
     a: Patch,
-    b: Patch
+    b: Patch,
+    diagonal: bool = True
 ) -> Integer:
-    """ closest manhattan distance between two patches """
-    return min(abs(ai - bi) + abs(aj - bj) for ai, aj in toindices(a) for bi, bj in toindices(b))
+    """
+    计算两个patches之间的最小距离
 
+    Args:
+        a: 第一个patch
+        b: 第二个patch
+        diagonal: 是否考虑对角线距离
+            False: 曼哈顿距离 |x1-x2| + |y1-y2|
+            True: 切比雪夫距离 max(|x1-x2|, |y1-y2|)
+    """
+    if not diagonal:
+        # 传统曼哈顿距离
+        return min(abs(ai - bi) + abs(aj - bj)
+                  for ai, aj in toindices(a)
+                  for bi, bj in toindices(b))
+    else:
+        # 切比雪夫距离（允许对角线移动）
+        return min(max(abs(ai - bi), abs(aj - bj))
+                  for ai, aj in toindices(a)
+                  for bi, bj in toindices(b))
 
 def adjacent(
     a: Patch,
-    b: Patch
+    b: Patch,
+    diagonal: bool = True
 ) -> Boolean:
-    """ whether two patches are adjacent """
-    return manhattan(a, b) == 1
+    """
+    判断两个patches是否相邻
+
+    Args:
+        diagonal: True则对角线也算相邻
+    """
+    if diagonal:
+        # 使用切比雪夫距离判断相邻
+        return manhattan(a, b, diagonal=True) == 1
+    else:
+        # 传统四方向相邻
+        return manhattan(a, b) == 1
 
 
 def bordering(
@@ -1068,13 +1103,14 @@ def palette(
     return frozenset({v for v, _ in element})
 
 
+
 def numcolors(
     element: Element
 ) -> IntegerSet:
     """ number of colors occurring in object or grid """
     return len(palette(element))
 
-
+colorofobj = color
 def color(
     obj: Object
 ) -> Integer:
@@ -1553,18 +1589,18 @@ def righthalf(
     return rot270(bottomhalf(rot90(grid)))
 
 
-def vfrontier(
-    location: IntegerTuple
-) -> Indices:
-    """ vertical frontier """
-    return frozenset((i, location[1]) for i in range(30))
+# def vfrontier(
+#     location: IntegerTuple
+# ) -> Indices:
+#     """ vertical frontier """
+#     return frozenset((i, location[1]) for i in range(30))
 
 
-def hfrontier(
-    location: IntegerTuple
-) -> Indices:
-    """ horizontal frontier """
-    return frozenset((location[0], j) for j in range(30))
+# def hfrontier(
+#     location: IntegerTuple
+# ) -> Indices:
+#     """ horizontal frontier """
+#     return frozenset((location[0], j) for j in range(30))
 
 
 def backdrop(
@@ -1782,17 +1818,51 @@ def occurrences(
     return frozenset(occs)
 
 
-def frontiers(
-    grid: Grid
-) -> Objects:
-    """ set of frontiers """
-    h, w = len(grid), len(grid[0])
-    row_indices = tuple(i for i, r in enumerate(grid) if len(set(r)) == 1)
-    column_indices = tuple(j for j, c in enumerate(dmirror(grid)) if len(set(c)) == 1)
-    hfrontiers = frozenset({frozenset({(grid[i][j], (i, j)) for j in range(w)}) for i in row_indices})
-    vfrontiers = frozenset({frozenset({(grid[i][j], (i, j)) for i in range(h)}) for j in column_indices})
-    return hfrontiers | vfrontiers
+# def frontiers(
+#     grid: Grid
+# ) -> Objects:
+#     """ set of frontiers """
+#     h, w = len(grid), len(grid[0])
+#     row_indices = tuple(i for i, r in enumerate(grid) if len(set(r)) == 1)
+#     column_indices = tuple(j for j, c in enumerate(dmirror(grid)) if len(set(c)) == 1)
+#     hfrontiers = frozenset({frozenset({(grid[i][j], (i, j)) for j in range(w)}) for i in row_indices})
+#     vfrontiers = frozenset({frozenset({(grid[i][j], (i, j)) for i in range(h)}) for j in column_indices})
+#     return hfrontiers | vfrontiers
 
+def frontiers(grid: Grid) -> Objects:
+    """ set of frontiers """
+    if not grid or not grid[0]:
+        return frozenset()  # 空网格返回空集合
+
+    try:
+        h, w = len(grid), len(grid[0])
+        # 检查行是否全相同
+        row_indices = tuple(i for i, r in enumerate(grid)
+                          if r and len(set(r)) == 1)
+        # 检查列是否全相同
+        column_indices = tuple(j for j, c in enumerate(dmirror(grid))
+                             if c and len(set(c)) == 1)
+
+        # 如果没有找到frontiers，返回空集合
+        if not row_indices and not column_indices:
+            return frozenset()
+
+        # 构建frontiers
+        hfrontiers = frozenset({
+            frozenset({(grid[i][j], (i, j)) for j in range(w)})
+            for i in row_indices
+        }) if row_indices else frozenset()
+
+        vfrontiers = frozenset({
+            frozenset({(grid[i][j], (i, j)) for i in range(h)})
+            for j in column_indices
+        }) if column_indices else frozenset()
+
+        return hfrontiers | vfrontiers
+
+    except Exception as e:
+        print(f"Error in frontiers: {e}")
+        return frozenset()  # 发生异常时返回空集合
 
 def compress(
     grid: Grid
