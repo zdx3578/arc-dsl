@@ -1001,55 +1001,6 @@ def sorted_frozenset(fset: frozenset) -> list:
     """
     return sorted(fset, key=lambda x: (x[0], x[1]))
 
-def is_positive_diagonal(
-    patch: Patch
-) -> Boolean:
-    """判断 patch 是否形成从左上到右下的正对角线"""
-    if len(patch) == 0:
-        return False
-
-    # 检查高度和宽度是否等于 patch 的长度
-    if height(patch) != len(patch) or width(patch) != len(patch):
-        return False
-
-    # 将 patch 中的点按行排序
-    sorted_points = sorted(patch)
-
-    # 获取起始点的坐标
-    start_i, start_j = sorted_points[0]
-
-    # 检查是否所有点都在从左上到右下的对角线上
-    for i, j in sorted_points:
-        if j != start_j + (i - start_i):
-            return False
-
-    return True
-
-
-def is_negative_diagonal(
-    patch: Patch
-) -> Boolean:
-    """判断 patch 是否形成从右上到左下的负对角线"""
-    if len(patch) == 0:
-        return False
-
-    # 检查高度和宽度是否等于 patch 的长度
-    if height(patch) != len(patch) or width(patch) != len(patch):
-        return False
-
-    # 将 patch 中的点按行排序
-    sorted_points = sorted(patch)
-
-    # 获取起始点的坐标
-    start_i, start_j = sorted_points[0]
-
-    # 检查是否所有点都在从右上到左下的对角线上
-    for i, j in sorted_points:
-        if j != start_j - (i - start_i):
-            return False
-
-    return True
-
 
 def hmatching(
     a: Patch,
@@ -1771,56 +1722,6 @@ def box(
     return frozenset(vlines | hlines)
 
 
-def is_valid_empty_box(obj: Object, grid: Grid) -> bool:
-    """
-    判断对象是否是一个空心矩阵框，并且高度和宽度大于 2，并且小于输入网格的高度和宽度。
-
-    参数:
-    obj: Object - 输入的对象。
-    grid: Grid - 输入的网格。
-
-    返回:
-    bool - 如果对象是一个空心矩阵框，并且高度和宽度大于 2，并且小于输入网格的高度和宽度，返回 True；否则返回 False。
-    """
-    # 确保 obj 的格式正确
-    if not (isinstance(obj, frozenset) and all(isinstance(item, tuple) and len(item) == 2 for item in obj)):
-        return False
-
-    # 获取对象的高度和宽度
-    obj_height, obj_width = get_object_dimensions(obj)
-    grid_height, grid_width = len(grid), len(grid[0])
-
-    # 检查对象的高度和宽度是否大于 2，并且小于输入网格的高度和宽度
-    if not (obj_height > 2 and obj_width > 2 and obj_height < grid_height and obj_width < grid_width):
-        return False
-
-    # 获取对象的边框
-    obj_box = box(obj)
-
-    # 获取对象的内部
-    obj_interior = toindices(obj) - obj_box
-
-    # 检查对象的内部是否为空，并且对象的边框与 obj_box 相同
-    return len(obj_interior) == 0 and obj_box == toindices(obj)
-
-
-def is_box(obj: Object) -> bool:
-    """
-    判断对象是否是一个矩阵框。
-
-    参数:
-    obj: Object - 输入的对象。
-
-    返回:
-    bool - 如果对象是一个矩阵框，返回 True；否则返回 False。
-    """
-    # 获取对象的边框
-    obj_box = box(obj)
-
-    # 检查对象是否与其边框相同
-    return obj == obj_box
-
-
 def shoot(
     start: IntegerTuple,
     direction: IntegerTuple
@@ -1958,3 +1859,40 @@ def vperiod(
         if pruned.issubset(normalized):
             return p
     return h
+
+# ```python  asobject(grid)
+# filepath: /Users/zhangdexiang/github/VSAHDC/arc-dsl/dsl.py
+
+def period(obj: Object) -> Tuple[int, int, bool]:
+    """
+    计算对象的水平及垂直周期，并判断是否存在周期性。
+    返回 (horizontal_period, vertical_period, is_periodic)
+    """
+    # 先标准化对象
+    normalized = normalize(obj)
+    h = height(normalized)
+    w = width(normalized)
+
+    # 计算水平周期
+    hp = w
+    for p in range(1, w):
+        offsetted = shift(normalized, (0, -p))
+        pruned = frozenset({(c, (i, j)) for c, (i, j) in offsetted if j >= 0})
+        if pruned.issubset(normalized):
+            hp = p
+            break
+
+    # 计算垂直周期
+    vp = h
+    for p in range(1, h):
+        offsetted = shift(normalized, (-p, 0))
+        pruned = frozenset({(c, (i, j)) for c, (i, j) in offsetted if i >= 0})
+        if pruned.issubset(normalized):
+            vp = p
+            break
+
+    # 是否存在周期性（需判断是否该周期小于原本尺寸）
+    is_periodic = (hp < w) or (vp < h)
+    print("水平周期:", hp, "垂直周期:", vp, "是否有周期:", is_periodic)
+
+    return (hp, vp, is_periodic)

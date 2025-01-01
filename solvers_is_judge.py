@@ -73,9 +73,139 @@ def is_diff_corner_color(I, O):
     advanced_difference(I, O)
 
 
+def is_diff_is_neighibor(I, O):
+    advanced_difference(I, O)
+
 # 33 c909285e ??
 
+# 42
 
+
+
+
+def is_part_of_obj(obj1: Object, obj2: Object) -> bool:
+    """
+    判断 obj1 是否是 obj2 的一部分
+
+    Args:
+        obj1: 可能是部分的对象
+        obj2: 完整的对象
+
+    Returns:
+        bool: True 如果 obj1 是 obj2 的一部分
+    """
+    # 空对象特殊处理
+    if not obj1:
+        return True
+    if not obj2:
+        return False
+
+    # 检查 obj1 是否是 obj2 的子集
+    # 注意：这里直接使用集合操作，因为Object类型是frozenset
+    # 由于Object的元素是(value, (i, j))格式，所以自动会匹配值和位置
+    return obj1.issubset(obj2) or obj2.issubset(obj1)
+
+
+
+
+
+def is_valid_empty_box(obj: Object, grid: Grid) -> bool:
+    """
+    判断对象是否是一个空心矩阵框，并且高度和宽度大于 2，并且小于输入网格的高度和宽度。
+
+    参数:
+    obj: Object - 输入的对象。
+    grid: Grid - 输入的网格。
+
+    返回:
+    bool - 如果对象是一个空心矩阵框，并且高度和宽度大于 2，并且小于输入网格的高度和宽度，返回 True；否则返回 False。
+    """
+    # 确保 obj 的格式正确
+    if not (isinstance(obj, frozenset) and all(isinstance(item, tuple) and len(item) == 2 for item in obj)):
+        return False
+
+    # 获取对象的高度和宽度
+    obj_height, obj_width = get_object_dimensions(obj)
+    grid_height, grid_width = len(grid), len(grid[0])
+
+    # 检查对象的高度和宽度是否大于 2，并且小于输入网格的高度和宽度
+    if not (obj_height > 2 and obj_width > 2 and obj_height < grid_height and obj_width < grid_width):
+        return False
+
+    # 获取对象的边框
+    obj_box = box(obj)
+
+    # 获取对象的内部
+    obj_interior = toindices(obj) - obj_box
+
+    # 检查对象的内部是否为空，并且对象的边框与 obj_box 相同
+    return len(obj_interior) == 0 and obj_box == toindices(obj)
+
+
+def is_box(obj: Object) -> bool:
+    """
+    判断对象是否是一个矩阵框。
+
+    参数:
+    obj: Object - 输入的对象。
+
+    返回:
+    bool - 如果对象是一个矩阵框，返回 True；否则返回 False。
+    """
+    # 获取对象的边框
+    obj_box = box(obj)
+
+    # 检查对象是否与其边框相同
+    return obj == obj_box
+
+def is_positive_diagonal(
+    patch: Patch
+) -> Boolean:
+    """判断 patch 是否形成从左上到右下的正对角线"""
+    if len(patch) == 0:
+        return False
+
+    # 检查高度和宽度是否等于 patch 的长度
+    if height(patch) != len(patch) or width(patch) != len(patch):
+        return False
+
+    # 将 patch 中的点按行排序
+    sorted_points = sorted(patch)
+
+    # 获取起始点的坐标
+    start_i, start_j = sorted_points[0]
+
+    # 检查是否所有点都在从左上到右下的对角线上
+    for i, j in sorted_points:
+        if j != start_j + (i - start_i):
+            return False
+
+    return True
+
+
+def is_negative_diagonal(
+    patch: Patch
+) -> Boolean:
+    """判断 patch 是否形成从右上到左下的负对角线"""
+    if len(patch) == 0:
+        return False
+
+    # 检查高度和宽度是否等于 patch 的长度
+    if height(patch) != len(patch) or width(patch) != len(patch):
+        return False
+
+    # 将 patch 中的点按行排序
+    sorted_points = sorted(patch)
+
+    # 获取起始点的坐标
+    start_i, start_j = sorted_points[0]
+
+    # 检查是否所有点都在从右上到左下的对角线上
+    for i, j in sorted_points:
+        if j != start_j - (i - start_i):
+            return False
+
+    return True
 
 
 
