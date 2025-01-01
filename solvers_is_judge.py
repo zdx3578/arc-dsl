@@ -283,7 +283,7 @@ from typing import List, Tuple, Union, Set, Optional
 from arc_types import *
 
 
-def is_same_shape_shift_parameters(patch1: Patch, patch2: Patch) -> Tuple[Optional[IntegerTuple], str, Dict[str, Any]]:
+def is_same_shape_shift_parameters(patch1: Patch, patch2: Patch,  check_values: bool = False ) -> Tuple[Optional[IntegerTuple], str, Dict[str, Any]]:
     """判断两个patch形状和值是否相同，并计算移动参数"""
     transformations = [
         ("original", lambda p: p),
@@ -345,6 +345,13 @@ def is_same_shape_shift_parameters(patch1: Patch, patch2: Patch) -> Tuple[Option
 
             if not shape_match:
                 continue
+
+            # 如果不需要检查值，直接返回形状匹配结果
+            if not check_values:
+                return (shift_distance, "shapes are the same", {
+                    "transformation": transform_name,
+                    "match_type": "shape_only",
+                    "transformed_patch": transformed_patch1  })
 
             # 检查值匹配
             value_map1 = {}
