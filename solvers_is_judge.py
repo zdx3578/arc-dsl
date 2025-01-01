@@ -15,12 +15,16 @@ def search(I, O):
 def grid_property(I, O):
 
 def diff_property(I, O):
+    diff = difference(I, O)
+
 
 
 def process_objproperty(I: Grid) -> List[Set[Object]]:
     """处理输入网格中的对象分组"""
     objs = objects(I)  # 假设objects函数返回网格中的所有对象
     group_adjacent_obj = group_adjacent_objects(objs, diagonal=True)  # 支持对角线相邻
+
+    group_same_shape_obj = group_same_shape_objects(objs)
 
     is_same_shape_shift_parameters
     is_same_obj_shift_parameters
@@ -37,7 +41,7 @@ def process_objproperty(I: Grid) -> List[Set[Object]]:
     size
     is_mirror
 
-    object adjacent
+
 
 
 
@@ -467,6 +471,49 @@ def is_same_obj_shift_parameters(patch1: Patch, patch2: Patch) -> Tuple[Optional
 
     return (None, "shapes are different", {"transformation": None})
 
+
+def group_same_shape_objects(objects: Objects) -> List[Set[Object]]:
+    """
+    将形状相同的对象分到同一组
+
+    Args:
+        objects: 所有对象的集合
+
+    Returns:
+        List[Set[Object]]: 形状相同的对象分组列表
+    """
+    if not objects:
+        return []
+
+    # 初始化分组
+    groups = []
+    processed = set()
+    objects_list = list(objects)
+
+    # 遍历每个对象
+    for i, obj1 in enumerate(objects_list):
+        if obj1 in processed:
+            continue
+
+        # 创建新组，包含当前对象
+        current_group = {obj1}
+        processed.add(obj1)
+
+        # 与其他未处理对象比较
+        for j, obj2 in enumerate(objects_list[i+1:], i+1):
+            if obj2 in processed:
+                continue
+
+            # 使用is_same_shape_shift_parameters判断形状是否相同
+            shift_params, message, transform_info = is_same_shape_shift_parameters(obj1, obj2)
+
+            if shift_params is not None and message == "shapes are the same":
+                current_group.add(obj2)
+                processed.add(obj2)
+
+        groups.append(current_group)
+
+    return groups
 
 
 def is_complete_change_color(grid1: Grid, grid2: Grid) -> bool:
