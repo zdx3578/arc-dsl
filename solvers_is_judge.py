@@ -281,35 +281,15 @@ def is_fill_I_box_color(I,O,color=8):
 
 from typing import List, Tuple, Union, Set, Optional
 from arc_types import *
-# 假设 Patch 和 IntegerTuple 的类型定义
-# Patch = Set[Union[Tuple[int, Tuple[int, int]], Tuple[int, int]]]
-# IntegerTuple = Tuple[int, int]
 
 
-def is_same_obj_shift_parameters(patch1: Patch, patch2: Patch) -> Tuple[Optional[IntegerTuple], str]:
-    """
-    计算将 patch2 移动到与 patch1 合并所需的 (di, dj) 移动距离，并判断形状是否相同。
-
-    Args:
-        patch1 (Patch): 目标补丁。
-        patch2 (Patch): 需要移动的补丁。
-
-    Returns:
-        Tuple[Optional[IntegerTuple], str]: 如果可以对齐，返回 (di, dj) 和成功消息；
-                                            如果形状不同，返回 (None, 'shapes are different')。
-    """
-    shifts = set()
-
-    # 提取 patch1 的坐标
-    # coords1: Indices = asindices_patch(patch1)
-    coords2: Indices = asindices_patch(patch2)
-
+def is_same_shape_shift_parameters(patch1: Patch, patch2: Patch) -> Tuple[Optional[IntegerTuple], str, Dict[str, Any]]:
+    """判断两个patch形状和值是否相同，并计算移动参数"""
     transformations = [
         ("original", lambda p: p),
         ("rot90", rot90),
         ("rot180", rot180),
         ("rot270", rot270),
-        # 单一镜像
         ("hmirror", hmirror),
         ("vmirror", vmirror),
         ("cmirror", cmirror),
@@ -331,23 +311,25 @@ def is_same_obj_shift_parameters(patch1: Patch, patch2: Patch) -> Tuple[Optional
         ("dmirror_rot180", lambda p: rot180(dmirror(p))),
         ("dmirror_rot270", lambda p: rot270(dmirror(p)))
     ]
+
+    coords2: Indices = asindices_patch(patch2)
+
     for transform_name, transform_func in transformations:
         transformed_patch1 = transform_func(patch1)
         coords1: Indices = asindices_patch(transformed_patch1)
 
-    # 如果两个补丁的点数不同，形状必然不同
         if len(coords1) != len(coords2):
-            return (None, "shapes are different")
+            continue
 
         # 如果 patch1 或 patch2 为空
         if not coords1 or not coords2:
             if coords1 == coords2:
-                return ((0, 0), "patches are identical (both empty or same)")
-            else:
-                return (None, "shapes are different")
+                return ((0, 0), "patches are identical (both empty)", {
+                    "transformation": transform_name,
+                    "match_type": "full_match"
+                })
+            continue
 
-        # 选择一个参考点
-        # 计算移动参数
         try:
             ref1 = next(iter(coords1))
             ref2 = next(iter(coords2))
@@ -355,7 +337,16 @@ def is_same_obj_shift_parameters(patch1: Patch, patch2: Patch) -> Tuple[Optional
             dj = ref1[1] - ref2[1]
             shift_distance = (di, dj)
 
-            # 验证所有点
+            # 检查形状匹配
+            shape_match = all(
+                (i1 - di, j1 - dj) in coords2
+                for (i1, j1) in coords1
+            )
+
+            if not shape_match:
+                continue
+
+            # 检查值匹配
             value_map1 = {}
             value_map2 = {}
 
@@ -369,24 +360,41 @@ def is_same_obj_shift_parameters(patch1: Patch, patch2: Patch) -> Tuple[Optional
                     value, (i, j) = elem
                     value_map2[(i, j)] = value
 
-            # 修改匹配逻辑，同时验证位置和值
-            match = all(
-                (i1 - di, j1 - dj) in coords2 and
-                (not value_map1 or  # 如果没有值映射，只检查位置
-                value_map1.get((i1, j1)) == value_map2.get((i1 - di, j1 - dj)))
-                for (i1, j1) in coords1
-            )
+            # 如果有值映射，检查值是否匹配
+            if value_map1 and value_map2:
+                value_match = all(
+                    value_map1.get((i1, j1)) == value_map2.get((i1 - di, j1 - dj))
+                    for (i1, j1) in coords1
+                )
 
-            if match:
+                if value_match:
+                    return (shift_distance, "objects are identical", {
+                        "transformation": transform_name,
+                        "match_type": "full_match",
+                        "transformed_patch": transformed_patch1
+                    })
+                else:
+                    return (shift_distance, "same shape but different values", {
+                        "transformation": transform_name,
+                        "match_type": "shape_only",
+                        "transformed_patch": transformed_patch1
+                    })
+            else:
+                # 没有值映射时，只返回形状匹配结果
                 return (shift_distance, "shapes are the same", {
                     "transformation": transform_name,
-                    "transformed_patch": 'PASS'
+                    "match_type": "shape_only",
+                    "transformed_patch": transformed_patch1
                 })
 
         except StopIteration:
             continue
 
-    return (None, "shapes are different", {"transformation": None})
+    return (None, "shapes are different", {
+        "transformation": None,
+        "match_type": "no_match"
+    })
+
 
 
 def group_same_shape_objects(objects: Objects) -> List[Set[Object]]:
