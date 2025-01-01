@@ -3,6 +3,20 @@ from constants import *
 import dsl2
 import inspect
 from arc_types import *
+import logging
+import traceback
+from contextlib import contextmanager
+
+@contextmanager
+def safe_context():
+    """安全上下文管理器，用于异常捕获和日志记录"""
+    try:
+        yield
+    except Exception as e:
+        print(f"___________safe_context___An error occurred: {e}")
+        logging.error("捕获到异常：%s", e)
+        logging.error("详细错误信息：\n%s", traceback.format_exc())
+
 
 def search(I, O):
     hwratio
@@ -15,19 +29,20 @@ def search(I, O):
 def grid_property(I, O):
 
 def diff_property(I, O):
-    diff = difference(I, O)
+    advanced_difference(I, O)
 
 
+def obj_property(I, O):
 
-def process_objproperty(I: Grid) -> List[Set[Object]]:
+def process_objsproperty(I: Grid) -> List[Set[Object]]:
     """处理输入网格中的对象分组"""
     objs = objects(I)  # 假设objects函数返回网格中的所有对象
     group_adjacent_obj = group_adjacent_objects(objs, diagonal=True)  # 支持对角线相邻
 
     group_same_shape_obj = group_same_shape_objects(objs)
 
-    is_same_shape_shift_parameters
-    is_same_obj_shift_parameters
+    is_same_shape_move_shift_parameters
+
 
     shape
 
@@ -44,9 +59,6 @@ def process_objproperty(I: Grid) -> List[Set[Object]]:
 
 
 
-
-
-
 def is_partition_obj(I, O):
     obj = partition(I)
     return objproperty(I, O)
@@ -56,12 +68,31 @@ def is_upsacle_proper_colorcount(I, O):
     return
 
 
-
+#37 3aa6fb7a
+def is_diff_corner_color(I, O):
+    advanced_difference(I, O)
 
 
 # 33 c909285e ??
 
 
+
+
+
+
+from itertools import product
+def get_all_obj(grid: Grid) -> list[Objects]:
+    # 枚举所有参数组合
+    results = []
+    for univalued, diagonal, without_bg in product([True, False], repeat=3):
+        result = objects(grid, univalued, diagonal, without_bg)
+        results.append({
+            "univalued": univalued,
+            "diagonal": diagonal,
+            "without_bg": without_bg,
+            "result": result
+        })
+    return results
 
 
 def is_has_frontier(I, O):
@@ -73,10 +104,8 @@ def is_adjacent(p1,p2):
 def is_upscale_numcolors(I, O):
     return O == upscale(I, numcolors(I))
 
-def is_is_part_oflargeproperty(I, O):
-    movevec = is_same_shape_shift_parameters(shape(ofcolor(I, ZERO)), shape(O))
-    x1 = move(I,O,movevec)
-    #x1isproperofthisfileotherproper #x1 is proper of this file other is fun proper
+
+def getall_isfunctions():
     # 获取当前模块所有函数
     current_module = inspect.currentframe().f_globals
     is_functions = [
@@ -85,6 +114,16 @@ def is_is_part_oflargeproperty(I, O):
            name.startswith('is_') and
            not name.startswith('is_is_')
     ]
+    return is_functions
+
+def is_is_part_oflarge_property(I, O):  #9ecd008a
+    # movevec = is_same_shape_move_shift_parameters(shape(ofcolor(I, ZERO)), shape(O))
+    movevec = is_same_shape_move_shift_parameters((ofcolor(I, ZERO)), (O))
+    x1 = move(I,O,movevec)
+    #x1isproperofthisfileotherproper #x1 is proper of this file other is fun proper
+    # 获取当前模块所有函数
+    current_module = inspect.currentframe().f_globals
+    is_functions = get_allisfunctions()
 
     # 遍历所有符合条件的函数
     for fun in is_functions:
@@ -146,7 +185,7 @@ def group_adjacent_objects(objects: Objects, diagonal: bool = True) -> List[Set[
 
 
 
-def is_part_ofzeroofbigpicture(I, O):
+def is_part_ofzero_of_bigpicture(I, O):
     return shape(O) == shape(ofcolor(I, ZERO))
 
 
@@ -226,9 +265,9 @@ def is_split_one_n1(I, O):
             # 尝试分割输入
             split_result = s(I)
             # 检查分割后的每一部分是否等于输出
-            for split_matrix in split_result:
+            for index, split_matrix in enumerate(split_result):
                 if split_matrix == O:
-                    return (True)
+                    return (True, index)
         except Exception:
             # 防止操作不匹配导致错误
             continue
@@ -279,11 +318,11 @@ def is_fill_I_box_color(I,O,color=8):
 
 
 
-from typing import List, Tuple, Union, Set, Optional
+from typing import List, Tuple, Union, Set, Optional, Dict, Any
 from arc_types import *
 
 
-def is_same_shape_shift_parameters(patch1: Patch, patch2: Patch,  check_values: bool = False ) -> Tuple[Optional[IntegerTuple], str, Dict[str, Any]]:
+def is_same_shape_move_shift_parameters(patch1: Patch, patch2: Patch,  check_values: bool = False ) -> Tuple[Optional[IntegerTuple], str, Dict[str, Any]]:
     """判断两个patch形状和值是否相同，并计算移动参数"""
     transformations = [
         ("original", lambda p: p),
@@ -436,8 +475,8 @@ def group_same_shape_objects(objects: Objects) -> List[Set[Object]]:
             if obj2 in processed:
                 continue
 
-            # 使用is_same_shape_shift_parameters判断形状是否相同
-            shift_params, message, transform_info = is_same_shape_shift_parameters(obj1, obj2)
+            # 使用is_same_shape_move_shift_parameters判断形状是否相同
+            shift_params, message, transform_info = is_same_shape_move_shift_parameters(obj1, obj2)
 
             if shift_params is not None and message == "shapes are the same":
                 current_group.add(obj2)

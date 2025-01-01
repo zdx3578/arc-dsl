@@ -151,6 +151,39 @@ def difference(
     """ set difference """
     return type(a)(e for e in a if e not in b)
 
+def advanced_difference(
+    a: FrozenSet,
+    b: FrozenSet
+) -> Dict[str, Any]:
+    """高级集合差异分析，包含多层次比较"""
+    # 基础差异分析
+    common = a.intersection(b)
+    a_unique = a - b
+    b_unique = b - a
+
+    # 排序差异
+    sorted_a_uniq = sorted(a_unique, key=lambda x: (x[0], x[1]))
+    sorted_b_uniq = sorted(b_unique, key=lambda x: (x[0], x[1]))
+
+    # 二次差异比较
+    diff_a_unique = sorted(set(sorted_a_uniq) - set(sorted_b_uniq))
+    diff_b_unique = sorted(set(sorted_b_uniq) - set(sorted_a_uniq))
+
+    return {
+        "common": common,
+        "first_level_diff": {
+            "a_unique": a_unique,
+            "b_unique": b_unique,
+            "sorted_diffs": {
+                "a": sorted_a_uniq,
+                "b": sorted_b_uniq
+            }
+        },
+        "second_level_diff": {
+            "diff_a": diff_a_unique,
+            "diff_b": diff_b_unique
+        }
+    }
 
 def dedupe(
     tup: Tuple
@@ -579,7 +612,7 @@ def mostcolor(
     """ most common color """
     values = [v for r in element for v in r] if isinstance(element, tuple) else [v for v, _ in element]
     return max(set(values), key=values.count)
-
+mostcolorcount = mostcolor
 
 def leastcolor(
     element: Element
@@ -587,7 +620,7 @@ def leastcolor(
     """ least common color """
     values = [v for r in element for v in r] if isinstance(element, tuple) else [v for v, _ in element]
     return min(set(values), key=values.count)
-
+leastcolorcount = leastcolor
 
 def height(
     piece: Piece
@@ -1858,11 +1891,37 @@ def frontiers(grid: Grid) -> Objects:
             for j in column_indices
         }) if column_indices else frozenset()
 
-        return hfrontiers | vfrontiers
+        return hfrontiers , vfrontiers
 
     except Exception as e:
         print(f"Error in frontiers: {e}")
         return frozenset()  # 发生异常时返回空集合
+
+def split_by_frontiers(grid: Grid) -> List[Grid]:
+    """根据frontiers分割网格"""
+    h, w = len(grid), len(grid[0])
+    hfrs, vfrs = frontiers(grid)
+
+    # 如果没有分割线，返回原网格
+    if not hfrs and not vfrs:
+        return [grid]
+
+    # 直接从frontiers获取分割位置
+    row_splits = sorted({next(iter(fr))[1][0] for fr in hfrs}) if hfrs else []
+    col_splits = sorted({next(iter(fr))[1][1] for fr in vfrs}) if vfrs else []
+
+    # 添加边界
+    row_splits = [0] + row_splits + [h]
+    col_splits = [0] + col_splits + [w]
+
+    # 分割网格
+    return [
+        crop(grid, (start_i, start_j),
+             (end_i - start_i, end_j - start_j))
+        for i, (start_i, end_i) in enumerate(zip(row_splits, row_splits[1:]))
+        for j, (start_j, end_j) in enumerate(zip(col_splits, col_splits[1:]))
+    ]
+
 
 def compress(
     grid: Grid
