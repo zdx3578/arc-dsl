@@ -19,22 +19,83 @@ def safe_context():
 
 
 def search(I, O):
+    for date in [input-input,output-output,input-outputpaire]:
+        for fun in get_all_isfunctions():
+            try:
+                if fun(I, O):
+                    return fun
+            except Exception:
+                continue
     hwratio
     hratio
     is_out_is_in_subgrid
     is_in_is_out_subgrid
     objects
 
+# def common_proper(I: Grid, O: Grid) -> bool:
+#     return True
 
-def grid_property(I, O):
+# def grid_property(I, O):
 
 def diff_property(I, O):
-    advanced_difference(I, O)
+    diff = advanced_difference(I, O)
+    obj_property(diff)
 
 
-def obj_property(I, O):
+from typing import Union
 
-def process_objsproperty(I: Grid) -> List[Set[Object]]:
+def obj_property(input_data: Union[Object, Grid]) -> dict:
+    # 类型检查和转换
+    if isinstance(input_data, frozenset) and all(
+        isinstance(item, tuple) and len(item) == 2
+        and isinstance(item[1], tuple) and len(item[1]) == 2
+        for item in input_data
+    ):
+        # 输入是 Object 类型
+        obj = input_data
+    elif isinstance(input_data, (tuple, list)) and all(
+        isinstance(row, (tuple, list)) for row in input_data
+    ):
+        # 输入是 Grid 类型，转换为 Object
+        obj = asobject(input_data)
+    else:
+        raise ValueError("输入必须是 Object 或 Grid 类型")
+
+    #     # 类型检查和转换
+    # obj = (asobject(input_data) if isinstance(input_data, list)
+    #        else input_data if isinstance(input_data, frozenset)
+    #        else None)
+
+    # if obj is None:
+    #     raise ValueError("输入必须是Object或Grid类型")
+
+    # 计算对象属性
+
+    obj_I = obj
+    properties_I = {
+        'size': len(obj_I),
+        'shape': shape(obj_I),
+        'asindices': asindices(obj_I),
+        'position': center(obj_I),
+        'move': move(obj_I, (1, 1)),  # 示例：移动 (1, 1)
+        'shift': shift(obj_I, (1, 1)),  # 示例：平移 (1, 1)
+        'mirror': hmirror(obj_I),  # 示例：水平镜像
+        'rotate': rot90(obj_I),  # 示例：旋转 90 度
+        'colorcount': colorcount(obj_I, 1),  # 示例：颜色 1 的数量
+        'palette': palette(obj_I),
+        'numcolors': numcolors(obj_I),
+        'numcolors_nozero': len(palette(obj_I) - {0}),  # 排除 0 颜色
+        'all_colorcount': {color: colorcount(obj_I, color) for color in palette(obj_I)},
+        'leastcolor': leastcolor(obj_I),
+        'mostcolor': mostcolor(obj_I)
+        ######.....................
+    }
+    return properties_I
+
+
+
+
+def process_objs_property(I: Grid) -> List[Set[Object]]:
     """处理输入网格中的对象分组"""
     objs = objects(I)  # 假设objects函数返回网格中的所有对象
     group_adjacent_obj = group_adjacent_objects(objs, diagonal=True)  # 支持对角线相邻
@@ -79,6 +140,28 @@ def is_diff_is_neighibor(I, O):
 # 33 c909285e ??
 
 # 42
+
+
+def is_sizefilter(I: Grid, O: Grid) -> bool:
+    size proper?
+    return ?
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 
