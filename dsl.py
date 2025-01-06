@@ -1117,6 +1117,39 @@ def asobject(
     """ conversion of grid to object """
     return frozenset((v, (i, j)) for i, r in enumerate(grid) for j, v in enumerate(r))
 
+def object_to_grid(obj: Object) -> Grid:
+    """将object转换回grid
+
+    Args:
+        obj: 由(value, (i, j))组成的frozenset
+
+    Returns:
+        Grid: 转换后的网格
+    """
+    if not obj:
+        return [[]]
+
+    # 获取网格范围
+    coords = [(i, j) for _, (i, j) in obj]
+    max_i = max(i for i, _ in coords) + 1
+    max_j = max(j for _, j in coords) + 1
+
+    # 创建空网格
+    grid = [[0 for _ in range(max_j)] for _ in range(max_i)]
+
+    # 填充值
+    for value, (i, j) in obj:
+        grid[i][j] = value
+
+    return grid
+
+# 使用示例:
+"""
+grid = [[1, 2], [3, 4]]
+obj = asobject(grid)
+restored_grid = object_to_grid(obj)
+assert grid == restored_grid
+"""
 
 def rot90(
     grid: Grid
@@ -1818,7 +1851,7 @@ def split_by_frontiers(grid: Grid) -> List[Grid]:
     # 分割网格
     return [
         crop(grid, (start_i, start_j),
-             (end_i - start_i, end_j - start_j))
+            (end_i - start_i, end_j - start_j))
         for i, (start_i, end_i) in enumerate(zip(row_splits, row_splits[1:]))
         for j, (start_j, end_j) in enumerate(zip(col_splits, col_splits[1:]))
     ]
