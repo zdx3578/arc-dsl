@@ -76,6 +76,75 @@
   (define max-j (apply max (map second coords)))
   (list max-i max-j))
 
+;; 转置函数
+(define (transpose grid)
+  (apply map list grid))
+
+;; 通用翻转函数
+(define (mirror piece axis)
+  (cond
+    ;; 如果 piece 是 Grid，根据轴进行翻转
+    [(grid? piece)
+     (cond
+       [(eq? axis 'hmirror) (reverse piece)] ; 水平翻转：反转行顺序
+       [(eq? axis 'vmirror)
+        (map reverse piece)] ; 垂直翻转：反转每一行中的元素
+       [(eq? axis 'dmirror)
+        (transpose piece)] ; 对角线翻转：转置
+       [(eq? axis 'cmirror)
+        (transpose (map reverse (reverse piece)))] ; 反对角线翻转
+       [else (error "Unknown mirror axis")])]
+    ;; 如果 piece 是 Object，根据轴进行翻转
+    [(object? piece)
+     (let* ((corners (list (ulcorner piece) (lrcorner piece)))
+            (d (cond
+                [(eq? axis 'hmirror) (+ (first (first corners)) (first (second corners)))]
+                [(eq? axis 'vmirror) (+ (second (first corners)) (second (second corners)))]
+                [(eq? axis 'dmirror)
+                 ;; 对角线翻转的处理
+                 (let ((a (first (first corners)))
+                       (b (second (first corners))))
+                   (+ a b)))
+                [(eq? axis 'cmirror)
+                 ;; 反对角线翻转的处理
+                 (let ((a (first (first corners)))
+                       (b (second (first corners))))
+                   (+ a b)))
+                [else (error "Unknown mirror axis")]))
+            (mirrored-cells
+             (map (lambda (cell)
+                    (let ((v (first cell))
+                          (coord (second cell)))
+                      (match coord
+                        [(list i j)
+                         (cond
+                           [(eq? axis 'hmirror) (make-cell v (- d i) j)]
+                           [(eq? axis 'vmirror) (make-cell v i (- d j))]
+                           [(eq? axis 'dmirror)
+                            (make-cell v j i)] ; 对角线翻转：交换 i 和 j
+                           [(eq? axis 'cmirror)
+                            (make-cell v j i)] ; 反对角线翻转：交换 i 和 j
+                           [else (error "Unknown mirror axis")]))]))
+                  (set->list piece)))]
+       (make-object mirrored-cells))]
+    [else (error "Unknown Piece type")]))
+
+;; 水平翻转
+(define (hmirror piece)
+  (mirror piece 'hmirror))
+
+;; 垂直翻转
+(define (vmirror piece)
+  (mirror piece 'vmirror))
+
+;; 对角线翻转
+(define (dmirror piece)
+  (mirror piece 'dmirror))
+
+;; 反对角线翻转
+(define (cmirror piece)
+  (mirror piece 'cmirror))
+
 ;; ----------------------------
 ;; asobject 函数实现
 ;; ----------------------------
@@ -92,57 +161,53 @@
   obj)
 
 ;; ----------------------------
-;; hmirror 函数实现
+;; 定义操作序列
 ;; ----------------------------
 
-(define (hmirror piece)
-  (cond
-    ;; 如果 piece 是 Grid，返回反转的 Grid
-    [(grid? piece) (reverse piece)]
-    ;; 如果 piece 是 Object
-    [(object? piece)
-     (let* ((d (+ (first (ulcorner piece))
-                  (first (lrcorner piece))))
-            ;; 计算新的坐标
-            (mirrored-cells
-             (map (lambda (cell)
-                    (match cell
-                      [(list v (list i j))
-                       (make-cell v (- d i) j)]
-                      [_ (error "Unexpected Cell structure")]))
-                  (set->list piece))))
-       ;; 创建新的 Object
-       (make-object mirrored-cells))]
-    [else (error "Unknown Piece type")]))
+;; 定义镜像操作的枚举类型
+(define mirror-ops '(hmirror vmirror dmirror cmirror))
+
+;; 定义一个符号化的操作序列
+(define max-ops 3) ; 设定最大操作次数
+(define-symbolic ops (list (enum mirror-ops)
+                            (enum mirror-ops)
+                            (enum mirror-ops)))
+
+;; 定义应用操作序列的函数
+(define (apply-operations grid ops)
+  (foldl (λ (op g)
+           (cond
+             [(eq? op 'hmirror) (hmirror g)]
+             [(eq? op 'vmirror) (vmirror g)]
+             [(eq? op 'dmirror) (dmirror g)]
+             [(eq? op 'cmirror) (cmirror g)]
+             [else (error "Unknown operation")]))
+         grid
+         ops))
 
 ;; ----------------------------
-;; 声明符号化的 Grid
+;; 设定初始 Grid 和目标 Grid
 ;; ----------------------------
 
-;; 假设我们希望符号化一个 Grid，并将其转换为 Object
-(define-symbolic symbolic-grid (grid?))
+(define initial-grid '((1 2) (3 4)))
+(define target-grid '((4 3) (2 1))) ; 示例目标 Grid
 
-;; 使用 asobject 函数将 Grid 转换为 Object
-(define symbolic-object (asobject symbolic-grid))
+;; 转换初始 Grid 和目标 Grid 为 Object
+(define initial-object (asobject initial-grid))
+(define target-object (asobject target-grid))
 
-;; 应用 hmirror 函数
-(define mirrored-object (hmirror symbolic-object))
+;; ----------------------------
+;; 应用操作序列
+;; ----------------------------
+
+(define final-object (apply-operations initial-object ops))
 
 ;; ----------------------------
 ;; 设定约束
 ;; ----------------------------
 
-;; 示例约束：镜像后的 Object 中存在一个 Cell，其值为 2 且坐标为 (1, 1)
-(assert (ormap (λ (cell)
-                (and (= (first cell) 2)
-                     (= (second cell) '(1 1))))
-              (set->list mirrored-object)))
-
-;; 另一个约束示例：确保镜像后的 Object 中所有的 i 坐标都在 [0,1]
-(assert (forall (λ (cell)
-                (let ((i (first (second cell))))
-                  (and (>= i 0) (<= i 1))))
-              mirrored-object)))
+;; 目标是通过一系列翻转操作将 initial-object 转换为 target-object
+(assert (equal? final-object target-object))
 
 ;; ----------------------------
 ;; 求解
