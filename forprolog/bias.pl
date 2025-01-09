@@ -1,4 +1,10 @@
+max_vars(7).
+max_body(10).
 
+% 定义目标谓词
+head_pred(program, 2).
+type(program, (grid, grid)).
+direction(program, (in, out)).
 
 
 % ------------  自动生成的类型声明  ------------

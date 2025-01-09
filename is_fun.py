@@ -19,7 +19,7 @@ def safe_context():
 
 
 
-def search(I, O):
+def search(I: Grid, O: Grid) -> Optional[Callable]:
     for date in [input-input,output-output,input-outputpaire]:
         for fun in get_all_isfunctions():
             try:
@@ -38,12 +38,12 @@ def search(I, O):
 
 # def grid_property(I, O):
 
-def diff_property(I, O):
+def diff_property(I: Grid, O: Grid) -> dict:
     diff = advanced_difference(I, O)
     obj_property(diff)
-    归纳从diff 归纳  ilp
+    # 归纳从diff 归纳  ilp
 
-    函数 输入数据  是推理  演绎
+    # 函数 输入数据  是推理  演绎
 
 
 from typing import Union
@@ -84,7 +84,7 @@ def obj_property(input_data: Union[Object, Grid]) -> dict:
         'move': move(obj_I, (1, 1)),  # 示例：移动 (1, 1)
         'shift': shift(obj_I, (1, 1)),  # 示例：平移 (1, 1)
         'mirror': hmirror(obj_I),  # 示例：水平镜像
-        'rotate': rot90(obj_I),  # 示例：旋转 90 度
+        'rotate': rot90(obj_I),  # 示例：旋转 90 度     
         'colorcount': colorcount(obj_I, 1),  # 示例：颜色 1 的数量
         'palette': palette(obj_I),
         'numcolors': numcolors(obj_I),
@@ -126,22 +126,22 @@ def process_objs_property(I: Grid) -> List[Set[Object]]:
 
 
 
-def is_partition_obj(I, O):
+def is_partition_obj(I: Grid, O: Grid) -> bool:
     obj = partition(I)
     return objproperty(I, O)
 
 
-def is_upsacle_proper_colorcount(I, O):
+def is_upsacle_proper_colorcount(I: Grid, O: Grid) -> bool:
     return
 
 
 #37 3aa6fb7a
-def is_diff_corner_color(I, O):
+def is_diff_corner_color(I: Grid, O: Grid) -> bool:
     advanced_difference(I, O)
     is_part_of_obj(I, O)
 
 
-def is_diff_is_neighibor(I, O):
+def is_diff_is_neighibor(I: Grid, O: Grid) -> bool:
     advanced_difference(I, O)
 
 # 33 c909285e ??
@@ -336,7 +336,7 @@ def getall_isfunctions():
     ]
     return is_functions
 
-def is_is_part_oflarge_property(I, O):  #9ecd008a
+def is_is_part_oflarge_property(I: Grid, O: Grid) -> bool:  #9ecd008a
     # movevec = is_same_shape_move_shift_parameters(shape(ofcolor(I, ZERO)), shape(O))
     movevec = is_same_shape_move_shift_parameters((ofcolor(I, ZERO)), (O))
     x1 = move(I,O,movevec)
@@ -405,7 +405,7 @@ def group_adjacent_objects(objects: Objects, diagonal: bool = True) -> List[Set[
 
 
 
-def is_part_ofzero_of_bigpicture(I, O):
+def is_part_ofzero_of_bigpicture(I: Grid, O: Grid) -> bool:
     return shape(O) == shape(ofcolor(I, ZERO))
 
 
@@ -423,7 +423,7 @@ def is_sclae(grid1: Grid, grid2: Grid) -> bool:
     scales = width(grid1) / width(grid2)
     return grid1 == upscale(grid2, scales) or grid1 == downscale(grid2, scales) or grid1 == hupscale(grid2, scalesh) or grid1 == vupscale(grid2, scales)
 
-def is_concat_mirror(I, O):
+def is_concat_mirror(I: Grid, O: Grid) -> bool:
     # 遍历镜像和拼接操作的组合
     for mirror in [hmirror, vmirror, cmirror, dmirror]:
         mirrored_matrix = mirror(I)  # 应用镜像操作
@@ -437,7 +437,7 @@ def is_concat_mirror(I, O):
                 continue
     # 如果没有匹配的组合，返回 False
     return (False)
-def is_concat_rot(I, O):
+def is_concat_rot(I: Grid, O: Grid) -> bool:
     # 遍历旋转和拼接操作的组合
     for rotate in [rot90, rot180, rot270]:
         rotated_matrix = rotate(I)
@@ -451,7 +451,7 @@ def is_concat_rot(I, O):
                 continue
     # 如果没有匹配的组合，返回 False
     return (False)
-def is_concat_mirror_rot(I, O):
+def is_concat_mirror_rot(I: Grid, O: Grid) -> bool:
     # 遍历镜像、旋转和拼接操作的组合
     for mirror in [hmirror, vmirror, cmirror, dmirror]:
         mirrored_matrix = mirror(I)
@@ -467,7 +467,7 @@ def is_concat_mirror_rot(I, O):
                     continue
     # 如果没有匹配的组合，返回 False
     return (False)
-def is_concat(I, O):
+def is_concat(I: Grid, O: Grid) -> bool:
     # 检查水平拼接
     if hconcat(I, I) == O:
         return (True)
@@ -478,7 +478,7 @@ def is_concat(I, O):
     return (False)
 
 
-def is_split_one_n1(I, O):
+def is_split_one_n1(I: Grid, O: Grid) -> Tuple[bool, Optional[int]]:
     split = [hsplit, vsplit]
     for s in split:
         try:
@@ -495,13 +495,13 @@ def is_split_one_n1(I, O):
     return (False)
 
 
-def is_get_first_object(I):
+def is_get_first_object(I: Grid) -> Grid:
     x1 = objects(I, T, T, T)
     x2 = first(x1)
     O = subgrid(x2, I)
     return O
 
-def is_replace(I, O):
+def is_replace(I: Grid, O: Grid) -> bool:
     # if is_diff_positon_color(I, O):
     # 检查替换操作
     for color1 in range(10):
@@ -511,7 +511,7 @@ def is_replace(I, O):
     # 如果没有匹配的组合，返回 False
     return (False)
 
-def is_switch(I, O):
+def is_switch(I: Grid, O: Grid) -> bool:
     # 检查交换操作
     for color1 in range(10):
         for color2 in range(10):
@@ -521,16 +521,14 @@ def is_switch(I, O):
     return (False)
 
 # 第 1 个函数  d10ecb37
-def solve_d10ecb37(I):
-    O = crop(I, ORIGIN, TWO_BY_TWO)
-    return O
+
 
 # def is_upscale(grid1: Grid, grid2: Grid) -> bool:
 #     x1 = hratio(grid1,grid2)
 #     x2 = upscale(grid1,x1)
 #     return grid2 == x2
 
-def is_fill_I_box_color(I,O,color=8):
+def is_fill_I_box_color(I: Grid, O: Grid, color: int = 8) -> bool:
     # x1 = asindices(I)
     # # x0 = outbox(x1)
     # x2 = box(x1)
@@ -724,7 +722,7 @@ def is_in_is_out_subgrid(grid1: Grid, grid2: Grid) -> bool:
     return is_out_is_in_subgrid(grid2, grid1)
 
 
-def is_out_is_in_subgrid(grid2: Grid, grid1: Grid) -> bool:
+def is_out_is_in_subgrid(grid1: Grid, grid2: Grid) -> Union[Tuple[bool, str, Tuple[int, int], Tuple[int, int]], bool]:
     """
     检查 grid1 是否是 grid2 的子网格。
 
@@ -807,8 +805,4 @@ def solv00_is_subgrid_grid(grid1: Grid, grid2: Grid) -> bool:
     return (False)
 
 # 第 2 个函数  74dd1130
-def solve_74dd1130(I):
-    O = dmirror(I)
-    return O
-# 9dfd6313(I) 合并到 74dd1130
-solve_9dfd6313 = solve_74dd1130
+
