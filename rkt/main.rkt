@@ -201,7 +201,7 @@
                    ;; 创建 Object 结构
                    (define new-object (Object obj-cells))
                    ;; 递归调用
-                   (outer-loop rest-locs new-visited (cons new-object objs)))))]))
+                   (outer-loop rest-locs new-visited (cons new-object objs))))))]))
 
   ;; 执行外层循环
   (define objs (outer-loop all-locs (set) '()))
@@ -328,7 +328,7 @@
                                     (Cell (Cell-value cell) (list (- (grid-height grid1) 1 i) j)))
                                     )
                                   (Object-cells obj))))
-              (set->list my-objects))))
+              (set->list my-objects)))
 
 (displayln "Flipped Objects (hmirror):")
 (for ([obj (set->list flipped-objects)])
