@@ -1,7 +1,8 @@
 ;; properties.rkt
 #lang rosette
 
-(require "data-structures.rkt")
+(require "data-structures.rkt"
+ "helpers.rkt")
 
 (provide object-size object-center object-colorcount)
 

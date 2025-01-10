@@ -14,7 +14,7 @@
 ;; 返回：
 ;; - 无（打印输出）
 (define (process-json-data json-data)
-  "处理单个 JSON 数据，提取对象并执行验证。"
+  ;;"处理单个 JSON 数据，提取对象并执行验证。"
 
   ;; 提取训练和测试数据
   (define train-data (hash-ref json-data 'train))
@@ -91,7 +91,12 @@
         (displayln prop))
 
       ;; 分隔符
-      (printf "----------------------------------------\n"))))
+      (printf "----------------------------------------\n")
+      )
+      ; (void)
+    )
+    (void)
+
 
   ;; 处理所有训练数据
   (printf "Processing Train Data:\n")
@@ -102,3 +107,11 @@
   (printf "Processing Test Data:\n")
   (for ([data-pair test-data])
     (handle-data-pair data-pair))
+
+)
+
+
+
+
+
+
