@@ -25,9 +25,14 @@
 (define (read-json-file filepath)
   "读取指定路径的 JSON 文件并解析为 Racket 数据结构。"
   (displayln (format "Reading JSON file: ~a" filepath)) ; 使用 displayln 进行打印
-  (define json-str (file->string filepath))
-  (define ip (open-input-string json-str))
-  (read-json ip))
+  (with-handlers ([exn:fail? (lambda (e)
+                                (displayln (format "Failed to read JSON file: ~a" filepath))
+                                (displayln (exn-message e))
+                                #f)])
+    (define json-str (file->string filepath))
+    (define ip (open-input-string json-str))
+    (read-json ip))
+)
 
 ;; 遍历目录并读取所有 JSON 文件
 ;; 参数：
@@ -36,14 +41,19 @@
 ;; - 解析后的 JSON 数据列表
 (define (read-all-json-files dir-path)
   "遍历指定目录，读取所有 JSON 文件并返回解析后的数据列表。"
-  ; (displayln (format "Listing files in directory: ~a" dir-path))
+  (displayln (format "Listing files in directory: ~a" dir-path))
   (define files (directory-list dir-path))
-  ; (displayln (format "Files found: ~a" files))
+  (displayln (format "Files found: ~a" files))
   (define json-files
     (filter (λ (f)
               (let ([f-str (path->string f)])
-                ; (displayln (format "Checking file: ~a" f-str))
-                (string-ci-suffix? ".json" f-str))) ; 使用自定义的不区分大小写的后缀检查
+                (displayln (format "Checking file: ~a" f-str))
+                (string-ci-suffix? ".json" (string-downcase f-str)))) ; 使用不区分大小写的后缀检查
             files))
-  ; (displayln (format "JSON files filtered: ~a" json-files))
-  (map read-json-file json-files))
+  (displayln (format "JSON files filtered: ~a" json-files))
+  ;; 构建完整路径并读取 JSON 文件
+  (map (λ (f)
+         (path->string (build-path dir-path f))) ; 使用 build-path 构建完整路径
+       json-files)
+  ;; 读取 JSON 文件
+  (map read-json-file (map (λ (f) (path->string (build-path dir-path f))) json-files)))

@@ -36,13 +36,18 @@
 
 (define (mostcolor grid)
   (define freq (make-hash))
-  (for*/list ([i (in-range (grid-height grid))]
-              [j (in-range (grid-width grid))])
+  (for* ([i (in-range (grid-height grid))]
+         [j (in-range (grid-width grid))])
     (define c (grid-ref grid (list i j)))
     (hash-update! freq c (λ (old) (+ old 1)) 1))
-  (define-values (bg _)
-    (argmax (hash->list freq) (λ (p) (cdr p))))
+  ;; 找出出现次数最多的 color
+  (define max-pair
+    (argmax (hash->list freq)
+            (λ (p) (cdr p)))) ; 这里使用 cdr 获取出现次数
+  (define bg        (car max-pair))
+  (define col-count (cdr max-pair))
   bg)
+
 
 (define (transpose grid)
   (apply map list grid))
