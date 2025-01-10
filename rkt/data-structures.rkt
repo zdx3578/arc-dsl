@@ -1,7 +1,9 @@
 ;; data-structures.rkt
 #lang rosette
 
-(provide Cell Object Grid)
+(provide (struct-out Cell)
+         (struct-out Object)
+         (struct-out Grid))
 
 ;; 定义一个 Cell 结构，包含颜色值和位置
 (struct Cell (value loc) #:transparent)

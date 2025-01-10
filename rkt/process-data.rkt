@@ -101,4 +101,4 @@
   ;; 处理所有测试数据
   (printf "Processing Test Data:\n")
   (for ([data-pair test-data])
-    (handle-data-pair data-pair)))
+    (handle-data-pair data-pair))
