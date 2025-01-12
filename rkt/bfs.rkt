@@ -40,20 +40,21 @@
 ;; - 如果 univalued?=#t，则对象内颜色必须与起点一样
 ;; - 如果 univalued?=#f，则只要不是背景色 bg 都可加入同一对象
 (define (bfs-one-object grid start-loc start-color univalued? bg diagonal?)
-  ;; grid: Grid
-  ;; start-loc: (i j)
-  ;; start-color: color
-  ;; univalued?: Boolean
-  ;; bg: 背景颜色 or #f
-  ;; diagonal?: Boolean
   (define h (grid-height grid))
   (define w (grid-width grid))
+  ;; 如果不想每次都打印，可以把这行注释掉
+  (displayln "=========bfs-one-object")
+  (displayln grid)
 
-  ;; BFS 内部循环
-  (define (loop queue visited acc)
+  (define (loop queue visited acc iteration)
+    ;; 每次循环都打印一些信息
+    (displayln (format "第~a轮循环: queue长度=~a, visited大小=~a"
+                       iteration
+                       (length queue)
+                       (set-count visited)))
     (cond
       [(null? queue)
-       acc]  ; 返回 acc (set-of-Cell)
+       acc]  ; BFS 结束，返回结果
       [else
        ;; 取队首
        (define cand  (car queue))
@@ -73,6 +74,12 @@
            [else
             acc]))
 
+      (displayln (format "cand=~a visited? ~a" cand (set-member? visited cand)))
+      (printf "cand=~v (list? ~a, vector? ~a)\n" cand (list? cand) (vector? cand))
+      (for ([v (in-set visited)])
+        (printf "visited item=~v (list? ~a, vector? ~a)\n" v (list? v) (vector? v)))
+
+
        ;; 找邻居
        (define neighs (neighbors cand h w diagonal?))
 
@@ -90,14 +97,12 @@
        (define visited2 (foldl set-add visited new-neighs))
        ;; 入队
        (define queue2 (append restq new-neighs))
-       (loop queue2 visited2 acc2)]))
 
-  ;; 初始已访问
-  (define visited0 (set start-loc))
-  ;; 待处理队列
-  (define queue0 (list start-loc))
-  ;; 收集本对象格子的集合
-  (define acc0 (set))
+       ;; 递归调用时，iteration + 1
+       (loop queue2 visited2 acc2 (add1 iteration))]))
 
-  ;; 启动 BFS
-  (loop queue0 visited0 acc0))
+  (define visited0 (set start-loc))         ; 初始已访问
+  (define queue0 (list start-loc))         ; 待处理队列
+  (define acc0 (set))                      ; 收集本对象格子的集合
+
+  (loop queue0 visited0 acc0 1))           ; 启动 BFS，从第1次循环开始

@@ -18,6 +18,8 @@
 (define (objects grid univalued? diagonal? without-bg?)
   (define h (grid-height grid))
   (define w (grid-width grid))
+  (displayln h)
+  (displayln w)
 
   ;; 确定背景颜色
   (define bg
@@ -30,6 +32,8 @@
     (for*/list ([i (in-range h)]
                 [j (in-range w)])
       (list i j)))
+
+  (displayln all-locs)
 
   ;; 定义一个辅助函数，从 Cell 提取位置
   (define (cell-loc cell)

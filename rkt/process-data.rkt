@@ -15,10 +15,14 @@
 ;; - 无（打印输出）
 (define (process-json-data json-data)
   ;;"处理单个 JSON 数据，提取对象并执行验证。"
+  (displayln json-data)
 
   ;; 提取训练和测试数据
   (define train-data (hash-ref json-data 'train))
   (define test-data (hash-ref json-data 'test))
+  ; (define train-data (hash-ref json-data "train"))
+  ; (define test-data  (hash-ref json-data "test"))
+
 
   ;; 定义所有8种参数组合
   (define param-combinations
@@ -35,8 +39,18 @@
   ;; 处理每个输入输出对
   (define (handle-data-pair data-pair)
     ;; 将输入和输出网格转换为 Grid 结构
-    (define input-grid (Grid (map list (hash-ref data-pair 'input))))
-    (define output-grid (Grid (map list (hash-ref data-pair 'output))))
+    (define input-grid (Grid (hash-ref data-pair 'input)))
+    (define output-grid (Grid (hash-ref data-pair 'output)))
+    ; (define input-grid (Grid (map list (hash-ref data-pair "input"))))
+    ; (define output-grid (Grid (map list (hash-ref data-pair "output"))))
+    ;;; (Grid (hash-ref data-pair 'input))
+    ;;; (Grid (hash-ref data-pair 'output))
+
+
+
+    (displayln input-grid)
+    (displayln output-grid)
+
 
     ;; 遍历所有参数组合
     (for ([params param-combinations])
