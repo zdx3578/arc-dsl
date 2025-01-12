@@ -3,8 +3,8 @@
 
 (require "data-structures.rkt"
          "helpers.rkt"
-         "objects.rkt"
-         "properties.rkt")
+         "objects.rkt")
+        ;;;  "properties.rkt")
 
 (provide process-json-data)
 
@@ -67,46 +67,46 @@
 
 
       ;; 计算输入对象的属性
-      (define input-props
-        (map (λ (obj)
-               (hash
-                'size (object-size obj)
-                'center (object-center obj)
-                'colorcount (object-colorcount obj)))
-             (set->list input-objects)))
+      ;;; (define input-props
+      ;;;   (map (λ (obj)
+      ;;;          (hash
+      ;;;           'size (object-size obj)
+      ;;;           'center (object-center obj)
+      ;;;           'colorcount (object-colorcount obj)))
+      ;;;        (set->list input-objects)))
 
-      ;; 计算输出对象的属性
-      (define output-props
-        (map (λ (obj)
-               (hash
-                'size (object-size obj)
-                'center (object-center obj)
-                'colorcount (object-colorcount obj)))
-             (set->list output-objects)))
+      ;;; ;; 计算输出对象的属性
+      ;;; (define output-props
+      ;;;   (map (λ (obj)
+      ;;;          (hash
+      ;;;           'size (object-size obj)
+      ;;;           'center (object-center obj)
+      ;;;           'colorcount (object-colorcount obj)))
+      ;;;        (set->list output-objects)))
 
       ;; 打印参数组合
       (printf "Parameters: univalued?=~a, diagonal?=~a, without_bg?=~a\n"
               univalued? diagonal? without-bg?)
 
-      ;; 打印输入对象
-      (printf "Input Objects:\n")
-      (for ([obj (set->list input-objects)])
-        (displayln (Object-cells obj)))
+      ;;; ;; 打印输入对象
+      ;;; (printf "Input Objects:\n")
+      ;;; (for ([obj (set->list input-objects)])
+      ;;;   (displayln (Object-cells obj)))
 
-      ;; 打印输入属性
-      (printf "Input Properties:\n")
-      (for ([prop input-props])
-        (displayln prop))
+      ;;; ;; 打印输入属性
+      ;;; (printf "Input Properties:\n")
+      ;;; (for ([prop input-props])
+      ;;;   (displayln prop))
 
-      ;; 打印输出对象
-      (printf "Output Objects:\n")
-      (for ([obj (set->list output-objects)])
-        (displayln (Object-cells obj)))
+      ;;; ;; 打印输出对象
+      ;;; (printf "Output Objects:\n")
+      ;;; (for ([obj (set->list output-objects)])
+      ;;;   (displayln (Object-cells obj)))
 
       ;; 打印输出属性
-      (printf "Output Properties:\n")
-      (for ([prop output-props])
-        (displayln prop))
+      ;;; (printf "Output Properties:\n")
+      ;;; (for ([prop output-props])
+      ;;;   (displayln prop))
 
       ;; 分隔符
       (printf "----------------------------------------\n")
