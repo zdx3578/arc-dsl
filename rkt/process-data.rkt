@@ -48,6 +48,10 @@
       (define input-objects (objects input-grid univalued? diagonal? without-bg?))
       (define output-objects (objects output-grid univalued? diagonal? without-bg?))
 
+      ;  (define input-objects (objects '/Users/zhangdexiang/github/VSAHDC/arc-dsl/rkt/training-data/97a05b5b'))
+      ; (define output-objects (objects '/Users/zhangdexiang/github/VSAHDC/arc-dsl/rkt/training-data/97a05b5b'))
+
+
       ;; 计算输入对象的属性
       (define input-props
         (map (λ (obj)
