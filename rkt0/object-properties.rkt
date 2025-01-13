@@ -2,7 +2,8 @@
 
 (provide (all-defined-out))
 
-// ...existing code...
+;;; o1 generation
+;;; // ...existing code...
 
 ;; 将 Patch 或 Object 转换为坐标集合
 (define (toindices element)
