@@ -2,6 +2,7 @@
 
 (require racket/set
          "objects.rkt"       ;; 假设里头有 (grid->objects grid), (rotate90 obj), (hmirror obj), etc.
+        "json-reader.rkt"
          "data-structures.rkt") ;; 包含我们对 (struct Object ...) 的定义等
 
 ;;; 核心思路：
@@ -155,3 +156,26 @@
 ;; 3) 你提到“后面再继续增加其他判断函数、特征判断”等：是典型在 DSL 里加 if-then-else / match-color / shape-check 之类，
 ;;    并在 interp 里实现 => Rosette 就能符号执行并自动搜索满足全部例子的程序。
 ;; ----------------------------------------------------------------------------
+
+
+
+
+
+;;; 代码说明
+;;; DSL 的定义
+
+;;; 在上面示例中，我用一种极简的写法 (define-type (Expr) ...) 并没有真正完成所有 parsing，而是用 (define-symbolic e1 e2 SymbolicAtomic) 强行把 e1,e2 变成符号变量(可取 'NoOp, 'Rot90 等)，再通过 (make-dsl e) 转成相应 AST。
+;;; 在实际项目里，如果你要合成更复杂的程序（多层嵌套/分支），可以用 Rosette 提供的 define-grammar 或者手写递归 symbolic AST 并 (assert (or (expr=NoOp e) (expr=Rot e sub) ...))。
+;;; 解释器 interp(e, obj)
+
+;;; 这里直接用了 (match e ...) 去匹配 DSL 的形式。
+;;; 当 DSL 中有分支逻辑或更多操作（比如 (IfColor c e1 e2)），就相应在 interp 里添加分支处理。
+;;; 多输入输出样例
+
+;;; 真实 ARC 里，你可能有 3~5 个 train 样例，每个都 (assert (equal? (interp symbolic-expr in-obj) out-obj))。
+;;; Rosette 会尝试在所有样例上都满足的表达式 => 最终 (solve) 若 sat?，则说明找到一个统一变换；否则 unsat。
+;;; 是否需要更多判断函数
+
+;;; 是。若你要表达更丰富的逻辑（如「若对象里包含颜色 7 则 hmirror，否则 rotate90」），就要在 DSL 里加 (If (HasColor c) e1 e2) 之类；
+;;; 同时也要在 interp 里写 ((If cond e1 e2) ...) => (if (interp-cond cond obj) (interp e1 obj) (interp e2 obj))；
+;;; 这样 Rosette 就能“搜索”包括判断在内的程序。
