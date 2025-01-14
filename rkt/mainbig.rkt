@@ -67,33 +67,33 @@
 
 
 
-(define-symbolic e1 e2 symbol?)
-;; 约束 e1,e2 只能是符号 'NoOp, 'Rot90, 'HMirror, 'VMirror
-(assert (or (eq? e1 'NoOp)
-            (eq? e1 'Rot90)
-            (eq? e1 'HMirror)
-            (eq? e1 'VMirror)))
-(assert (or (eq? e2 'NoOp)
-            (eq? e2 'Rot90)
-            (eq? e2 'HMirror)
-            (eq? e2 'VMirror)))
+;;; (define-symbolic e1 e2 symbol?)
+;;; ;; 约束 e1,e2 只能是符号 'NoOp, 'Rot90, 'HMirror, 'VMirror
+;;; (assert (or (eq? e1 'NoOp)
+;;;             (eq? e1 'Rot90)
+;;;             (eq? e1 'HMirror)
+;;;             (eq? e1 'VMirror)))
+;;; (assert (or (eq? e2 'NoOp)
+;;;             (eq? e2 'Rot90)
+;;;             (eq? e2 'HMirror)
+;;;             (eq? e2 'VMirror)))
 
-;; 把符号 'NoOp / 'Rot90 / 'HMirror / 'VMirror => 我们的 struct DSL
-(define (make-dsl sym)
-  (match sym
-    ['NoOp    (NoOp)]
-    ['Rot90   (Rot90 (NoOp))]
-    ['HMirror (HMirror (NoOp))]
-    ['VMirror (VMirror (NoOp))]
-    [_        (error "Unexpected symbol for DSL" sym)]))
+;;; ;; 把符号 'NoOp / 'Rot90 / 'HMirror / 'VMirror => 我们的 struct DSL
+;;; (define (make-dsl sym)
+;;;   (match sym
+;;;     ['NoOp    (NoOp)]
+;;;     ['Rot90   (Rot90 (NoOp))]
+;;;     ['HMirror (HMirror (NoOp))]
+;;;     ['VMirror (VMirror (NoOp))]
+;;;     [_        (error "Unexpected symbol for DSL" sym)]))
 
-;; 把 e1,e2 组成一个Compose
-(define (symbolic-expr e1 e2)
-  (Compose (make-dsl e1)
-           (make-dsl e2)))
+;;; ;; 把 e1,e2 组成一个Compose
+;;; (define (symbolic-expr e1 e2)
+;;;   (Compose (make-dsl e1)
+;;;            (make-dsl e2)))
 
 
-           
+
 
 ;;; ;; -------------------------------------------------------
 ;;; ;; 4) 简单示例：对单个例子加约束 => 调用 solve
@@ -151,37 +151,82 @@
 ;;         racket your-file.rkt <dir-of-json>
 ;; -------------------------------------------------------
 
-;; 6.1) 一个帮助函数：对某个 input-obj => output-obj，求解 DSL 变换
+;;; ;; 6.1) 一个帮助函数：对某个 input-obj => output-obj，求解 DSL 变换
+;;; (define (synthesize-transformation input-obj output-obj)
+;;;   ;; 定义一个新的符号变量 e
+;;;   ;; 这里示范另外一种做法：而不是 e1,e2，直接“整个 e”符号化
+;;;   ;;; (define-symbolic e (NoOp Rot90 HMirror VMirror Compose))
+;;;   ;; 上面这一行写法，仅仅是示例。实际可用 grammar-based approach，也可参照上面 e1,e2 的方式
+
+;;;   ;; 约束
+;;;   (define constraints
+;;;     (assert (equal? (interp e1 input-obj) output-obj)))
+
+;;;   (define r (solve constraints))
+;;;   (if r
+;;;     (begin
+;;;       (displayln "Solution found!")
+;;;       (define m (model r))   ; Rosette 2.x 风格
+;;;       (displayln m))
+;;;     (displayln "No solution...")))
+;;;   ;;; (if (sat? r)
+;;;   ;;;     (let ([sol (solution r)]
+;;;   ;;;           [found-e (lookup (solution r) e)])
+;;;   ;;;       (displayln "Found a transformation for this pair!")
+;;;   ;;;       (displayln (format " => DSL expr = ~a" found-e))
+;;;   ;;;       found-e)
+;;;   ;;;     (begin
+;;;   ;;;       (displayln "No solution found for this pair...")
+;;;   ;;;       #f)))
+
+
+
+
 (define (synthesize-transformation input-obj output-obj)
-  ;; 定义一个新的符号变量 e
-  ;; 这里示范另外一种做法：而不是 e1,e2，直接“整个 e”符号化
-  ;;; (define-symbolic e (NoOp Rot90 HMirror VMirror Compose))
-  ;; 上面这一行写法，仅仅是示例。实际可用 grammar-based approach，也可参照上面 e1,e2 的方式
-
-  ;; 约束
+  ;; step1: 定义 e 作为 symbol
+  (define-symbolic e symbol?)
+  ;; step2: 约束 e ∈ { 'NoOp, 'Rot90, 'HMirror, 'VMirror }
   (define constraints
-    (assert (equal? (interp e1 input-obj) output-obj)))
+    (assert (or (eq? e 'NoOp)
+                (eq? e 'Rot90)
+                (eq? e 'HMirror)
+                (eq? e 'VMirror))))
+  ;; step3: 另行定义一个 (translate e) => DSL struct
+  (define (translate sym)
+    (cond
+      [(eq? sym 'NoOp)    (NoOp)]
+      [(eq? sym 'Rot90)   (Rot90 (NoOp))]   ;; for example
+      [(eq? sym 'HMirror) (HMirror (NoOp))]
+      [(eq? sym 'VMirror) (VMirror (NoOp))]
+      [else (error "unrecognized DSL symbol" sym)]))
 
-  (define r (solve constraints))
+  ;; step4: 给 solve 加上 "interp" 的最终约束
+  ;;        note: in Rosette 2.x we must pass all constraints to (solve).
+  (define constraints2
+    (assert (equal? (interp (translate e) input-obj)
+                    output-obj)))
+
+  ;; unify them:
+  (define all-constraints (and constraints constraints2))
+
+  ;; step5: solve
+  (define r (solve all-constraints))
   (if r
-    (begin
-      (displayln "Solution found!")
-      (define m (model r))   ; Rosette 2.x 风格
-      (displayln m))
-    (displayln "No solution...")))
-  ;;; (if (sat? r)
-  ;;;     (let ([sol (solution r)]
-  ;;;           [found-e (lookup (solution r) e)])
-  ;;;       (displayln "Found a transformation for this pair!")
-  ;;;       (displayln (format " => DSL expr = ~a" found-e))
-  ;;;       found-e)
-  ;;;     (begin
-  ;;;       (displayln "No solution found for this pair...")
-  ;;;       #f)))
+      (begin
+        (displayln "Solution found!")
+        (define m (model r))
+        (displayln m))
+      (displayln "No solution...")))
+
+
+
+
 
 ;; 6.2) 主函数：读取目录 => 对 JSON => 取出第一个 train pair => 合成
 (define (main dir)
+(displayln "1 info!")
   (define all-json (read-all-json-files dir))  ;; => list of JSON data
+  (displayln "1 info!")
   (for ([json-data (in-list all-json)])
     (displayln "======================================")
     (displayln (format "Now process JSON: ~a" json-data))
