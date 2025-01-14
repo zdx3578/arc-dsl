@@ -72,6 +72,9 @@
 ;; 例：我们定义 "expr" = Compose e1 e2, e1 e2 都可以是 'NoOp', 'Rot90', 'HMirror', 'VMirror' 等
 ;;   也可以写成更复杂的递归 grammar.
 
+(define-type SymbolicAtomic
+  (U 'NoOp 'Rot90 'HMirror 'VMirror))
+  
 (define-symbolic e1 e2 SymbolicAtomic)
 ;; e1,e2 ∈ { 'NoOp, 'Rot90, 'HMirror, 'VMirror } for example
 (assert (or (eq? e1 'NoOp)

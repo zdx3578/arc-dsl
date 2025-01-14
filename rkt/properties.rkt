@@ -216,6 +216,17 @@
 ;; (displayln (cmirror test-obj))
 ;; ...
 
+(define (toindices piece)
+  (cond
+    ;;; [(grid? piece)
+    ;;;  (asindices piece)]
+    [(object? piece)
+     ;; 只取坐标
+     (for/set ([e (in-set piece)])
+       (second e))]
+    [else
+     (error "toindices: not a grid or object" piece)]))
+
 (define (ulcorner piece)
   (define idx (toindices piece))
   (list (apply min (for/list ([p (in-set idx)]) (first p)))
@@ -238,4 +249,4 @@
         (define ej (apply max (for/list ([p (in-set idx)]) (second p))))
         (for/set ([i (in-range si (add1 ei))]
                   [j (in-range sj (add1 ej))])
-          (list i j))))))
+          (list i j)))))

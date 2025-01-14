@@ -4,7 +4,10 @@
 (require "data-structures.rkt"   ;; 提供 (struct Grid ...)
          "objects.rkt"           ;; 提供 (objects grid univalued? diagonal? without-bg?)
          "json-reader.rkt"       ;; 提供 (read-all-json-files dir)
-         racket/set)
+         racket/set
+         typed/racket)
+
+;;; (require typed/racket)
 
 ;; -------------------------------------------------------------------------
 ;; 2) 定义符号 DSL (极简示例)：可做 rotate/hmirror/no-op 的组合
@@ -24,7 +27,7 @@
      (rotate90 (interp sub obj))]     ;; rotate90 => 你可以在 objects.rkt 或其他文件里实现
     [(HMirror sub)
      (hmirror (interp sub obj))]))    ;; hmirror 同理
-  )
+
 
 ;; -------------------------------------------------------------------------
 ;; 3) 定义一个合成函数，用 Rosette 符号化 e，并让 inputObjects => outputObjects
