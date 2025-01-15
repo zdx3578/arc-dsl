@@ -66,13 +66,29 @@
 
 
 
+(define param-combinations
+  (list
+   (list #f #f #f)
+   (list #f #f #t)
+   (list #f #t #f)
+   (list #f #t #t)
+   (list #t #f #f)
+   (list #t #f #t)
+   (list #t #t #f)
+   (list #t #t #t)))
 
+;; 基于单组参数生成对象
+(define (objects-with-params grid bools)
+  (define b1 (list-ref bools 0))
+  (define b2 (list-ref bools 1))
+  (define b3 (list-ref bools 2))
+  (objects grid b1 b2 b3)) ;; 根据你的实际签名调整
 
-
-
-
-
-
+;; 汇总生成：把 8 组参数的结果合并
+(define (all-objects-from-grid grid)
+  (for/fold ([acc (set)])
+            ([params (in-list param-combinations)])
+    (set-union acc (objects-with-params grid params))))
 
 
 
@@ -95,22 +111,28 @@
       (define input-grid  (Grid (hash-ref first-pair 'input)))
       (define output-grid (Grid (hash-ref first-pair 'output)))
 
-      (define input-objects  (objects input-grid  #f #f #f))
-      (define output-objects (objects output-grid #f #f #f))
+        ;; -- 1) 对 input-grid 进行 8 种参数组合 -> 并集
+        (define input-obj-set (all-objects-from-grid input-grid))
 
-      (define in-obj  (if (set-empty? input-objects)
-                          (set)
-                          (car (set->list input-objects))))
-      (define out-obj (if (set-empty? output-objects)
-                          (set)
-                          (car (set->list output-objects))))
+        ;; -- 2) 现在对 output-grid 的 8 种组合分别处理
+        (for ([out-param (in-list param-combinations)])
+          (define out-obj-set (objects-with-params output-grid out-param))
+          (displayln (format ">> Output param = ~a, count=~a"
+                             out-param
+                             (set-count out-obj-set)))
 
-      (displayln (format "Input obj=~a" in-obj))
-      (displayln (format "Output obj=~a" out-obj))
+          ;; 对 out-obj-set 中每一个对象
+          (for ([out-obj (in-set out-obj-set)])
+            (displayln (format "  Checking out-obj = ~a" out-obj))
 
-      ;; 调用我们写的合成函数
-      (synthesize-transformation in-obj out-obj))))
+            ;; 在 input-obj-set 里找能变换成 out-obj 的 in-obj
+            ;; 下面是最简单的做法：对所有 in-obj 都尝试合成
+            (for ([in-obj (in-set input-obj-set)])
+              (displayln (format "    Trying in-obj = ~a" in-obj))
+              (synthesize-transformation in-obj out-obj)))))
+      )
 
+    (displayln "Done!"))
 
 (provide main)
 
