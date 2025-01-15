@@ -23,16 +23,16 @@
 ;; 返回：
 ;; - 解析后的 JSON 数据（哈希表等）
 (define (read-json-file filepath)
-  "读取指定路径的 JSON 文件并解析为 Racket 数据结构。"
-  (displayln (format "Reading JSON file: ~a" filepath)) ; 使用 displayln 进行打印
+  "读取指定路径的 JSON 文件并解析为 Racket 数据结构，同时将文件名添加到数据中。"
   (with-handlers ([exn:fail? (lambda (e)
-                                (displayln (format "Failed to read JSON file: ~a" filepath))
-                                (displayln (exn-message e))
-                                #f)])
+                               (displayln (format "Failed to read JSON file: ~a" filepath))
+                               (displayln (exn-message e))
+                               #f)])
     (define json-str (file->string filepath))
     (define ip (open-input-string json-str))
-    (read-json ip))
-)
+    (define json-data (read-json ip))
+    ;; Add the filename as a key to the JSON data
+    (hash-set json-data 'filename filepath))) ; No need for path->string here
 
 ;; 遍历目录并读取所有 JSON 文件
 ;; 参数：
@@ -40,20 +40,14 @@
 ;; 返回：
 ;; - 解析后的 JSON 数据列表
 (define (read-all-json-files dir-path)
-  "遍历指定目录，读取所有 JSON 文件并返回解析后的数据列表。"
-  (displayln (format "Listing files in directory: ~a" dir-path))
+  "遍历指定目录，读取所有 JSON 文件并返回解析后的数据列表，每个数据包含文件名。"
   (define files (directory-list dir-path))
-  (displayln (format "Files found: ~a" files))
   (define json-files
     (filter (λ (f)
-              (let ([f-str (path->string f)])
-                (displayln (format "Checking file: ~a" f-str))
-                (string-ci-suffix? ".json" (string-downcase f-str)))) ; 使用不区分大小写的后缀检查
+              (let ([f-str (path->string f)]) ; Convert path to string for comparison
+                (string-ci-suffix? ".json" (string-downcase f-str))))
             files))
-  (displayln (format "JSON files filtered: ~a" json-files))
-  ;; 构建完整路径并读取 JSON 文件
+  ;; 读取 JSON 文件并返回包含文件名的数据
   (map (λ (f)
-         (path->string (build-path dir-path f))) ; 使用 build-path 构建完整路径
-       json-files)
-  ;; 读取 JSON 文件
-  (map read-json-file (map (λ (f) (path->string (build-path dir-path f))) json-files)))
+         (read-json-file (path->string (build-path dir-path f)))) ; Convert path to string
+       json-files))

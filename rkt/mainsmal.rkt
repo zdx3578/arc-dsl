@@ -4,7 +4,7 @@
 (require "data-structures.rkt"   ;; 提供 (struct Grid ...)
          "objects.rkt"           ;; 提供 (objects grid univalued? diagonal? without-bg?)
          "json-reader.rkt"       ;; 提供 (read-all-json-files dir)
-         racket/set
+        ;;;  racket/set
          typed/racket)
 
 ;;; (require typed/racket)
