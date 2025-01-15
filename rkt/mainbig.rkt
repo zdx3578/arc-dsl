@@ -111,9 +111,9 @@
   (define all-json (read-all-json-files dir))  ;; => list of JSON data
   ;;; (displayln "1 info!")
   (for ([json-data (in-list all-json)])
-    (displayln (format "Processing file: ~a" (hash-ref data 'filename)))
+    (displayln (format "Processing file: ~a" (hash-ref json-data 'filename)))
     (displayln "======================================")
-    (displayln (format "Processing file: ~a" (hash-ref data 'filename)))
+    (displayln (format "Processing file: ~a" (hash-ref json-data 'filename)))
     ;;; (displayln (format "Now process JSON: ~a" json-data))
 
     (define train-data (hash-ref json-data 'train))

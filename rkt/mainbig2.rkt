@@ -49,16 +49,14 @@
     [else (error "unrecognized transformation code" e)]))
 
 (define (synthesize-transformation input-obj output-obj)
-  (define-symbolic e integer?)
+
 
   (define all-conditions
     (and (>= e 0) (< e 4)  ;; Ensure e is within valid range
          (equal? (interp (translate e) input-obj)
                  output-obj)))
 
-  (define result
-    (solve
-      (assert all-conditions)))
+  (define result (solve (assert all-conditions)))
 
   (if result
       (begin
@@ -70,30 +68,8 @@
 
 
 
-;;; (define (synthesize-transformation input-obj output-obj)
-;;;   ;; 声明一个符号整数 e
-;;;   (define-symbolic e integer?)
 
-;;;   ;; 约束 e 的取值只能在 0..3
-;;;   (define (translate i)
-;;;     (cond
-;;;       [(= i 0) (NoOp)]
-;;;       [(= i 1) (Rot90 (NoOp))]
-;;;       [(= i 2) (HMirror (NoOp))]
-;;;       [(= i 3) (VMirror (NoOp))]
-;;;       [else    (error "Out of range! e=" i)]))
 
-;;;   (define all-conditions
-;;;     (and (<= 0 e) (<= e 3)
-;;;          (equal? (interp (translate e) input-obj)
-;;;                  output-obj)))
-
-;;;   (define result (solve (assert all-conditions)))
-;;;   (if result
-;;;       (begin
-;;;         (displayln "Solution found!")
-;;;         (displayln (model result)))
-;;;       (displayln "No solution...")))
 
 
 
