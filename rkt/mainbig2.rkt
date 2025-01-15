@@ -58,11 +58,14 @@
 
   (define result (solve (assert all-conditions)))
 
-  (if result
-      (begin
-        (displayln "Solution found!")
-        (displayln (model result)))
-      (displayln "No solution...")))
+  (cond
+    [(sat? result)
+     (displayln "Solution found!")
+     (displayln (model result))]
+    [(unsat? result)
+     (displayln "No solution...")]
+    [else
+     (displayln "Unknown result...")]))
 
 
 
@@ -115,20 +118,21 @@
         (define input-obj-set (all-objects-from-grid input-grid))
 
         ;; -- 2) 现在对 output-grid 的 8 种组合分别处理
+        (displayln "=========================Output=========================")
         (for ([out-param (in-list param-combinations)])
           (define out-obj-set (objects-with-params output-grid out-param))
-          (displayln (format ">> Output param = ~a, count=~a"
+          (displayln (format "----------ieration----------->> Output param = ~a, count=~a"
                              out-param
                              (set-count out-obj-set)))
 
           ;; 对 out-obj-set 中每一个对象
           (for ([out-obj (in-set out-obj-set)])
-            (displayln (format "  Checking out-obj = ~a" out-obj))
+            (displayln (format " ----------ieration------ Checking out-obj = ~a" out-obj))
 
             ;; 在 input-obj-set 里找能变换成 out-obj 的 in-obj
             ;; 下面是最简单的做法：对所有 in-obj 都尝试合成
             (for ([in-obj (in-set input-obj-set)])
-              (displayln (format "    Trying in-obj = ~a" in-obj))
+              (displayln (format " ----------ieration   Trying in-obj = ~a" in-obj))
               (synthesize-transformation in-obj out-obj)))))
       )
 
