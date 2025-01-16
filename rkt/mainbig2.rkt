@@ -100,40 +100,72 @@
 ;;; (displayln "1 info!")
   (define all-json (read-all-json-files dir))  ;; => list of JSON data
   ;;; (displayln "1 info!")
-  (for ([json-data (in-list all-json)])
-    (displayln "======================================")
-    ;;; (displayln (format "Now process JSON: ~a" json-data))
-    (displayln (format "Processing file: ~a" (hash-ref json-data 'filename)))
+  (let ([file-iter 0])
+    (for ([json-data (in-list all-json)])
+      (set! file-iter (add1 file-iter))
 
-    (define train-data (hash-ref json-data 'train))
-    (define test-data  (hash-ref json-data 'test))
+      ;; 显示文件序号和文件名
+      (displayln "=================================================================")
+      (displayln (format "=================================================================File-Iteration #~a | filename: ~a"
+                         file-iter
+                         (hash-ref json-data 'filename)))
+
+      ;; 读取 train/test
+      (define train-data (hash-ref json-data 'train))
+      (define test-data  (hash-ref json-data 'test))
+
 
     ;; 只示范：拿第一个 train pair
-    (define first-pair (if (null? train-data) #f (car train-data)))
-    (when first-pair
-      (define input-grid  (Grid (hash-ref first-pair 'input)))
-      (define output-grid (Grid (hash-ref first-pair 'output)))
+      (let ([pair-iter 0])
+        (for ([pair (in-list train-data)])
+          (set! pair-iter (add1 pair-iter))
+
+          (displayln "-----------------------------------------------------------------")
+          (displayln (format " =================================================================File-Iteration #~a  ~a ------- Now processing train pair #: ~a" file-iter (hash-ref json-data 'filename) pair-iter))
+
+          ;; 取出 input-grid, output-grid
+          (define input-grid  (Grid (hash-ref pair 'input)))
+          (define output-grid (Grid (hash-ref pair 'output)))
+
 
         ;; -- 1) 对 input-grid 进行 8 种参数组合 -> 并集
         (define input-obj-set (all-objects-from-grid input-grid))
+        (displayln (format "  input-obj-set count = ~a" (set-count input-obj-set)))
+
 
         ;; -- 2) 现在对 output-grid 的 8 种组合分别处理
-        (displayln "=========================Output=========================")
+        ;;; (displayln "=========================Output=========================")
+        (let ([outer-iter 0])
         (for ([out-param (in-list param-combinations)])
+          ;; 每进一次循环，计数 + 1
+          (set! outer-iter (add1 outer-iter))
+
           (define out-obj-set (objects-with-params output-grid out-param))
-          (displayln (format "----------ieration----------->> Output param = ~a, count=~a"
-                             out-param
-                             (set-count out-obj-set)))
+          (displayln "  ")
+          (displayln "  ")
+          (displayln (format "-----------------------------------------File #~a ~a train pair #: ~a-------------outobj param-iteration ~a---- Output param = ~a, count = ~a"
+                            file-iter (hash-ref json-data 'filename) pair-iter outer-iter
+                            out-param
+                            (set-count out-obj-set)))
 
-          ;; 对 out-obj-set 中每一个对象
-          (for ([out-obj (in-set out-obj-set)])
-            (displayln (format " ----------ieration------ Checking out-obj = ~a" out-obj))
+          ;; 中层循环：同理，定义一个 mid-iter 计数器
+          (let ([mid-iter 0])
+            (for ([out-obj (in-set out-obj-set)])
+              (set! mid-iter (add1 mid-iter))
+              (displayln "  ")
+              (displayln "  ")
+              (displayln (format "------------------File #~a -- train pair #: ~a--outobj param- ~a--------------out-obj iteration ~a------ Checking out-obj = ~a"
+                                file-iter pair-iter outer-iter mid-iter
+                                out-obj))
 
-            ;; 在 input-obj-set 里找能变换成 out-obj 的 in-obj
-            ;; 下面是最简单的做法：对所有 in-obj 都尝试合成
-            (for ([in-obj (in-set input-obj-set)])
-              (displayln (format " ----------ieration   Trying in-obj = ~a" in-obj))
-              (synthesize-transformation in-obj out-obj)))))
+              ;; 最内层循环：再定义一个 inner-iter 计数器
+              (let ([inner-iter 0])
+                (for ([in-obj (in-set input-obj-set)])
+                  (set! inner-iter (add1 inner-iter))
+                  (displayln (format "-------- ~a  -   in-obj = ~a"
+                                    inner-iter
+                                    in-obj))
+                  (synthesize-transformation in-obj out-obj))))))))))
       )
 
     (displayln "Done!"))
