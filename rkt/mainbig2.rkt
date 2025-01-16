@@ -71,25 +71,25 @@
      (define sub-out (interp sub obj))
      (if (valid-rot90? sub-out)
          (rotate90 sub-out)
-         #f))]
+         #f)]
 
     [(HMirror sub)
      (define sub-out (interp sub obj))
      (if (valid-hmirror? sub-out)
          (hmirror sub-out)
-         #f))]
+         #f)]
 
     [(VMirror sub)
      (define sub-out (interp sub obj))
      (if (valid-vmirror? sub-out)
          (vmirror sub-out)
-         #f))]
+         #f)]
 
     [(Compose e1 e2)
      (define r1 (interp e1 obj))
      (if r1
          (interp e2 r1)
-         #f))]))
+         #f)]))
 
 ;; -------------------------------------------------------
 ;; 4) 合成逻辑：我们用整型 e 代替符号，范围是 [0..3]

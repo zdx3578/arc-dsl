@@ -4,40 +4,96 @@
 ;; 0) 引入我们需要的模块
 ;; -------------------------------------------------------
 (require racket/set
-        ;;;  typed/racket
          rosette/lib/match
-         "objects.rkt"
+         "objects.rkt"          ;; (objects grid b1 b2 b3)
          "properties.rkt"
-        ;;;  "typed-part.rkt"     ;; 假设里头有 (objects grid ...) (rotate90 obj), (hmirror obj), (vmirror obj) 等
-         "json-reader.rkt"       ;; 提供 (read-all-json-files dir)
-         "data-structures.rkt")  ;; 包含我们对 (struct Grid ...) 以及 (struct Object ...) 的定义等
+         "json-reader.rkt"      ;; (read-all-json-files dir)
+         "data-structures.rkt") ;; (struct Grid ...) 等
 
+;; -------------------------------------------------------
+;; 1) 定义一些辅助：object 宽/高，以及各个操作的有效性检查
+;; -------------------------------------------------------
 
+;; object-width / object-height 仅作演示，
+;; 通过 object-bbox 来拿到 min/max 行列，再计算宽高。
+(define (object-width obj)
+  (define-values (rmin rmax cmin cmax) (object-bbox obj))
+  (if (set-empty? obj)
+      0
+      (add1 (- rmax rmin)))) ;; 行的范围(含端点) => 宽
+
+(define (object-height obj)
+  (define-values (rmin rmax cmin cmax) (object-bbox obj))
+  (if (set-empty? obj)
+      0
+      (add1 (- cmax cmin)))) ;; 列的范围(含端点) => 高
+
+;; 判断 Rot90 的可行性(这里只是示例, 你可换成别的规则)
+(define (valid-rot90? obj)
+  (and (object? obj)
+       (not (set-empty? obj))          ;; 不要空对象
+       (> (object-width obj) 1)
+       (> (object-height obj) 1)))
+
+;; 判断 HMirror 的可行性
+(define (valid-hmirror? obj)
+  (and (object? obj)
+       (not (set-empty? obj))
+       (> (object-width obj) 0)
+       ;; 当然你可以添加更多逻辑……
+       #t))
+
+;; 判断 VMirror 的可行性
+(define (valid-vmirror? obj)
+  (and (object? obj)
+       (not (set-empty? obj))
+       (> (object-height obj) 0)
+       #t))
+
+;; -------------------------------------------------------
+;; 2) DSL 结构体
+;; -------------------------------------------------------
 (struct NoOp ()          #:transparent)
 (struct Rot90 (sub)      #:transparent)
 (struct HMirror (sub)    #:transparent)
 (struct VMirror (sub)    #:transparent)
 (struct Compose (e1 e2)  #:transparent)
 
-
+;; -------------------------------------------------------
+;; 3) 解释器：在执行每个操作前，先调检查器
+;; -------------------------------------------------------
 (define (interp expr obj)
   (match expr
     [(NoOp)
      obj]
+
     [(Rot90 sub)
-     (rotate90 (interp sub obj))]
+     (define sub-out (interp sub obj))
+     (if (valid-rot90? sub-out)
+         (rotate90 sub-out)
+         #f)]
+
     [(HMirror sub)
-     (hmirror (interp sub obj))]
+     (define sub-out (interp sub obj))
+     (if (valid-hmirror? sub-out)
+         (hmirror sub-out)
+         #f)]
+
     [(VMirror sub)
-     (vmirror (interp sub obj))]
+     (define sub-out (interp sub obj))
+     (if (valid-vmirror? sub-out)
+         (vmirror sub-out)
+         #f)]
+
     [(Compose e1 e2)
-     (let ([r1 (interp e1 obj)])
-       (interp e2 r1))]))
+     (define r1 (interp e1 obj))
+     (if r1
+         (interp e2 r1)
+         #f)]))
 
-
-
-
-
+;; -------------------------------------------------------
+;; 4) 合成逻辑：我们用整型 e 代替符号，范围是 [0..3]
+;; -------------------------------------------------------
 (define-symbolic e integer?)
 
 (define (translate e)
@@ -49,15 +105,13 @@
     [else (error "unrecognized transformation code" e)]))
 
 (define (synthesize-transformation input-obj output-obj)
-
-
   (define all-conditions
     (and (>= e 0) (< e 4)  ;; Ensure e is within valid range
+         ;; interp 出来的结果必须等于 output-obj
          (equal? (interp (translate e) input-obj)
                  output-obj)))
 
   (define result (solve (assert all-conditions)))
-
   (cond
     [(sat? result)
      (displayln "Solution found!")
@@ -67,8 +121,9 @@
     [else
      (displayln "Unknown result...")]))
 
-
-
+;; -------------------------------------------------------
+;; 5) 8 种布尔参数组合 & 汇总生成
+;; -------------------------------------------------------
 (define param-combinations
   (list
    (list #f #f #f)
@@ -80,22 +135,20 @@
    (list #t #t #f)
    (list #t #t #t)))
 
-;; 基于单组参数生成对象
 (define (objects-with-params grid bools)
   (define b1 (list-ref bools 0))
   (define b2 (list-ref bools 1))
   (define b3 (list-ref bools 2))
   (objects grid b1 b2 b3)) ;; 根据你的实际签名调整
 
-;; 汇总生成：把 8 组参数的结果合并
 (define (all-objects-from-grid grid)
   (for/fold ([acc (set)])
             ([params (in-list param-combinations)])
     (set-union acc (objects-with-params grid params))))
 
-
-
-;; 6.2) 主函数：读取目录 => 对 JSON => 取出第一个 train pair => 合成
+;; -------------------------------------------------------
+;; 6) 主函数 main
+;; -------------------------------------------------------
 (define (main dir)
 ;;; (displayln "1 info!")
   (define all-json (read-all-json-files dir))  ;; => list of JSON data
