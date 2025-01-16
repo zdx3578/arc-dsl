@@ -37,71 +37,61 @@
 
 
 
+
+(define-symbolic e integer?)
+
+(define (translate e)
+  (cond
+    [(= e 0) (NoOp)]
+    [(= e 1) (Rot90 (NoOp))]
+    [(= e 2) (HMirror (NoOp))]
+    [(= e 3) (VMirror (NoOp))]
+    [else (error "unrecognized transformation code" e)]))
+
 (define (synthesize-transformation input-obj output-obj)
-  ;; 把 e 定义成一个只能取 'NoOp 'Rot90 'HMirror 'VMirror 的枚举
-  (define DSL-ops (list 'NoOp 'Rot90 'HMirror 'VMirror))
 
-  ;; 2) 定义 e 为一个整型符号变量
-  (define-symbolic e integer?)
 
-  ;; 3) 加约束：e 必须在 [0, 3] 之间
-  (assert (<= 0 e))
-  (assert (<= e (sub1 (length DSL-ops))))
-
-  ;; 4) 你的 translate 函数，用数字 => 具体 DSL 操作
-  (define (translate idx)
-    (match (list-ref DSL-ops idx)
-      ['NoOp    (NoOp)]
-      ['Rot90   (Rot90 (NoOp))]
-      ['HMirror (HMirror (NoOp))]
-      ['VMirror (VMirror (NoOp))]
-      [_        (error "unrecognized DSL symbol")]))
-
-  ;; 然后跟你之前类似地去 interp + check ...
   (define all-conditions
-    (equal? (interp (translate e) input-obj)
-            output-obj))
+    (and (>= e 0) (< e 4)  ;; Ensure e is within valid range
+         (equal? (interp (translate e) input-obj)
+                 output-obj)))
 
-  (define result
-    (solve (assert all-conditions)))
+  (define result (solve (assert all-conditions)))
 
-  (if result
-      (begin
-        (displayln "Solution found!")
-        (displayln (model result)))
-      (displayln "No solution...")))
-
-
-
-
-
-;;; (define (synthesize-transformation input-obj output-obj)
-;;;   ;; 声明一个符号整数 e
-;;;   (define-symbolic e integer?)
-
-;;;   ;; 约束 e 的取值只能在 0..3
-;;;   (define (translate i)
-;;;     (cond
-;;;       [(= i 0) (NoOp)]
-;;;       [(= i 1) (Rot90 (NoOp))]
-;;;       [(= i 2) (HMirror (NoOp))]
-;;;       [(= i 3) (VMirror (NoOp))]
-;;;       [else    (error "Out of range! e=" i)]))
-
-;;;   (define all-conditions
-;;;     (and (<= 0 e) (<= e 3)
-;;;          (equal? (interp (translate e) input-obj)
-;;;                  output-obj)))
-
-;;;   (define result (solve (assert all-conditions)))
-;;;   (if result
-;;;       (begin
-;;;         (displayln "Solution found!")
-;;;         (displayln (model result)))
-;;;       (displayln "No solution...")))
+  (cond
+    [(sat? result)
+     (displayln "Solution found!")
+     (displayln (model result))]
+    [(unsat? result)
+     (displayln "No solution...")]
+    [else
+     (displayln "Unknown result...")]))
 
 
 
+(define param-combinations
+  (list
+   (list #f #f #f)
+   (list #f #f #t)
+   (list #f #t #f)
+   (list #f #t #t)
+   (list #t #f #f)
+   (list #t #f #t)
+   (list #t #t #f)
+   (list #t #t #t)))
+
+;; 基于单组参数生成对象
+(define (objects-with-params grid bools)
+  (define b1 (list-ref bools 0))
+  (define b2 (list-ref bools 1))
+  (define b3 (list-ref bools 2))
+  (objects grid b1 b2 b3)) ;; 根据你的实际签名调整
+
+;; 汇总生成：把 8 组参数的结果合并
+(define (all-objects-from-grid grid)
+  (for/fold ([acc (set)])
+            ([params (in-list param-combinations)])
+    (set-union acc (objects-with-params grid params))))
 
 
 
@@ -110,37 +100,75 @@
 ;;; (displayln "1 info!")
   (define all-json (read-all-json-files dir))  ;; => list of JSON data
   ;;; (displayln "1 info!")
-  (for ([json-data (in-list all-json)])
-    (displayln (format "Processing file: ~a" (hash-ref json-data 'filename)))
-    (displayln "======================================")
-    (displayln (format "Processing file: ~a" (hash-ref json-data 'filename)))
-    ;;; (displayln (format "Now process JSON: ~a" json-data))
+  (let ([file-iter 0])
+    (for ([json-data (in-list all-json)])
+      (set! file-iter (add1 file-iter))
 
-    (define train-data (hash-ref json-data 'train))
-    (define test-data  (hash-ref json-data 'test))
+      ;; 显示文件序号和文件名
+      (displayln "=================================================================")
+      (displayln (format "=================================================================File-Iteration #~a | filename: ~a"
+                         file-iter
+                         (hash-ref json-data 'filename)))
+
+      ;; 读取 train/test
+      (define train-data (hash-ref json-data 'train))
+      (define test-data  (hash-ref json-data 'test))
+
 
     ;; 只示范：拿第一个 train pair
-    (define first-pair (if (null? train-data) #f (car train-data)))
-    (when first-pair
-      (define input-grid  (Grid (hash-ref first-pair 'input)))
-      (define output-grid (Grid (hash-ref first-pair 'output)))
+      (let ([pair-iter 0])
+        (for ([pair (in-list train-data)])
+          (set! pair-iter (add1 pair-iter))
 
-      (define input-objects  (objects input-grid  #f #f #f))
-      (define output-objects (objects output-grid #f #f #f))
+          (displayln "-----------------------------------------------------------------")
+          (displayln (format " =================================================================File-Iteration #~a  ~a ------- Now processing train pair #: ~a" file-iter (hash-ref json-data 'filename) pair-iter))
 
-      (define in-obj  (if (set-empty? input-objects)
-                          (set)
-                          (car (set->list input-objects))))
-      (define out-obj (if (set-empty? output-objects)
-                          (set)
-                          (car (set->list output-objects))))
+          ;; 取出 input-grid, output-grid
+          (define input-grid  (Grid (hash-ref pair 'input)))
+          (define output-grid (Grid (hash-ref pair 'output)))
 
-      (displayln (format "Input obj=~a" in-obj))
-      (displayln (format "Output obj=~a" out-obj))
 
-      ;; 调用我们写的合成函数
-      (synthesize-transformation in-obj out-obj))))
+        ;; -- 1) 对 input-grid 进行 8 种参数组合 -> 并集
+        (define input-obj-set (all-objects-from-grid input-grid))
+        (displayln (format "  input-obj-set count = ~a" (set-count input-obj-set)))
 
+
+        ;; -- 2) 现在对 output-grid 的 8 种组合分别处理
+        ;;; (displayln "=========================Output=========================")
+        (let ([outer-iter 0])
+        (for ([out-param (in-list param-combinations)])
+          ;; 每进一次循环，计数 + 1
+          (set! outer-iter (add1 outer-iter))
+
+          (define out-obj-set (objects-with-params output-grid out-param))
+          (displayln "  ")
+          (displayln "  ")
+          (displayln (format "-----------------------------------------File #~a ~a train pair #: ~a-------------outobj param-iteration ~a---- Output param = ~a, count = ~a"
+                            file-iter (hash-ref json-data 'filename) pair-iter outer-iter
+                            out-param
+                            (set-count out-obj-set)))
+
+          ;; 中层循环：同理，定义一个 mid-iter 计数器
+          (let ([mid-iter 0])
+            (for ([out-obj (in-set out-obj-set)])
+              (set! mid-iter (add1 mid-iter))
+              (displayln "  ")
+              (displayln "  ")
+              (displayln (format "------------------File #~a -- train pair #: ~a--outobj param- ~a--------------out-obj iteration ~a------ Checking out-obj = ~a"
+                                file-iter pair-iter outer-iter mid-iter
+                                out-obj))
+
+              ;; 最内层循环：再定义一个 inner-iter 计数器
+              (let ([inner-iter 0])
+                (for ([in-obj (in-set input-obj-set)])
+                  (set! inner-iter (add1 inner-iter))
+                  (displayln (format "-------- ~a  -   in-obj = ~a"
+                                    inner-iter
+                                    in-obj))
+                  (synthesize-transformation in-obj out-obj))))))))))
+      )
+
+    (displayln "Done!"))
 
 (provide main)
 
