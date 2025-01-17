@@ -5,6 +5,7 @@
 ;; -------------------------------------------------------
 (require racket/set
          rosette/lib/match
+        ;;;  racket/control
          "objects.rkt"          ;; (objects grid b1 b2 b3)
          "properties.rkt"
          "json-reader.rkt"      ;; (read-all-json-files dir)
@@ -62,49 +63,81 @@
 ;; -------------------------------------------------------
 ;; 3) 解释器：在执行每个操作前，先调检查器
 ;; -------------------------------------------------------
-(define (interp expr in-obj)
+(define (interp expr obj)
   (match expr
     [(NoOp)
-     ;; NoOp 不变，直接返回 in-obj
-     in-obj]
+     obj]
 
     [(Rot90 sub)
-     (define sub-out (interp sub in-obj))
-     (if sub-out
-         (let ([result (rotate90 sub-out)])
-           (let ([expected (list (second (shape sub-out))
-                                 (first (shape sub-out)))]
-                 [actual   (shape result)])
-             (if (equal? actual expected)
-                 result
-                 #f)))
+     (define sub-out (interp sub obj))
+     (if (valid-rot90? sub-out)
+         (rotate90 sub-out)
          #f)]
 
     [(HMirror sub)
-     (define sub-out (interp sub in-obj))
-     (if sub-out
-         (let ([result (hmirror sub-out)])
-           ;; hmirror 不会改变 shape
-           (if (equal? (shape result) (shape sub-out))
-               result
-               #f))
+     (define sub-out (interp sub obj))
+     (if (valid-hmirror? sub-out)
+         (hmirror sub-out)
          #f)]
 
     [(VMirror sub)
-     (define sub-out (interp sub in-obj))
-     (if sub-out
-         (let ([result (vmirror sub-out)])
-           ;; vmirror 不会改变 shape
-           (if (equal? (shape result) (shape sub-out))
-               result
-               #f))
+     (define sub-out (interp sub obj))
+     (if (valid-vmirror? sub-out)
+         (vmirror sub-out)
          #f)]
 
     [(Compose e1 e2)
-     (define r1 (interp e1 in-obj))
+     (define r1 (interp e1 obj))
      (if r1
          (interp e2 r1)
          #f)]))
+
+
+;;; (define (interp expr in-obj)
+;;;   (match expr
+;;;     [(NoOp)
+;;;      ;; NoOp 不变，直接返回 in-obj
+;;;      in-obj]
+
+;;;     [(Rot90 sub)
+;;;      (define sub-out (interp sub in-obj))
+;;;      (if sub-out
+;;;          (let ([result (rotate90 sub-out)])
+;;;            (let ([expected (list (second (shape sub-out))
+;;;                                  (first (shape sub-out)))]
+;;;                  [actual   (shape result)])
+;;;              (if (equal? actual expected)
+;;;                  result
+;;;                  #f)))
+;;;          #f)]
+
+;;;     [(HMirror sub)
+;;;      (define sub-out (interp sub in-obj))
+;;;      (if sub-out
+;;;          (let ([result (hmirror sub-out)])
+;;;            ;; hmirror 不会改变 shape
+;;;            (if (equal? (shape result) (shape sub-out))
+;;;                result
+;;;                #f))
+;;;          #f)]
+
+;;;     [(VMirror sub)
+;;;      (define sub-out (interp sub in-obj))
+;;;      (if sub-out
+;;;          (let ([result (vmirror sub-out)])
+;;;            ;; vmirror 不会改变 shape
+;;;            (if (equal? (shape result) (shape sub-out))
+;;;                result
+;;;                #f))
+;;;          #f)]
+
+;;;     [(Compose e1 e2)
+;;;      (define r1 (interp e1 in-obj))
+;;;      (if r1
+;;;          (interp e2 r1)
+;;;          #f)]))
+
+
 
 ;; -------------------------------------------------------
 ;; 4) 合成逻辑：我们用整型 e 代替符号，范围是 [0..3]
@@ -121,22 +154,33 @@
 
 (define (synthesize-transformation input-obj output-obj)
 
+  (if (equal? input-obj output-obj)
+    (begin
+      (displayln "Solution found => NoOp"  )
+      (displayln "#hash((e . 0))")  ;; 或者任何你要输出的信息
+      (displayln input-obj )
+      'sat)  ;; 函数的返回值
 
-  (define all-conditions
-    (and (>= e 0) (< e 4)  ;; Ensure e is within valid range
-         ;; interp 出来的结果必须等于 output-obj
-         (equal? (interp (translate e) input-obj)
-                 output-obj)))
+    ;; 否则才做后续的 SMT 求解
+    (begin
 
-  (define result (solve (assert all-conditions)))
-  (cond
-    [(sat? result)
-     (displayln "Solution found!")
-     (displayln (model result))]
-    [(unsat? result)
-     (displayln "No solution...")]
-    [else
-     (displayln "Unknown result...")]))
+      (define all-conditions
+        (and (>= e 0) (< e 4)  ;; Ensure e is within valid range
+            ;; interp 出来的结果必须等于 output-obj
+            (equal? (interp (translate e) input-obj)
+                    output-obj)))
+
+      (define result (solve (assert all-conditions)))
+      (cond
+        [(sat? result)
+        (displayln "Solution found!  "  )
+         (displayln input-obj )
+        (displayln (model result))]
+        [(unsat? result)
+        (displayln " . . . . . . . . ")]
+        [else
+        (displayln "Unknown result...")]))
+    ))
 
 ;; -------------------------------------------------------
 ;; 5) 8 种布尔参数组合 & 汇总生成
@@ -232,9 +276,9 @@
               (let ([inner-iter 0])
                 (for ([in-obj (in-set input-obj-set)])
                   (set! inner-iter (add1 inner-iter))
-                  (displayln (format "-------- ~a  -   in-obj = ~a"
-                                    inner-iter
-                                    in-obj))
+                  ;;; (displayln (format "-------- ~a  -   in-obj = ~a"
+                  ;;;                   inner-iter
+                  ;;;                   in-obj))
                   (synthesize-transformation in-obj out-obj))))))))))
       )
 
