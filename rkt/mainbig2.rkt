@@ -142,6 +142,22 @@
 ;; -------------------------------------------------------
 ;; 4) 合成逻辑：我们用整型 e 代替符号，范围是 [0..3]
 ;; -------------------------------------------------------
+
+(define (simple-check in-obj out-obj)
+  (cond
+    [(equal? in-obj out-obj)
+     'NoOp]
+    [(equal? (rotate90 in-obj) out-obj)
+     'Rot90]
+    [(equal? (hmirror in-obj) out-obj)
+     'HMirror]
+    [(equal? (vmirror in-obj) out-obj)
+     'VMirror]
+    [else
+     #f]))  ;; #f 表示没找到匹配的变换
+
+
+
 (define-symbolic e integer?)
 
 (define (translate e)
