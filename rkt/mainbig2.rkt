@@ -169,34 +169,49 @@
     [else (error "unrecognized transformation code" e)]))
 
 (define (synthesize-transformation input-obj output-obj)
+  ;; 1. 先做一次简单的快速检测
+  (define check-result (simple-check input-obj output-obj))
 
-  (if (equal? input-obj output-obj)
-    (begin
-      (displayln "Solution found => NoOp"  )
-      (displayln "#hash((e . 0))")  ;; 或者任何你要输出的信息
-      (displayln input-obj )
-      'sat)  ;; 函数的返回值
+  (cond
+    ;; 1.1 匹配到了简单变换，直接输出结果
+    [check-result
+     (displayln (string-append "Solution found => " (symbol->string check-result)))
+     ;; 可以根据 check-result 的不同，输出不同的 e 值
+     (displayln
+      (string-append
+       "#hash((e . "
+       (case check-result
+         [(NoOp)     "0"]
+         [(Rot90)    "1"]
+         [(HMirror)  "2"]
+         [(VMirror)  "3"])
+       "))"))
+     (displayln input-obj)
+     'sat]  ;; 函数返回值
 
-    ;; 否则才做后续的 SMT 求解
-    (begin
+    ;; 1.2 否则进入 SMT 求解
+    [else
+     ;; 如果没有提前返回，则执行后续与 SMT 相关的逻辑
+     (define all-conditions
+       (and
+         (>= e 0)
+         (< e 4)
+         ;; interp出来的结果必须等于 output-obj
+         (equal? (interp (translate e) input-obj) output-obj)))
 
-      (define all-conditions
-        (and (>= e 0) (< e 4)  ;; Ensure e is within valid range
-            ;; interp 出来的结果必须等于 output-obj
-            (equal? (interp (translate e) input-obj)
-                    output-obj)))
-
-      (define result (solve (assert all-conditions)))
-      (cond
-        [(sat? result)
-        (displayln "Solution found!  "  )
-         (displayln input-obj )
+     (define result (solve (assert all-conditions)))
+     (cond
+       [(sat? result)
+        (displayln "Solution found by SMT!")
+        (displayln input-obj)
         (displayln (model result))]
-        [(unsat? result)
-        (displayln " . . . . . . . . ")]
-        [else
-        (displayln "Unknown result...")]))
-    ))
+
+       [(unsat? result)
+        (displayln "SMT result: unsat. No solution!")]
+
+       [else
+        (displayln "SMT result: unknown...")])]))
+
 
 ;; -------------------------------------------------------
 ;; 5) 8 种布尔参数组合 & 汇总生成
