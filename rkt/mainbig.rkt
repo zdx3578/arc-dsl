@@ -5,6 +5,7 @@
 ;; -------------------------------------------------------
 (require racket/set
          rosette/lib/match
+        ;;;  racket/control
          "objects.rkt"          ;; (objects grid b1 b2 b3)
          "properties.rkt"
          "json-reader.rkt"      ;; (read-all-json-files dir)
@@ -105,21 +106,34 @@
     [else (error "unrecognized transformation code" e)]))
 
 (define (synthesize-transformation input-obj output-obj)
-  (define all-conditions
-    (and (>= e 0) (< e 4)  ;; Ensure e is within valid range
-         ;; interp 出来的结果必须等于 output-obj
-         (equal? (interp (translate e) input-obj)
-                 output-obj)))
 
-  (define result (solve (assert all-conditions)))
-  (cond
-    [(sat? result)
-     (displayln "Solution found!")
-     (displayln (model result))]
-    [(unsat? result)
-     (displayln "No solution...")]
-    [else
-     (displayln "Unknown result...")]))
+  (if (equal? input-obj output-obj)
+    (begin
+      (displayln "Solution found => NoOp"  )
+      (displayln "#hash((e . 0))")  ;; 或者任何你要输出的信息
+      (displayln input-obj )
+      'sat)  ;; 函数的返回值
+
+    ;; 否则才做后续的 SMT 求解
+    (begin
+
+      (define all-conditions
+        (and (>= e 0) (< e 4)  ;; Ensure e is within valid range
+            ;; interp 出来的结果必须等于 output-obj
+            (equal? (interp (translate e) input-obj)
+                    output-obj)))
+
+      (define result (solve (assert all-conditions)))
+      (cond
+        [(sat? result)
+        (displayln "Solution found!  "  )
+         (displayln input-obj )
+        (displayln (model result))]
+        [(unsat? result)
+        (displayln " . . . . . . . . ")]
+        [else
+        (displayln "Unknown result...")]))
+    ))
 
 ;; -------------------------------------------------------
 ;; 5) 8 种布尔参数组合 & 汇总生成
@@ -215,9 +229,9 @@
               (let ([inner-iter 0])
                 (for ([in-obj (in-set input-obj-set)])
                   (set! inner-iter (add1 inner-iter))
-                  (displayln (format "-------- ~a  -   in-obj = ~a"
-                                    inner-iter
-                                    in-obj))
+                  ;;; (displayln (format "-------- ~a  -   in-obj = ~a"
+                  ;;;                   inner-iter
+                  ;;;                   in-obj))
                   (synthesize-transformation in-obj out-obj))))))))))
       )
 

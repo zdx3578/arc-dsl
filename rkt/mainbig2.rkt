@@ -62,31 +62,46 @@
 ;; -------------------------------------------------------
 ;; 3) 解释器：在执行每个操作前，先调检查器
 ;; -------------------------------------------------------
-(define (interp expr obj)
+(define (interp expr in-obj)
   (match expr
     [(NoOp)
-     obj]
+     ;; NoOp 不变，直接返回 in-obj
+     in-obj]
 
     [(Rot90 sub)
-     (define sub-out (interp sub obj))
-     (if (valid-rot90? sub-out)
-         (rotate90 sub-out)
+     (define sub-out (interp sub in-obj))
+     (if sub-out
+         (let ([result (rotate90 sub-out)])
+           (let ([expected (list (second (shape sub-out))
+                                 (first (shape sub-out)))]
+                 [actual   (shape result)])
+             (if (equal? actual expected)
+                 result
+                 #f)))
          #f)]
 
     [(HMirror sub)
-     (define sub-out (interp sub obj))
-     (if (valid-hmirror? sub-out)
-         (hmirror sub-out)
+     (define sub-out (interp sub in-obj))
+     (if sub-out
+         (let ([result (hmirror sub-out)])
+           ;; hmirror 不会改变 shape
+           (if (equal? (shape result) (shape sub-out))
+               result
+               #f))
          #f)]
 
     [(VMirror sub)
-     (define sub-out (interp sub obj))
-     (if (valid-vmirror? sub-out)
-         (vmirror sub-out)
+     (define sub-out (interp sub in-obj))
+     (if sub-out
+         (let ([result (vmirror sub-out)])
+           ;; vmirror 不会改变 shape
+           (if (equal? (shape result) (shape sub-out))
+               result
+               #f))
          #f)]
 
     [(Compose e1 e2)
-     (define r1 (interp e1 obj))
+     (define r1 (interp e1 in-obj))
      (if r1
          (interp e2 r1)
          #f)]))
@@ -105,6 +120,8 @@
     [else (error "unrecognized transformation code" e)]))
 
 (define (synthesize-transformation input-obj output-obj)
+
+
   (define all-conditions
     (and (>= e 0) (< e 4)  ;; Ensure e is within valid range
          ;; interp 出来的结果必须等于 output-obj

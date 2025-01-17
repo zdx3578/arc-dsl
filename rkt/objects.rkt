@@ -194,6 +194,6 @@
   ) ;; ← 对应 (for ([loc (in-list locs)])
   ;; 返回所有对象 (每个对象也是 set)
   ;;; (displayln "-----------objects function-----------")
-  (displayln objs)
+  ;;; (displayln objs)
   objs
 ) ;; ← 对应 (define (objects ...
