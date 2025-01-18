@@ -11,45 +11,7 @@
          "json-reader.rkt"      ;; (read-all-json-files dir)
          "data-structures.rkt") ;; (struct Grid ...) 等
 
-;; -------------------------------------------------------
-;; 1) 定义一些辅助：object 宽/高，以及各个操作的有效性检查
-;; -------------------------------------------------------
 
-;; object-width / object-height 仅作演示，
-;; 通过 object-bbox 来拿到 min/max 行列，再计算宽高。
-(define (object-width obj)
-  (define-values (rmin rmax cmin cmax) (object-bbox obj))
-  (if (set-empty? obj)
-      0
-      (add1 (- rmax rmin)))) ;; 行的范围(含端点) => 宽
-
-(define (object-height obj)
-  (define-values (rmin rmax cmin cmax) (object-bbox obj))
-  (if (set-empty? obj)
-      0
-      (add1 (- cmax cmin)))) ;; 列的范围(含端点) => 高
-
-;; 判断 Rot90 的可行性(这里只是示例, 你可换成别的规则)
-(define (valid-rot90? obj)
-  (and (object? obj)
-       (not (set-empty? obj))          ;; 不要空对象
-       (> (object-width obj) 1)
-       (> (object-height obj) 1)))
-
-;; 判断 HMirror 的可行性
-(define (valid-hmirror? obj)
-  (and (object? obj)
-       (not (set-empty? obj))
-       (> (object-width obj) 0)
-       ;; 当然你可以添加更多逻辑……
-       #t))
-
-;; 判断 VMirror 的可行性
-(define (valid-vmirror? obj)
-  (and (object? obj)
-       (not (set-empty? obj))
-       (> (object-height obj) 0)
-       #t))
 
 ;; -------------------------------------------------------
 ;; 2) DSL 结构体
@@ -213,30 +175,6 @@
         (displayln "SMT result: unknown...")])]))
 
 
-;; -------------------------------------------------------
-;; 5) 8 种布尔参数组合 & 汇总生成
-;; -------------------------------------------------------
-(define param-combinations
-  (list
-   (list #f #f #f)
-   (list #f #f #t)
-   (list #f #t #f)
-   (list #f #t #t)
-   (list #t #f #f)
-   (list #t #f #t)
-   (list #t #t #f)
-   (list #t #t #t)))
-
-(define (objects-with-params grid bools)
-  (define b1 (list-ref bools 0))
-  (define b2 (list-ref bools 1))
-  (define b3 (list-ref bools 2))
-  (objects grid b1 b2 b3)) ;; 根据你的实际签名调整
-
-(define (all-objects-from-grid grid)
-  (for/fold ([acc (set)])
-            ([params (in-list param-combinations)])
-    (set-union acc (objects-with-params grid params))))
 
 ;; -------------------------------------------------------
 ;; 6) 主函数 main
@@ -275,7 +213,9 @@
 
         ;; -- 1) 对 input-grid 进行 8 种参数组合 -> 并集
         (define input-obj-set (all-objects-from-grid input-grid))
+        (define input-00shapes-set (all-objects-00shape-from-objs input-obj-set))
         (displayln (format "  input-obj-set count = ~a" (set-count input-obj-set)))
+        (displayln (format "  input-00shapes-set count = ~a" (set-count input-00shapes-set)))
 
 
         ;; -- 2) 现在对 output-grid 的 8 种组合分别处理

@@ -11,45 +11,7 @@
          "json-reader.rkt"      ;; (read-all-json-files dir)
          "data-structures.rkt") ;; (struct Grid ...) 等
 
-;; -------------------------------------------------------
-;; 1) 定义一些辅助：object 宽/高，以及各个操作的有效性检查
-;; -------------------------------------------------------
 
-;; object-width / object-height 仅作演示，
-;; 通过 object-bbox 来拿到 min/max 行列，再计算宽高。
-(define (object-width obj)
-  (define-values (rmin rmax cmin cmax) (object-bbox obj))
-  (if (set-empty? obj)
-      0
-      (add1 (- rmax rmin)))) ;; 行的范围(含端点) => 宽
-
-(define (object-height obj)
-  (define-values (rmin rmax cmin cmax) (object-bbox obj))
-  (if (set-empty? obj)
-      0
-      (add1 (- cmax cmin)))) ;; 列的范围(含端点) => 高
-
-;; 判断 Rot90 的可行性(这里只是示例, 你可换成别的规则)
-(define (valid-rot90? obj)
-  (and (object? obj)
-       (not (set-empty? obj))          ;; 不要空对象
-       (> (object-width obj) 1)
-       (> (object-height obj) 1)))
-
-;; 判断 HMirror 的可行性
-(define (valid-hmirror? obj)
-  (and (object? obj)
-       (not (set-empty? obj))
-       (> (object-width obj) 0)
-       ;; 当然你可以添加更多逻辑……
-       #t))
-
-;; 判断 VMirror 的可行性
-(define (valid-vmirror? obj)
-  (and (object? obj)
-       (not (set-empty? obj))
-       (> (object-height obj) 0)
-       #t))
 
 ;; -------------------------------------------------------
 ;; 2) DSL 结构体
@@ -142,6 +104,22 @@
 ;; -------------------------------------------------------
 ;; 4) 合成逻辑：我们用整型 e 代替符号，范围是 [0..3]
 ;; -------------------------------------------------------
+
+(define (simple-check in-obj out-obj)
+  (cond
+    [(equal? in-obj out-obj)
+     'NoOp]
+    [(equal? (rotate90 in-obj) out-obj)
+     'Rot90]
+    [(equal? (hmirror in-obj) out-obj)
+     'HMirror]
+    [(equal? (vmirror in-obj) out-obj)
+     'VMirror]
+    [else
+     #f]))  ;; #f 表示没找到匹配的变换
+
+
+
 (define-symbolic e integer?)
 
 (define (translate e)
@@ -153,59 +131,50 @@
     [else (error "unrecognized transformation code" e)]))
 
 (define (synthesize-transformation input-obj output-obj)
+  ;; 1. 先做一次简单的快速检测
+  (define check-result (simple-check input-obj output-obj))
 
-  (if (equal? input-obj output-obj)
-    (begin
-      (displayln "Solution found => NoOp"  )
-      (displayln "#hash((e . 0))")  ;; 或者任何你要输出的信息
-      (displayln input-obj )
-      'sat)  ;; 函数的返回值
+  (cond
+    ;; 1.1 匹配到了简单变换，直接输出结果
+    [check-result
+     (displayln (string-append "Solution found => " (symbol->string check-result)))
+     ;; 可以根据 check-result 的不同，输出不同的 e 值
+     (displayln
+      (string-append
+       "#hash((e . "
+       (case check-result
+         [(NoOp)     "0"]
+         [(Rot90)    "1"]
+         [(HMirror)  "2"]
+         [(VMirror)  "3"])
+       "))"))
+     (displayln input-obj)
+     'sat]  ;; 函数返回值
 
-    ;; 否则才做后续的 SMT 求解
-    (begin
+    ;; 1.2 否则进入 SMT 求解
+    [else
+     ;; 如果没有提前返回，则执行后续与 SMT 相关的逻辑
+     (define all-conditions
+       (and
+         (>= e 0)
+         (< e 4)
+         ;; interp出来的结果必须等于 output-obj
+         (equal? (interp (translate e) input-obj) output-obj)))
 
-      (define all-conditions
-        (and (>= e 0) (< e 4)  ;; Ensure e is within valid range
-            ;; interp 出来的结果必须等于 output-obj
-            (equal? (interp (translate e) input-obj)
-                    output-obj)))
-
-      (define result (solve (assert all-conditions)))
-      (cond
-        [(sat? result)
-        (displayln "Solution found!  "  )
-         (displayln input-obj )
+     (define result (solve (assert all-conditions)))
+     (cond
+       [(sat? result)
+        (displayln "Solution found by SMT!")
+        (displayln input-obj)
         (displayln (model result))]
-        [(unsat? result)
-        (displayln " . . . . . . . . ")]
-        [else
-        (displayln "Unknown result...")]))
-    ))
 
-;; -------------------------------------------------------
-;; 5) 8 种布尔参数组合 & 汇总生成
-;; -------------------------------------------------------
-(define param-combinations
-  (list
-   (list #f #f #f)
-   (list #f #f #t)
-   (list #f #t #f)
-   (list #f #t #t)
-   (list #t #f #f)
-   (list #t #f #t)
-   (list #t #t #f)
-   (list #t #t #t)))
+       [(unsat? result)
+        (displayln "SMT result: unsat. No solution!")]
 
-(define (objects-with-params grid bools)
-  (define b1 (list-ref bools 0))
-  (define b2 (list-ref bools 1))
-  (define b3 (list-ref bools 2))
-  (objects grid b1 b2 b3)) ;; 根据你的实际签名调整
+       [else
+        (displayln "SMT result: unknown...")])]))
 
-(define (all-objects-from-grid grid)
-  (for/fold ([acc (set)])
-            ([params (in-list param-combinations)])
-    (set-union acc (objects-with-params grid params))))
+
 
 ;; -------------------------------------------------------
 ;; 6) 主函数 main
@@ -244,7 +213,9 @@
 
         ;; -- 1) 对 input-grid 进行 8 种参数组合 -> 并集
         (define input-obj-set (all-objects-from-grid input-grid))
+        (define input-00shapes-set (all-objects-00shape-from-objs input-obj-set))
         (displayln (format "  input-obj-set count = ~a" (set-count input-obj-set)))
+        (displayln (format "  input-00shapes-set count = ~a" (set-count input-00shapes-set)))
 
 
         ;; -- 2) 现在对 output-grid 的 8 种组合分别处理

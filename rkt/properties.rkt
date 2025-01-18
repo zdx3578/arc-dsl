@@ -1,7 +1,8 @@
 #lang rosette
 
 (require racket/set
-         racket/list)
+         racket/list
+         "objects.rkt")
 
 (provide (all-defined-out))
 
@@ -14,6 +15,20 @@
 ;; 例如，对象 #<set: (3 (12 7)) (3 (12 6)) ... >
 ;; 表示颜色为3, 坐标(12,7)、(12,6) 等等。
 ;; -----------------------------------------------------------------------------
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 ;; -----------------------------------------------------------------------------
 ;; 1. 帮助判断是否是“对象”（而不是别的值）
@@ -199,6 +214,46 @@
   ;; (define-values (rmin rmax cmin cmax) (object-bbox obj))
   ;; ...
 
+
+;; -------------------------------------------------------
+;; 1) 定义一些辅助：object 宽/高，以及各个操作的有效性检查
+;; -------------------------------------------------------
+
+;; object-width / object-height 仅作演示，
+;; 通过 object-bbox 来拿到 min/max 行列，再计算宽高。
+(define (object-width obj)
+  (define-values (rmin rmax cmin cmax) (object-bbox obj))
+  (if (set-empty? obj)
+      0
+      (add1 (- rmax rmin)))) ;; 行的范围(含端点) => 宽
+
+(define (object-height obj)
+  (define-values (rmin rmax cmin cmax) (object-bbox obj))
+  (if (set-empty? obj)
+      0
+      (add1 (- cmax cmin)))) ;; 列的范围(含端点) => 高
+
+;; 判断 Rot90 的可行性(这里只是示例, 你可换成别的规则)
+(define (valid-rot90? obj)
+  (and (object? obj)
+       (not (set-empty? obj))          ;; 不要空对象
+       (> (object-width obj) 1)
+       (> (object-height obj) 1)))
+
+;; 判断 HMirror 的可行性
+(define (valid-hmirror? obj)
+  (and (object? obj)
+       (not (set-empty? obj))
+       (> (object-width obj) 0)
+       ;; 当然你可以添加更多逻辑……
+       #t))
+
+;; 判断 VMirror 的可行性
+(define (valid-vmirror? obj)
+  (and (object? obj)
+       (not (set-empty? obj))
+       (> (object-height obj) 0)
+       #t))
 ;; -----------------------------------------------------------------------------
 ;; 使用示例（如要测试）:
 ;; (define test-obj
@@ -250,3 +305,89 @@
         (for/set ([i (in-range si (add1 ei))]
                   [j (in-range sj (add1 ej))])
           (list i j)))))
+
+
+
+;; -------------------------------------------------------
+;; 5) 8 种布尔参数组合 & 汇总生成
+;; -------------------------------------------------------
+(define param-combinations
+  (list
+   (list #f #f #f)
+   (list #f #f #t)
+   (list #f #t #f)
+   (list #f #t #t)
+   (list #t #f #f)
+   (list #t #f #t)
+   (list #t #t #f)
+   (list #t #t #t)))
+
+(define (objects-with-params grid bools)
+  (define b1 (list-ref bools 0))
+  (define b2 (list-ref bools 1))
+  (define b3 (list-ref bools 2))
+  (objects grid b1 b2 b3)) ;; 根据你的实际签名调整
+
+(define (all-objects-from-grid grid)
+  (for/fold ([acc (set)])
+            ([params (in-list param-combinations)])
+    (set-union acc (objects-with-params grid params))))
+
+
+
+
+;; 4. 将一组坐标平移到 (0, 0) 的辅助函数。
+;;    例如，如果最小行号是 minr，最小列号是 minc，
+;;    那么将所有 (r, c) 转换为 (r - minr, c - minc)。
+;; -------------------------------------------------------------------
+(define (shift-coords-to-0-0 coords)
+  ;; 将 coords（一个 set）转成 list
+  (define coords-list (set->list coords))
+
+  ;; 注意若 coords-list 为空，则 (apply min ...) 会错误，可在此处做一层防御性处理
+  ;;; (when (null? coords-list)
+  ;;;   (return-from shift-coords-to-0-0 coords))  ;; 或返回 empty set 之类
+
+  (define min-row (apply min (map first coords-list)))
+  (define min-col (apply min (map second coords-list)))
+
+  ;; 之后也可以继续用 for/set 或 map+set->list 等
+  (for/set ([rc (in-list coords-list)])
+    (let ([r (first rc)]
+          [c (second rc)])
+      (cons (- r min-row) (- c min-col)))))
+
+
+;; -------------------------------------------------------------------
+;; 5. 组合所有步骤，得到 “对象形状” 的集合。
+;;    每个对象形状是一个“平移后”的坐标集合 (以 0,0 为左上角)。
+;; -------------------------------------------------------------------
+;;; (define (all-objects-shape-from-grid grid)
+;;;   (define all-objs (all-objects-from-grid grid))
+;;;   (for/set ([obj (in-set all-objs)])
+;;;     (define coords (asindices obj))
+;;;     (shift-coords-to-0-0 coords)))
+
+
+(define (all-objects-00shape-from-objs all-objs)
+  ;;; (define all-objs (all-objects-from-grid grid))
+  (for/set ([obj (in-set all-objs)])
+    (define coords (asindices obj))
+    (shift-coords-to-0-0 coords)))
+
+(define (all-objects-shape-from-objs all-objs)
+  ;;; (define all-objs (all-objects-from-grid grid))
+  (for/set ([obj (in-set all-objs)])
+    (asindices obj)))
+    ;;; (define coords (asindices obj))
+    ;;; (shift-coords-to-0-0 coords)))
+;; -------------------------------------------------------------------
+;; 6. 使用示例 (取决于你的 grid 是什么)
+;; -------------------------------------------------------------------
+;; (define my-grid
+;;   '(...))
+;;
+;;; (define all-shapes (all-objects-shape-from-grid my-grid))
+;; (displayln shapes)
+;;
+;; shapes 里就包含了去重后的所有“对象形状”坐标集合
