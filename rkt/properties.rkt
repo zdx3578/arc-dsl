@@ -341,21 +341,17 @@
 ;;    那么将所有 (r, c) 转换为 (r - minr, c - minc)。
 ;; -------------------------------------------------------------------
 (define (shift-coords-to-0-0 coords)
-  ;; 将 coords（一个 set）转成 list
-  (define coords-list (set->list coords))
+  (unless (set-empty? coords)
+    ;; 如果不空，就执行正常逻辑
+    (define coords-list (set->list coords))
+    (define min-row (apply min (map first coords-list)))
+    (define min-col (apply min (map second coords-list)))
+    (set
+     (for/list ([rc (in-list coords-list)])
+       (let ([r (first rc)]
+             [c (second rc)])
+         (cons (- r min-row) (- c min-col)))))))
 
-  ;; 注意若 coords-list 为空，则 (apply min ...) 会错误，可在此处做一层防御性处理
-  ;;; (when (null? coords-list)
-  ;;;   (return-from shift-coords-to-0-0 coords))  ;; 或返回 empty set 之类
-
-  (define min-row (apply min (map first coords-list)))
-  (define min-col (apply min (map second coords-list)))
-
-  ;; 之后也可以继续用 for/set 或 map+set->list 等
-  (for/set ([rc (in-list coords-list)])
-    (let ([r (first rc)]
-          [c (second rc)])
-      (cons (- r min-row) (- c min-col)))))
 
 
 ;; -------------------------------------------------------------------
