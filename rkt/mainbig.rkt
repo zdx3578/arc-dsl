@@ -198,7 +198,7 @@
       (define test-data  (hash-ref json-data 'test))
 
 
-    ;; 只示范：拿第一个 train pair
+    ;; 只示范：
       (let ([pair-iter 0])
         (for ([pair (in-list train-data)])
           (set! pair-iter (add1 pair-iter))
@@ -216,6 +216,18 @@
         (define input-00shapes-set (all-objects-00shape-from-objs input-obj-set))
         (displayln (format "  input-obj-set count = ~a" (set-count input-obj-set)))
         (displayln (format "  input-00shapes-set count = ~a" (set-count input-00shapes-set)))
+
+        ;; -- 1) 对 output-grid 进行 8 种参数组合 -> 并集
+        (define output-obj-set (all-objects-from-grid output-grid))
+        (define output-00shapes-set (all-objects-00shape-from-objs output-obj-set))
+        (displayln (format "  output-obj-set count = ~a" (set-count output-obj-set)))
+        (displayln (format "  output-00shapes-set count = ~a" (set-count output-00shapes-set)))
+
+        (define diff1 (set-subtract set1 set2))
+        (define diff2 (set-subtract set1 set2))
+        (define diff (set-subtract diff1 diff2 ))
+
+
 
 
         ;; -- 2) 现在对 output-grid 的 8 种组合分别处理

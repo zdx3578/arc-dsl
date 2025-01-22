@@ -84,7 +84,7 @@ def obj_property(input_data: Union[Object, Grid]) -> dict:
         'move': move(obj_I, (1, 1)),  # 示例：移动 (1, 1)
         'shift': shift(obj_I, (1, 1)),  # 示例：平移 (1, 1)
         'mirror': hmirror(obj_I),  # 示例：水平镜像
-        'rotate': rot90(obj_I),  # 示例：旋转 90 度     
+        'rotate': rot90(obj_I),  # 示例：旋转 90 度
         'colorcount': colorcount(obj_I, 1),  # 示例：颜色 1 的数量
         'palette': palette(obj_I),
         'numcolors': numcolors(obj_I),
