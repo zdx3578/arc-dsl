@@ -94,7 +94,7 @@
   (cond
     ;; 1.1 如果简单检测到变换成功，就返回 #t
     [check-result
-     (displayln (string-append "Solution found => " (symbol->string check-result)))
+     (displayln (string-append "inoutobj found => " (symbol->string check-result)))
      ;; 如果需要，可以打印出不同 e 的值:
      (displayln
       (string-append
@@ -120,14 +120,14 @@
      (define result (solve (assert all-conditions)))
      (cond
        [(sat? result)
-        (displayln "Solution found by SMT!")
+        (displayln "inoutobj found by SMT!")
         (displayln input-obj)
         (displayln (model result))
         ;; 表示成功
         #t]
 
        [(unsat? result)
-        (displayln "SMT result: unsat. No solution!")
+        (displayln "            .              .             ")
         ;; 表示失败
         #f]
 
@@ -200,6 +200,10 @@
 
                 ;; 求出此 param 下的所有 out-obj
                 (define out-obj-set (objects-with-params output-grid out-param))
+                (displayln (format "-----------------------------------------File #~a ~a train pair #: ~a-------------outobj param-iteration ~a---- Output param = ~a, count = ~a"
+                            file-iter (hash-ref json-data 'filename) pair-iter outer-iter
+                            out-param
+                            (set-count out-obj-set)))
 
                 ;; 先假设此 param 可以搞定所有 out-obj
                 (let ([mid-iter 0])
@@ -207,6 +211,9 @@
                   (define found-one? #f)
                     (when all-out-obj-solved?
                       (set! mid-iter (add1 mid-iter))
+                      (displayln (format "------------------File #~a -- train pair #: ~a--outobj param- ~a--------------out-obj iteration ~a------ Checking out-obj = ~a"
+                                file-iter pair-iter outer-iter mid-iter
+                                out-obj))
 
 
                       (let ([inner-iter 0])
