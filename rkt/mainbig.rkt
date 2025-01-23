@@ -127,7 +127,7 @@
         #t]
 
        [(unsat? result)
-        (displayln "            .              .             ")
+        ;;; (displayln "            .              .             ")
         ;; 表示失败
         #f]
 
@@ -168,7 +168,7 @@
           (set! pair-iter (add1 pair-iter))
 
           (displayln
-          (format " =================================================================File-Iteration #~a  ~a ------- Now processing train pair #: ~a"
+          (format "                .              .            File-Iteration #~a  ~a ------- Now processing train pair #: ~a"
                    file-iter
                    (hash-ref json-data 'filename)
                    pair-iter))
@@ -200,10 +200,10 @@
 
                 ;; 求出此 param 下的所有 out-obj
                 (define out-obj-set (objects-with-params output-grid out-param))
-                (displayln (format "-----------------------------------------File #~a ~a train pair #: ~a-------------outobj param-iteration ~a---- Output param = ~a, count = ~a"
-                            file-iter (hash-ref json-data 'filename) pair-iter outer-iter
-                            out-param
-                            (set-count out-obj-set)))
+                (displayln (format "               .                 .                File #~a  train pair #: ~a-------------outobj param-iteration ~a---- Output param = ~a, count = ~a"
+                            file-iter
+                            ;;; (hash-ref json-data 'filename)
+                            pair-iter outer-iter      out-param      (set-count out-obj-set)))
 
                 ;; 先假设此 param 可以搞定所有 out-obj
                 (let ([mid-iter 0])
@@ -211,9 +211,9 @@
                   (define found-one? #f)
                     (when all-out-obj-solved?
                       (set! mid-iter (add1 mid-iter))
-                      (displayln (format "------------------File #~a -- train pair #: ~a--outobj param- ~a--------------out-obj iteration ~a------ Checking out-obj = ~a"
-                                file-iter pair-iter outer-iter mid-iter
-                                out-obj))
+                      ;;; (displayln (format "         .              .            File #~a -- train pair #: ~a--outobj param- ~a--------------out-obj iteration ~a------ Checking out-obj = ~a"
+                      ;;;           file-iter pair-iter outer-iter mid-iter
+                      ;;;           out-obj))
 
 
                       (let ([inner-iter 0])
@@ -229,7 +229,7 @@
 
                 ;; 如果此 param 可以搞定所有 out-obj，则这个 pair 成功
                 (when all-out-obj-solved?
-                  (displayln (format "====> Param ~a solves all out-obj => This pair (pair #:~a) is success!"
+                  (displayln (format "  =  =  =  =  >  Param ~a solves all out-obj => This pair (pair #:~a) is success!"
                                      out-param pair-iter))
                   (set! param-found? #t)))
           )
