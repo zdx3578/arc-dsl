@@ -55,49 +55,6 @@
          #f)]))
 
 
-;;; (define (interp expr in-obj)
-;;;   (match expr
-;;;     [(NoOp)
-;;;      ;; NoOp 不变，直接返回 in-obj
-;;;      in-obj]
-
-;;;     [(Rot90 sub)
-;;;      (define sub-out (interp sub in-obj))
-;;;      (if sub-out
-;;;          (let ([result (rotate90 sub-out)])
-;;;            (let ([expected (list (second (shape sub-out))
-;;;                                  (first (shape sub-out)))]
-;;;                  [actual   (shape result)])
-;;;              (if (equal? actual expected)
-;;;                  result
-;;;                  #f)))
-;;;          #f)]
-
-;;;     [(HMirror sub)
-;;;      (define sub-out (interp sub in-obj))
-;;;      (if sub-out
-;;;          (let ([result (hmirror sub-out)])
-;;;            ;; hmirror 不会改变 shape
-;;;            (if (equal? (shape result) (shape sub-out))
-;;;                result
-;;;                #f))
-;;;          #f)]
-
-;;;     [(VMirror sub)
-;;;      (define sub-out (interp sub in-obj))
-;;;      (if sub-out
-;;;          (let ([result (vmirror sub-out)])
-;;;            ;; vmirror 不会改变 shape
-;;;            (if (equal? (shape result) (shape sub-out))
-;;;                result
-;;;                #f))
-;;;          #f)]
-
-;;;     [(Compose e1 e2)
-;;;      (define r1 (interp e1 in-obj))
-;;;      (if r1
-;;;          (interp e2 r1)
-;;;          #f)]))
 
 
 

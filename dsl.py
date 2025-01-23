@@ -151,6 +151,8 @@ def difference(
     """ set difference """
     return type(a)(e for e in a if e not in b)
 
+from typing import Dict, Any, List, Tuple, Callable, Optional
+
 def advanced_difference(
     a: FrozenSet,
     b: FrozenSet
@@ -1094,13 +1096,14 @@ def numcolors(
     """ number of colors occurring in object or grid """
     return len(palette(element))
 
-colorofobj = color
+
 def color(
     obj: Object
 ) -> Integer:
     """ color of object """
     return next(iter(obj))[0]
 
+colorofobj = color
 
 def toobject(
     patch: Patch,

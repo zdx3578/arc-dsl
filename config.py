@@ -56,7 +56,7 @@ proper_functions = [
     get_min_object,
     # move_down_1obj,
     get_mirror_hole,
-    do_numb_color_upscale,
+    # do_numb_color_upscale,
     box_cut,
     get_partition_min_subgrid,
     # is_subgrid_grid,

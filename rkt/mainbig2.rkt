@@ -218,44 +218,79 @@
         (displayln (format "  input-00shapes-set count = ~a" (set-count input-00shapes-set)))
 
 
-        ;; -- 2) 现在对 output-grid 的 8 种组合分别处理
-        ;;; (displayln "=========================Output=========================")
-        (let ([outer-iter 0])
-        (for ([out-param (in-list param-combinations)])
-          ;; 每进一次循环，计数 + 1
-          (set! outer-iter (add1 outer-iter))
 
-          (define out-obj-set (objects-with-params output-grid out-param))
-          (displayln "  ")
-          (displayln "  ")
-          (displayln (format "-----------------------------------------File #~a ~a train pair #: ~a-------------outobj param-iteration ~a---- Output param = ~a, count = ~a"
-                            file-iter (hash-ref json-data 'filename) pair-iter outer-iter
-                            out-param
-                            (set-count out-obj-set)))
 
-          ;; 中层循环：同理，定义一个 mid-iter 计数器
-          (let ([mid-iter 0])
-            (for ([out-obj (in-set out-obj-set)])
-              (set! mid-iter (add1 mid-iter))
-              (displayln "  ")
-              (displayln "  ")
-              (displayln (format "------------------File #~a -- train pair #: ~a--outobj param- ~a--------------out-obj iteration ~a------ Checking out-obj = ~a"
-                                file-iter pair-iter outer-iter mid-iter
-                                out-obj))
+          ;; -------------------------------------------------------
+          ;; 现在对 output-grid 的 8 种组合分别处理（外层循环）
+          ;; 一旦找到一个 out-param 能匹配所有 out-obj, 即可停止.
+          ;; -------------------------------------------------------
+          (let ([outer-iter 0]
+                [param-found? #f])   ;; 标记是否已有成功的param
 
-              ;; 最内层循环：再定义一个 inner-iter 计数器
-              (let ([inner-iter 0])
-                (for ([in-obj (in-set input-obj-set)])
-                  (set! inner-iter (add1 inner-iter))
-                  ;;; (displayln (format "-------- ~a  -   in-obj = ~a"
-                  ;;;                   inner-iter
-                  ;;;                   in-obj))
-                  (synthesize-transformation in-obj out-obj))))))))))
-      )
+            (for ([out-param (in-list param-combinations)])
+              (unless param-found?   ;; 如果已经找到过成功param，就不要再进来了
+                (set! outer-iter (add1 outer-iter))
 
-    (displayln "Done!"))
+                ;; 取得对当前 out-param 的所有 out-obj
+                (define out-obj-set (objects-with-params output-grid out-param))
+
+                (displayln "  ")
+                (displayln "  ")
+                (displayln
+                 (format "-----------------------------------------File #~a ~a train pair #:~a-------------outobj param-iteration ~a---- Output param = ~a, count = ~a"
+                         file-iter
+                         (hash-ref json-data 'filename)
+                         pair-iter
+                         outer-iter
+                         out-param
+                         (set-count out-obj-set)))
+
+                ;; 中层循环：对当前 out-param 下的 out-obj 全部尝试
+                (let ([mid-iter 0]
+                      [all-out-obj-solved? #t])  ;; 标记“此 out-param 是否能匹配所有 out-obj”
+
+                  (for ([out-obj (in-set out-obj-set)])
+                    (when all-out-obj-solved?
+                      (set! mid-iter (add1 mid-iter))
+                      (displayln "  ")
+                      (displayln "  ")
+                      (displayln
+                       (format "------------------File #~a -- train pair #: ~a--outobj param- ~a--------------out-obj iteration ~a------ Checking out-obj = ~a"
+                               file-iter
+                               pair-iter
+                               outer-iter
+                               mid-iter
+                               out-obj))
+
+                      ;; 最内层：遍历 input-obj-set, 找到一个成功则跳出
+                      (let ([inner-iter 0]
+                            [found-one? #f]) ;; 记录是否找到至少一个 in-obj 成功
+                        (for ([in-obj (in-set input-obj-set)])
+                          (unless found-one?
+                            (set! inner-iter (add1 inner-iter))
+                            ;; 这里可以加详细日志
+                            ;; (displayln (format "      inner-iter ~a => in-obj = ~a" inner-iter in-obj))
+
+                            (when (synthesize-transformation in-obj out-obj)
+                              ;; 有一个成功即可跳出最内层
+                              (set! found-one? #t)))))
+
+                      ;; 如果该 out-obj 没有任何一个 in-obj 成功匹配，则此 out-param 失败
+                      (unless found-one?
+                        (set! all-out-obj-solved? #f)))))
+
+                  ;; 如果该 out-param 成功匹配所有 out-obj，就不用再看后续 param
+                  (when all-out-obj-solved?
+                    (displayln (format "====> Great! Param ~a has solved **all** out-obj for pair #:~a. Stop searching further param." out-param pair-iter))
+                    (set! param-found? #t)))))
+
+            (when param-found?
+              (displayln (format "====> We found a param (#~a) that solves everything. End param loop early for pair #:~a" outer-iter pair-iter)))))
+
+      (displayln "Done!")))
 
 (provide main)
+
 
 
 (module+ main
