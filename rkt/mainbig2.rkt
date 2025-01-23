@@ -55,49 +55,6 @@
          #f)]))
 
 
-;;; (define (interp expr in-obj)
-;;;   (match expr
-;;;     [(NoOp)
-;;;      ;; NoOp 不变，直接返回 in-obj
-;;;      in-obj]
-
-;;;     [(Rot90 sub)
-;;;      (define sub-out (interp sub in-obj))
-;;;      (if sub-out
-;;;          (let ([result (rotate90 sub-out)])
-;;;            (let ([expected (list (second (shape sub-out))
-;;;                                  (first (shape sub-out)))]
-;;;                  [actual   (shape result)])
-;;;              (if (equal? actual expected)
-;;;                  result
-;;;                  #f)))
-;;;          #f)]
-
-;;;     [(HMirror sub)
-;;;      (define sub-out (interp sub in-obj))
-;;;      (if sub-out
-;;;          (let ([result (hmirror sub-out)])
-;;;            ;; hmirror 不会改变 shape
-;;;            (if (equal? (shape result) (shape sub-out))
-;;;                result
-;;;                #f))
-;;;          #f)]
-
-;;;     [(VMirror sub)
-;;;      (define sub-out (interp sub in-obj))
-;;;      (if sub-out
-;;;          (let ([result (vmirror sub-out)])
-;;;            ;; vmirror 不会改变 shape
-;;;            (if (equal? (shape result) (shape sub-out))
-;;;                result
-;;;                #f))
-;;;          #f)]
-
-;;;     [(Compose e1 e2)
-;;;      (define r1 (interp e1 in-obj))
-;;;      (if r1
-;;;          (interp e2 r1)
-;;;          #f)]))
 
 
 
@@ -198,7 +155,7 @@
       (define test-data  (hash-ref json-data 'test))
 
 
-    ;; 只示范：拿第一个 train pair
+    ;; 只示范：
       (let ([pair-iter 0])
         (for ([pair (in-list train-data)])
           (set! pair-iter (add1 pair-iter))
@@ -217,6 +174,16 @@
         (displayln (format "  input-obj-set count = ~a" (set-count input-obj-set)))
         (displayln (format "  input-00shapes-set count = ~a" (set-count input-00shapes-set)))
 
+        ;; -- 1) 对 output-grid 进行 8 种参数组合 -> 并集
+        (define output-obj-set (all-objects-from-grid output-grid))
+        (define output-00shapes-set (all-objects-00shape-from-objs output-obj-set))
+        (displayln (format "  output-obj-set count = ~a" (set-count output-obj-set)))
+        (displayln (format "  output-00shapes-set count = ~a" (set-count output-00shapes-set)))
+
+        (define diff1 (set-subtract input-obj-set output-obj-set))
+        (define diff2 (set-subtract output-obj-set input-obj-set))
+        (define diff (set-subtract diff1 diff2 ))
+
 
 
 
@@ -224,8 +191,9 @@
           ;; 现在对 output-grid 的 8 种组合分别处理（外层循环）
           ;; 一旦找到一个 out-param 能匹配所有 out-obj, 即可停止.
           ;; -------------------------------------------------------
+          (define param-found? #f)
           (let ([outer-iter 0]
-                [param-found? #f])   ;; 标记是否已有成功的param
+                )   ;; 标记是否已有成功的param
 
             (for ([out-param (in-list param-combinations)])
               (unless param-found?   ;; 如果已经找到过成功param，就不要再进来了
@@ -234,37 +202,22 @@
                 ;; 取得对当前 out-param 的所有 out-obj
                 (define out-obj-set (objects-with-params output-grid out-param))
 
-                (displayln "  ")
-                (displayln "  ")
-                (displayln
-                 (format "-----------------------------------------File #~a ~a train pair #:~a-------------outobj param-iteration ~a---- Output param = ~a, count = ~a"
-                         file-iter
-                         (hash-ref json-data 'filename)
-                         pair-iter
-                         outer-iter
-                         out-param
-                         (set-count out-obj-set)))
+                (define all-out-obj-solved? #t)
+
+
 
                 ;; 中层循环：对当前 out-param 下的 out-obj 全部尝试
                 (let ([mid-iter 0]
-                      [all-out-obj-solved? #t])  ;; 标记“此 out-param 是否能匹配所有 out-obj”
+                      )  ;; 标记“此 out-param 是否能匹配所有 out-obj”
 
                   (for ([out-obj (in-set out-obj-set)])
                     (when all-out-obj-solved?
                       (set! mid-iter (add1 mid-iter))
-                      (displayln "  ")
-                      (displayln "  ")
-                      (displayln
-                       (format "------------------File #~a -- train pair #: ~a--outobj param- ~a--------------out-obj iteration ~a------ Checking out-obj = ~a"
-                               file-iter
-                               pair-iter
-                               outer-iter
-                               mid-iter
-                               out-obj))
 
+                      (define found-one? #f)
                       ;; 最内层：遍历 input-obj-set, 找到一个成功则跳出
                       (let ([inner-iter 0]
-                            [found-one? #f]) ;; 记录是否找到至少一个 in-obj 成功
+                            ) ;; 记录是否找到至少一个 in-obj 成功
                         (for ([in-obj (in-set input-obj-set)])
                           (unless found-one?
                             (set! inner-iter (add1 inner-iter))
@@ -285,12 +238,12 @@
                     (set! param-found? #t)))))
 
             (when param-found?
-              (displayln (format "====> We found a param (#~a) that solves everything. End param loop early for pair #:~a" outer-iter pair-iter)))))
+              (displayln (format "====> We found a param????? (#~a) that solves everything. End param loop early for pair #:~a" pair-iter pair-iter)))))
 
       (displayln "Done!")))
+)
 
 (provide main)
-
 
 
 (module+ main
