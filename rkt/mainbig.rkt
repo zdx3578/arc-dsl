@@ -147,25 +147,17 @@
 
 (define (main dir)
   (define all-json (read-all-json-files dir))  ;; => list of JSON data
-
+  (define file-all-pairs-success? #t)
   (let ([file-iter 0])
+
     (for ([json-data (in-list all-json)])
       (set! file-iter (add1 file-iter))
 
-      ;;; ;; 显示文件序号和文件名
-      ;;; (displayln "=================================================================")
-      ;;; (displayln (format "=================================================================File-Iteration #~a | filename: ~a"
-      ;;;                    file-iter
-      ;;;                    (hash-ref json-data 'filename)))
-
-      ;; 对该文件，先假设“所有 pair 都成功”
-      (define file-all-pairs-success? #t)
-
-      ;; 读取 train/test
       (define train-data (hash-ref json-data 'train))
       (define test-data  (hash-ref json-data 'test))
 
       (let ([pair-iter 0])
+        (define param-found? #f)
         (for ([pair (in-list train-data)])
           (set! pair-iter (add1 pair-iter))
 
@@ -181,22 +173,22 @@
 
           ;; -- 1) 取出对象集
           (define input-obj-set (all-objects-from-grid input-grid))
-          (define output-obj-set (all-objects-from-grid output-grid))
-
+          (define input-00shapes-set (all-objects-00shape-from-objs input-obj-set))
 
                   ;; -- 1) 对 output-grid 进行 8 种参数组合 -> 并集
-          (define output-obj-set (all-objects-from-grid output-grid))
-          (define output-00shapes-set (all-objects-00shape-from-objs output-obj-set))
+          (define output-obj-setall (all-objects-from-grid output-grid))
+          (define output-00shapes-set (all-objects-00shape-from-objs output-obj-setall))
           ;;; (displayln (format "  output-obj-set count = ~a" (set-count output-obj-set)))
           ;;; (displayln (format "  output-00shapes-set count = ~a" (set-count output-00shapes-set)))
-          (define diff1 (set-subtract input-obj-set output-obj-set))
-          (define diff2 (set-subtract output-obj-set input-obj-set))
+          (define diff1 (set-subtract input-obj-set output-obj-setall))
+          (define diff2 (set-subtract output-obj-setall input-obj-set))
           (define diff (set-subtract diff1 diff2 ))
 
           ;; 在处理这个 pair 时，尝试 8 种 param
-          (define param-found? #f)
+
           (let ([outer-iter 0])
             (for ([out-param (in-list param-combinations)])
+            (define all-out-obj-solved? #t)
               (unless param-found?
                 (set! outer-iter (add1 outer-iter))
 
@@ -204,14 +196,15 @@
                 (define out-obj-set (objects-with-params output-grid out-param))
 
                 ;; 先假设此 param 可以搞定所有 out-obj
-                (define all-out-obj-solved? #t)
+
 
                 (let ([mid-iter 0])
                   (for ([out-obj (in-set out-obj-set)])
+                  (define found-one? #f)
                     (when all-out-obj-solved?
                       (set! mid-iter (add1 mid-iter))
 
-                      (define found-one? #f)
+
                       (let ([inner-iter 0])
                         (for ([in-obj (in-set input-obj-set)])
                           (unless found-one?
@@ -234,15 +227,19 @@
             (displayln (format "xxxx> This pair #:~a fails => no param works!"
                                pair-iter))
             ;; 只要有任何一个 pair 失败，就让“本文件不成功”
-            (set! file-all-pairs-success? #f)))))
+            (set! file-all-pairs-success? #f)))
+    )
+  )
 
       ;; 如果该文件的所有 pair 都成功，则对全局成功文件计数 +1
       (when file-all-pairs-success?
         (displayln (format "#### This file (filename: ~a) => all pairs success => count+1!"
-                           (hash-ref json-data 'filename)))
-        (set! total-successful-files (add1 total-successful-files)))))
+                           ('filename)))
+        (set! total-successful-files (add1 total-successful-files)))
 
-  (displayln (format "***** total-successful-files = ~a" total-successful-files)))
+
+  (displayln (format "***** total-successful-files = ~a" total-successful-files))
+)
 
 
 (provide main)
