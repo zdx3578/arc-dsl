@@ -387,3 +387,69 @@
 ;; (displayln shapes)
 ;;
 ;; shapes 里就包含了去重后的所有“对象形状”坐标集合
+
+
+
+
+
+
+
+;; -------------------------------------------------------
+;; 判断较小网格是否是较大网格的一个部分
+;; -------------------------------------------------------
+(define (is-subgrid? big-grid small-grid)
+  (define big-objects (objects big-grid))
+  (define small-objects (objects small-grid))
+
+  ;; 获取大矩阵和小矩阵的尺寸
+  (define big-rows (length big-objects))
+  (define big-cols (length (first big-objects)))
+  (define small-rows (length small-objects))
+  (define small-cols (length (first small-objects)))
+
+  ;; 遍历大矩阵，检查是否存在小矩阵匹配的位置
+  (for ([i (in-range (- big-rows small-rows + 1))])
+    (for ([j (in-range (- big-cols small-cols + 1))])
+      (define match #t)
+      ;; 检查大矩阵的当前位置是否与小矩阵完全匹配
+      (for ([x (in-range small-rows)])
+        (for ([y (in-range small-cols)])
+          (unless (= (list-ref (list-ref big-objects (+ i x)) (+ j y))
+                     (list-ref (list-ref small-objects x) y))
+            (set! match #f)))
+        (when (not match) (break)))
+      (when match
+        (return #t)))
+  #f)
+
+;; -------------------------------------------------------
+;; 判断多个小网格是否能拼装成一个大网格
+;; -------------------------------------------------------
+(define (can-assemble-grid subgrids big-grid)
+  (define big-objects (objects big-grid))
+  (define all-small-objects (apply append (map objects subgrids)))
+
+  ;; 遍历小网格，检查是否可以填充大网格
+  (define assembled #t)
+  (for ([i (in-range (length all-small-objects))])
+    (define small-object (list-ref all-small-objects i))
+    ;; 在大网格中查找匹配的位置
+    (let loop ([big-objects big-objects] [remaining small-object] [found #f])
+      (for ([row big-objects])
+        (if (not found)
+            (for ([col row])
+              ;; 判断能否把该小网格拼装到大网格中的位置
+              (if (= col remaining)
+                  (set! found #t)))))
+    )
+    (unless found (set! assembled #f)))
+  assembled)
+
+
+;; 测试
+(define big-grid [[16 15 14] [13 17 14] [15 15 16]])
+(define small-grid [[16 15] [14 15]])
+
+(displayln (is-subgrid? big-grid small-grid)) ; 应该返回 #t
+(displayln (can-assemble-grid (list small-grid small-grid) big-grid)) ; 应该返回 #t
+

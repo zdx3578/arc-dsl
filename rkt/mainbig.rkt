@@ -94,18 +94,18 @@
   (cond
     ;; 1.1 如果简单检测到变换成功，就返回 #t
     [check-result
-     (displayln (string-append "inoutobj found => " (symbol->string check-result)))
+    ;;;  (displayln (string-append "inoutobj found => " (symbol->string check-result)))
      ;; 如果需要，可以打印出不同 e 的值:
      (displayln
       (string-append
-       "#hash((e . "
+       "inoutobj found =>#hash((e . "
        (case check-result
          [(NoOp)     "0"]
          [(Rot90)    "1"]
          [(HMirror)  "2"]
          [(VMirror)  "3"])
        "))"))
-     (displayln input-obj)
+     (displayln     input-obj)
      ;; 直接返回 #t 表示成功
      #t]
 
@@ -166,9 +166,9 @@
         (define param-found? #f)
         (for ([pair (in-list train-data)])
           (set! pair-iter (add1 pair-iter))
+          (set! file-all-pairs-success? #t))
 
-          (displayln
-          (format "                .              .            File-Iteration #~a  ~a ------- Now processing train pair #: ~a"
+          (displayln          (format "                .              .            File-Iteration #~a  ~a ------- Now processing train pair #: ~a"
                    file-iter
                    (hash-ref json-data 'filename)
                    pair-iter))
@@ -191,66 +191,58 @@
           (define diff (set-subtract diff1 diff2 ))
 
           ;; 在处理这个 pair 时，尝试 8 种 param
-
           (let ([outer-iter 0])
             (for ([out-param (in-list param-combinations)])
+            (set! param-found? #f)
             (define all-out-obj-solved? #t)
               (unless param-found?
                 (set! outer-iter (add1 outer-iter))
 
                 ;; 求出此 param 下的所有 out-obj
                 (define out-obj-set (objects-with-params output-grid out-param))
-                (displayln (format "               .                 .                File #~a  train pair #: ~a-------------outobj param-iteration ~a---- Output param = ~a, count = ~a"
+                (displayln (format "               .                 .                File ~a  train-pair : ~a-------------outobj param ~a---- Output param = ~a, count = ~a"
                             file-iter
                             ;;; (hash-ref json-data 'filename)
                             pair-iter outer-iter      out-param      (set-count out-obj-set)))
 
                 ;; 先假设此 param 可以搞定所有 out-obj
                 (let ([mid-iter 0])
+                  (set! all-out-obj-solved? #t)
                   (for ([out-obj (in-set out-obj-set)])
-                  (define found-one? #f)
+                    (define found-one? #f)
                     (when all-out-obj-solved?
                       (set! mid-iter (add1 mid-iter))
                       ;;; (displayln (format "         .              .            File #~a -- train pair #: ~a--outobj param- ~a--------------out-obj iteration ~a------ Checking out-obj = ~a"
-                      ;;;           file-iter pair-iter outer-iter mid-iter
-                      ;;;           out-obj))
-
-
+                      ;;;           file-iter pair-iter outer-iter mid-iter     out-obj))
                       (let ([inner-iter 0])
+                      (set! found-one? #f)
                         (for ([in-obj (in-set input-obj-set)])
                           (unless found-one?
                             (set! inner-iter (add1 inner-iter))
                             (when (synthesize-transformation in-obj out-obj)
                               (set! found-one? #t))))))
-
                     ;; 若此 out-obj 全部失败
                     (unless found-one?
-                      (set! all-out-obj-solved? #f)))))
-
+                      (set! all-out-obj-solved? #f))
+                  )))
                 ;; 如果此 param 可以搞定所有 out-obj，则这个 pair 成功
                 (when all-out-obj-solved?
-                  (displayln (format "  =  =  =  =  >  Param ~a solves all out-obj => This pair (pair #:~a) is success!"
+                  (displayln (format "  Y  Y  Y  Y  Y  Y   >  Param ~a solves all out-obj => This pair (pair #:~a) is success!"
                                      out-param pair-iter))
                   (set! param-found? #t)))
-          )
-        )
-
+          )        )
           ;; 当 8 种 param 全部试完后，若 param-found? 仍是 #f, 说明该 pair 失败
           (unless param-found?
-            (displayln (format "xxxx> This pair #:~a fails => no param works!"
+            (displayln (format "         X  X  X  X  X  X  X  X  X  X  X  X  X  X  > This pair #:~a fails => no param works!"
                                pair-iter))
             ;; 只要有任何一个 pair 失败，就让“本文件不成功”
             (set! file-all-pairs-success? #f))
-      )
-    )
-  )
-
+      )    )  )
       ;; 如果该文件的所有 pair 都成功，则对全局成功文件计数 +1
       (when file-all-pairs-success?
-        (displayln (format "#### This file (filename: ~a) => all pairs success => count+1!"
+        (displayln (format "         Y  Y  Y  Y  Y  Y  Y  Y  Y  Y  Y  Y  Y  Y  This file (filename: ~a) => all pairs success => count+1!"
                            ('filename)))
         (set! total-successful-files (add1 total-successful-files)))
-
 
   (displayln (format "***** total-successful-files = ~a" total-successful-files))
 )
