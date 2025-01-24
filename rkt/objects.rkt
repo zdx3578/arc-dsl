@@ -103,8 +103,8 @@
 
 (define (objects grid univalued? diagonal? without-bg?)
   ;; 1) 确定背景色；若 without-bg?=#t，则最常见颜色；否则 #f
-  (displayln (format " > > objects fun log  param = ~a, =~a, =~a"
-                             univalued? diagonal? without-bg?))
+  ;;; (displayln (format " > > objects fun log  param = ~a, =~a, =~a"
+  ;;;                            univalued? diagonal? without-bg?))
   (define bg
     (if without-bg?
         (mostcolor grid)

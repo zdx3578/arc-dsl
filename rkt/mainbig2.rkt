@@ -94,7 +94,7 @@
   (cond
     ;; 1.1 如果简单检测到变换成功，就返回 #t
     [check-result
-     (displayln (string-append "inoutobj found => " (symbol->string check-result)))
+    ;;;  (displayln (string-append "inoutobj found => " (symbol->string check-result)))
      ;; 如果需要，可以打印出不同 e 的值:
      (displayln
       (string-append
@@ -105,7 +105,7 @@
          [(HMirror)  "2"]
          [(VMirror)  "3"])
        "))"))
-     (displayln input-obj)
+    ;;;  (displayln input-obj)
      ;; 直接返回 #t 表示成功
      #t]
 
@@ -127,7 +127,7 @@
         #t]
 
        [(unsat? result)
-        (displayln "            .              .             ")
+        ;;; (displayln "            .              .             ")
         ;; 表示失败
         #f]
 
@@ -137,35 +137,49 @@
         #f])]))
 
 
-(define (main dir)
-  (define all-json (read-all-json-files dir))
-
-  (define total-successful-files
-    (for/sum ([json-data (in-list all-json)])
-      (define fn (hash-ref json-data 'filename))
-      (define success? (process-single-file json-data))
-      (when success?
-        (displayln (format "====> Successful file: ~a" fn)))
-      (if success? 1 0)))    ;; 如果成功就返回 1，否则 0
-
-  (displayln (format "***** total-successful-files = ~a" total-successful-files)))
-
-
 ;; 处理单个文件
 (define (process-single-file json-data)
   (define train-data (hash-ref json-data 'train))
   (for/and ([pair (in-list train-data)]) ; 所有 pair 必须成功
     (define input-grid (Grid (hash-ref pair 'input)))
     (define output-grid (Grid (hash-ref pair 'output)))
-    (define input-obj-set (all-objects-from-grid input-grid))
+    ;;; (define input-obj-set (all-objects-from-grid input-grid))
+    (define input-obj-set0 (all-objects-from-grid input-grid))
+    (define  input-obj-set (all-objects-00-c0-from-objs input-obj-set0))
     ;;; (define output-obj-setall (all-objects-from-grid output-grid))
 
     ;; 检查是否存在参数组合满足所有输出对象
     (for/or ([out-param (in-list param-combinations)]) ; 存在即成功
-      (define out-obj-set (objects-with-params output-grid out-param))
+      (define out-obj-set0 (objects-with-params output-grid out-param))
+      (define  out-obj-set (all-objects-00-c0-from-objs out-obj-set0))
       (for/and ([out-obj (in-set out-obj-set)]) ; 所有 out-obj 必须可解
         (for/or ([in-obj (in-set input-obj-set)]) ; 存在可转换的 in-obj
           (synthesize-transformation in-obj out-obj))))))
+
+
+
+
+(define (process-single-file-logging json-data)
+  (define fn (hash-ref json-data 'filename))
+  (define success? (process-single-file json-data))
+  (if success?
+      (displayln (format "[] SUCCESS => ~a" fn))
+      (begin
+        (displayln (format "[] FAIL    => ~a" fn))
+        ;;; (sleep 1)
+        ))
+  success?)
+
+(define (main dir)
+  (define all-json (read-all-json-files dir))
+  (define total-success
+    (for/sum ([json-data (in-list all-json)])
+      (if (process-single-file-logging json-data)
+          1
+          0)))
+
+  (displayln (format "[] total-successful-files = ~a" total-success)))
+
 
 (provide main)
 

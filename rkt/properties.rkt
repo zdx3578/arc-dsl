@@ -351,9 +351,6 @@
        (let ([r (first rc)]
              [c (second rc)])
          (cons (- r min-row) (- c min-col)))))))
-
-
-
 ;; -------------------------------------------------------------------
 ;; 5. 组合所有步骤，得到 “对象形状” 的集合。
 ;;    每个对象形状是一个“平移后”的坐标集合 (以 0,0 为左上角)。
@@ -363,20 +360,44 @@
 ;;;   (for/set ([obj (in-set all-objs)])
 ;;;     (define coords (asindices obj))
 ;;;     (shift-coords-to-0-0 coords)))
-
-
-(define (all-objects-00shape-from-objs all-objs)
+(define (all-00shape-from-objs all-objs)
   ;;; (define all-objs (all-objects-from-grid grid))
   (for/set ([obj (in-set all-objs)])
     (define coords (asindices obj))
     (shift-coords-to-0-0 coords)))
 
-(define (all-objects-shape-from-objs all-objs)
+(define (all-shape-from-objs all-objs)
   ;;; (define all-objs (all-objects-from-grid grid))
   (for/set ([obj (in-set all-objs)])
     (asindices obj)))
     ;;; (define coords (asindices obj))
     ;;; (shift-coords-to-0-0 coords)))
+
+(define (shift-obj-to-0-0-0 obj)
+  ;; 如果 obj 为空，就直接返回一个空 set
+  (if (set-empty? obj)
+      (set)
+      (let* ([obj-list (set->list obj)]
+             ;; obj-list 里每个元素 e = '(color (r c))
+             ;; 先把 (r c) 收集下来，方便算 min-row 和 min-col
+             [rc-list (map (λ (e) (cadr e)) obj-list)]
+             [min-row (apply min (map first rc-list))]
+             [min-col (apply min (map second rc-list))])
+        (for/set ([e (in-list obj-list)])
+          ;; e = '(color (r c))
+          (define color 0)  ; 你想要的默认颜色
+          (define r (first (cadr e)))
+          (define c (second (cadr e)))
+          ;; 生成新的 '(color (r' c'))
+          (list color (list (- r min-row) (- c min-col)))))))
+
+
+(define (all-objects-00-c0-from-objs all-objs)
+  ;;; (define all-objs (all-objects-from-grid grid))
+  (for/set ([obj (in-set all-objs)])
+    ;;; (define coords (asindices obj))
+    (shift-obj-to-0-0-0 obj)))
+
 ;; -------------------------------------------------------------------
 ;; 6. 使用示例 (取决于你的 grid 是什么)
 ;; -------------------------------------------------------------------
