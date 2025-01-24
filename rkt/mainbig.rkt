@@ -166,7 +166,7 @@
         (define param-found? #f)
         (for ([pair (in-list train-data)])
           (set! pair-iter (add1 pair-iter))
-          (set! file-all-pairs-success? #t))
+          (set! file-all-pairs-success? #t)
 
           (displayln          (format "                .              .            File-Iteration #~a  ~a ------- Now processing train pair #: ~a"
                    file-iter
@@ -237,7 +237,7 @@
                                pair-iter))
             ;; 只要有任何一个 pair 失败，就让“本文件不成功”
             (set! file-all-pairs-success? #f))
-      )    )  )
+      )    ))
       ;; 如果该文件的所有 pair 都成功，则对全局成功文件计数 +1
       (when file-all-pairs-success?
         (displayln (format "         Y  Y  Y  Y  Y  Y  Y  Y  Y  Y  Y  Y  Y  Y  This file (filename: ~a) => all pairs success => count+1!"

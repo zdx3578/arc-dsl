@@ -137,15 +137,19 @@
         #f])]))
 
 
-(define total-successful-files 0)
-
-
 (define (main dir)
-  (define all-json (read-all-json-files dir)) ; 假设已定义 read-all-json-files
-  (set! total-successful-files
-        (for/sum ([json-data (in-list all-json)]) ; 使用 for/sum 直接统计成功文件
-          (if (process-single-file json-data) 1 0)))
+  (define all-json (read-all-json-files dir))
+
+  (define total-successful-files
+    (for/sum ([json-data (in-list all-json)])
+      (define fn (hash-ref json-data 'filename))
+      (define success? (process-single-file json-data))
+      (when success?
+        (displayln (format "====> Successful file: ~a" fn)))
+      (if success? 1 0)))    ;; 如果成功就返回 1，否则 0
+
   (displayln (format "***** total-successful-files = ~a" total-successful-files)))
+
 
 ;; 处理单个文件
 (define (process-single-file json-data)
