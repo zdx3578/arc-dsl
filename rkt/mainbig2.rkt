@@ -2,28 +2,49 @@
 
 (require racket/set
          rosette/lib/match
-         "objects.rkt"          ;; (objects grid b1 b2 b3)
+         "objects.rkt"
          "properties.rkt"
-         "json-reader.rkt"      ;; (read-all-json-files dir)
-         "data-structures.rkt") ;; (struct Grid ...) 等
+         "json-reader.rkt"
+         "data-structures.rkt")
 
-;; -------------------------------------------------------
-;; 1) DSL结构体 (保留 + 新增CMirror, DMirror)
-;; -------------------------------------------------------
-(struct NoOp    ()          #:transparent)
-(struct Rot90   (sub)       #:transparent)
-(struct HMirror (sub)       #:transparent)
-(struct VMirror (sub)       #:transparent)
-(struct CMirror (sub)       #:transparent)  ; NEW
-(struct DMirror (sub)       #:transparent)  ; NEW
-(struct Compose (e1 e2)     #:transparent)
+;; ========================================================
+;; 1) 统一 DSL 结构 + 构造器宏
+;; ========================================================
+;; 只有一个 struct: (DSL op maybe-sub)
+;;  - op:     symbol, e.g. 'NoOp, 'Rot90, 'CMirror, etc.
+;;  - sub:    #f if no sub, or (DSL ...) if has sub
+(struct DSL (op sub) #:transparent)
 
-;; -------------------------------------------------------
-;; 2) TransformationInfo 与 transformations 表
-;;    在这里添加/删除变换即可
-;; -------------------------------------------------------
-(struct TransformationInfo (name code apply-fn check-fn dsl-maker)
-  #:transparent)
+;; 定义一组宏，让写法和原先类似:
+(define-syntax-rule (NoOp)
+  (DSL 'NoOp #f))
+
+(define-syntax-rule (Rot90 sub)
+  (DSL 'Rot90 sub))
+
+(define-syntax-rule (HMirror sub)
+  (DSL 'HMirror sub))
+
+(define-syntax-rule (VMirror sub)
+  (DSL 'VMirror sub))
+
+(define-syntax-rule (CMirror sub)
+  (DSL 'CMirror sub))
+
+(define-syntax-rule (DMirror sub)
+  (DSL 'DMirror sub))
+
+;; 组合操作
+;;  - 这里可以把 Compose(e1, e2) 直接存在 sub 里,
+;;    例如 sub = (list e1 e2).
+(define-syntax-rule (Compose e1 e2)
+  (DSL 'Compose (list e1 e2)))
+
+
+;; ========================================================
+;; 2) TransformationInfo + transformations 表
+;; ========================================================
+(struct TransformationInfo (name code apply-fn check-fn dsl-maker) #:transparent)
 
 (define transformations
   (list
@@ -32,7 +53,7 @@
     0
     (lambda (obj) obj)
     (lambda (i o) (equal? i o))
-    (lambda (sub) (NoOp)))    ;; sub 暂时用不上, NoOp无子表达式
+    (lambda (sub) (NoOp))) ;; sub => #f
 
    (TransformationInfo
     'Rot90
@@ -51,27 +72,25 @@
    (TransformationInfo
     'VMirror
     3
-    (lambda (obj) (if (#t) (vmirror obj) #f))
+    (lambda (obj) (if (valid-vmirror? obj) (vmirror obj) #f))
     (lambda (i o) (equal? (vmirror i) o))
     (lambda (sub) (VMirror sub)))
 
-   ;; === 你提到的 CMirror / DMirror，具体实现看需求
    (TransformationInfo
     'CMirror
     4
-    (lambda (obj) (cmirror obj)) ; 你需实现 valid-cmirror?, cmirror
+    (lambda (obj)  (cmirror obj) )
     (lambda (i o) (equal? (cmirror i) o))
     (lambda (sub) (CMirror sub)))
 
    (TransformationInfo
     'DMirror
     5
-    (lambda (obj)  (dmirror obj) ) ; 你需实现 valid-dmirror?, dmirror
+    (lambda (obj) (dmirror obj) )
     (lambda (i o) (equal? (dmirror i) o))
     (lambda (sub) (DMirror sub)))
    ))
 
-;; 辅助函数: 查表
 (define (lookup-trans-by-name nm)
   (for/first ([tf (in-list transformations)])
     (when (eq? nm (TransformationInfo-name tf))
@@ -82,93 +101,55 @@
     (when (= c (TransformationInfo-code tf))
       tf)))
 
-;; -------------------------------------------------------
-;; 3) 统一 `interp`：用 dsl-op-name 和 dsl-op-sub
-;;    来识别操作名与子表达式，减少重复 match
-;; -------------------------------------------------------
-
-;; (A) 提取 DSL操作名
-(define (dsl-op-name expr)
-  (cond
-    [(NoOp? expr)    'NoOp]
-    [(Rot90? expr)   'Rot90]
-    [(HMirror? expr) 'HMirror]
-    [(VMirror? expr) 'VMirror]
-    [(CMirror? expr) 'CMirror]    ;; NEW
-    [(DMirror? expr) 'DMirror]    ;; NEW
-    [else (error "Unknown DSL op (not Compose or recognized unary op)" expr)]))
-
-;; (B) 提取 DSL操作的子表达式(若无子，则返回 #f)
-(define (dsl-op-sub expr)
-  (cond
-    [(NoOp? expr)    #f]
-    [(Rot90? expr)   (Rot90-sub expr)]
-    [(HMirror? expr) (HMirror-sub expr)]
-    [(VMirror? expr) (VMirror-sub expr)]
-    [(CMirror? expr) (CMirror-sub expr)]  ;; NEW
-    [(DMirror? expr) (DMirror-sub expr)]  ;; NEW
-    [else #f]))
-
-
-;; (C) 真正的 interp
+;; ========================================================
+;; 3) interp: 通过 (DSL 'Compose (list e1 e2)) 等区分
+;; ========================================================
 (define (interp expr obj)
   (match expr
-    ;; 如果是 Compose
-    [(Compose e1 e2)
+    ;; 组合操作: (DSL 'Compose (list e1 e2))
+    [(DSL 'Compose (list e1 e2))
      (define r1 (interp e1 obj))
      (if r1 (interp e2 r1) #f)]
 
-    ;; 否则认为是单一操作 (NoOp, Rot90, HMirror, VMirror, CMirror, DMirror)
-    [_
-     (define op (dsl-op-name expr))        ;; 提取操作名
-     (define sub (dsl-op-sub expr))        ;; 取子表达式(可为 #f)
-     (if (not sub)
-         ;; 如果没有子表达式, 如 (NoOp)
+    ;; 单操作, 没有子表达式: (DSL 'NoOp #f)
+    [(DSL op #f)
+     (define tf (lookup-trans-by-name op))
+     (if tf ((TransformationInfo-apply-fn tf) obj) #f)]
+
+    ;; 单操作, 有一个 sub: (DSL 'Rot90 sub)
+    [(DSL op sub)
+     (define sub-out (interp sub obj))
+     (if sub-out
          (let ([tf (lookup-trans-by-name op)])
-           (if tf ((TransformationInfo-apply-fn tf) obj) #f))
-         ;; 有子表达式, 先 interp sub => sub-out
-         (let ([sub-out (interp sub obj)])
-           (if sub-out
-               (let ([tf (lookup-trans-by-name op)])
-                 (if tf ((TransformationInfo-apply-fn tf) sub-out) #f))
-               #f)))]))
+           (if tf ((TransformationInfo-apply-fn tf) sub-out) #f))
+         #f)]))
 
-
-;; -------------------------------------------------------
-;; 4) 合成逻辑(与之前类似，但使用 transformations 表)
-;; -------------------------------------------------------
-
-;; 4.1) simple-check => 遍历 transformations, 用 check-fn
+;; ========================================================
+;; 4) 合成逻辑
+;; ========================================================
 (define (simple-check in-obj out-obj)
   (for/or ([tf (in-list transformations)])
     (define cfn (TransformationInfo-check-fn tf))
     (when (and cfn (cfn in-obj out-obj))
       (TransformationInfo-name tf))))
 
-;; 4.2) translate => 根据 e 用 dsl-maker
 (define-symbolic e integer?)
 
 (define (translate e)
   (define found (lookup-trans-by-code e))
   (if found
-      ;; 给 sub = (NoOp) 作为默认下级
-      ((TransformationInfo-dsl-maker found) (NoOp))
+      ((TransformationInfo-dsl-maker found) (NoOp))  ; default sub => NoOp
       (error "unrecognized transformation code" e)))
 
-
-;; 4.3) synthesize-transformation
 (define (synthesize-transformation input-obj output-obj)
-  ;; 1. 简单检测
   (define name-result (simple-check input-obj output-obj))
   (cond
     [(symbol? name-result)
-     ;; 找到 tf, 打印 code
      (define tf (lookup-trans-by-name name-result))
-     (define c  (TransformationInfo-code tf))
+     (define c (TransformationInfo-code tf))
      (displayln (format "#hash((e . ~a))" c))
      #t]
     [else
-     ;; SMT
      (define all-conditions
        (and (>= e 0)
             (< e (length transformations))
@@ -183,18 +164,18 @@
        [(unsat? result) #f]
        [else (displayln "SMT result: unknown...") #f])]))
 
-;; -------------------------------------------------------
-;; 以下保持你原先的 process-single-file / main 逻辑
-;; -------------------------------------------------------
+;; ========================================================
+;; 以下保留你原先的 process-single-file / main
+;; ========================================================
 (define (process-single-file json-data)
   (define train-data (hash-ref json-data 'train))
-  (for/and ([pair (in-list train-data)]) ; 所有 pair 必须成功
+  (for/and ([pair (in-list train-data)])
     (define input-grid (Grid (hash-ref pair 'input)))
     (define output-grid (Grid (hash-ref pair 'output)))
     (define input-obj-set0 (all-objects-from-grid input-grid))
     (define input-obj-set (all-objects-00-c0-from-objs input-obj-set0))
 
-    (for/or ([out-param (in-list param-combinations)]) ; 存在即成功
+    (for/or ([out-param (in-list param-combinations)])
       (define out-obj-set0 (objects-with-params output-grid out-param))
       (define out-obj-set (all-objects-00-c0-from-objs out-obj-set0))
       (for/and ([out-obj (in-set out-obj-set)])
