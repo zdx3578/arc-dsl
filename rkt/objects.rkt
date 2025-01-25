@@ -99,101 +99,124 @@
 ;; (define (neighbors loc h w) ...) ; 8邻接
 ;; (define (dneighbors loc h w) ...) ; 4邻接
 
+;; 存储与对象相关的各种信息
+
+(provide          (struct-out ObjectInfo) )
+
+
+
+(struct ObjectInfo
+  (obj               ;; set of '(color (row col))'
+   univalued?        ;; 是否仅保留单一颜色
+   diagonal?         ;; 是否允许对角扩散
+   without-bg?       ;; 是否需要排除背景色
+   origin-color      ;; 如果对象保持单色则为种子颜色，否则 -1 或 'multi'
+   origin-position   ;; 对象的最小(row,col)，或别的定位
+   otherinfo)
+  #:transparent)
+
 (provide objects)
 
 (define (objects grid univalued? diagonal? without-bg?)
-  ;; 1) 确定背景色；若 without-bg?=#t，则最常见颜色；否则 #f
-  ;;; (displayln (format " > > objects fun log  param = ~a, =~a, =~a"
-  ;;;                            univalued? diagonal? without-bg?))
+  ;; 1) 根据 without-bg? 确定背景色
   (define bg
     (if without-bg?
-        (mostcolor grid)
-        #f)
-  ) ;; ← 对应 (define bg
+        (mostcolor grid)  ;; 你已有的获取“最常见颜色”的函数
+        #f))
 
   (define h (grid-height grid))
   (define w (grid-width grid))
 
-  ;; 所有坐标
+  ;; 把所有坐标 [(0 0), (0 1) ... (h-1 w-1)] 放入一个 list
   (define locs
     (for*/list ([i (in-range h)]
                 [j (in-range w)])
-      (list i j))
-  ) ;; ← 对应 (define locs
+      (list i j)))
 
-  ;; 记录已经属于某个对象的坐标
+  ;; 已占用的坐标
   (define occupied (set))
 
-  ;; 存放所有对象
+  ;; 最终返回的对象集 (每个元素是一个 ObjectInfo)
   (define objs (set))
 
-  ;; 根据 diagonal? 确定邻居函数
+  ;; 若 diagonal?=#t，允许对角；否则仅四邻居
   (define neigh-fn
-    (if diagonal?
-        neighbors
-        dneighbors)
-  ) ;; ← 对应 (define neigh-fn
+    (if diagonal? neighbors dneighbors))
 
-  ;; 主循环，遍历所有坐标
+  ;; 遍历每个坐标
   (for ([loc (in-list locs)])
-    (when (not (set-member? occupied loc))
-      (define val (grid-ref grid loc))
-      ;; 如果是背景色，且要排除，则跳过
-      (when (not (and bg (equal? val bg)))
-        ;; 创建一个新对象，包含当前格子 (color, (r c))
-        (define obj (set (list val loc)))
-        ;; 待扩展坐标
-        (define cands (set loc))
-
-        ;; 用 let + 递归 loop，模拟 Python while
+    (unless (set-member? occupied loc)
+      (define seed-color (grid-ref grid loc))
+      ;; 若 seed-color == bg 并且 without-bg?=#t，则跳过
+      (unless (and bg (equal? seed-color bg))
+        ;; 准备 BFS/DFS
+        (define obj (set (list seed-color loc))) ;; 该对象起步
+        (define cands (set loc))                  ;; 待扩展坐标
+        ;; BFS 种子颜色
+        (define origin-color seed-color)
+        ;; 标志：是否出现多颜色
+        (define multi-color? #f)
+        ;; BFS
         (let loop ([c cands]
-                   [o obj])
+                   [o obj]
+                   [found-colors (set seed-color)])
           (cond
-            ;; 若候选坐标为空 => BFS/DFS 完成
             [(set-empty? c)
-             ;; 将当前对象加入 objs
-             (set! objs (set-add objs o))
-            ] ;; ← 对应 [(set-empty? c)
+             ;; BFS结束 => 求 min-row, min-col
+             (define o-list (set->list o)) ; e.g. '((color (r c)) ...)
+             (define minr (apply min (map (lambda (x) (first (cadr x))) o-list)))
+             (define minc (apply min (map (lambda (x) (second (cadr x))) o-list)))
+
+             ;; 若 multi-color?=#t，则最终 origin-color = -1
+             (define final-color
+               (if multi-color? -1 origin-color))
+
+             ;; 加入 objs 集
+             (set! objs
+                   (set-add objs
+                            (ObjectInfo
+                             o
+                             univalued?
+                             diagonal?
+                             without-bg?
+                             final-color
+                             (list minr minc)
+                             #f)))  ; otherinfo => #f 占位
+             ]
 
             [else
-             ;; neighborhood: 本轮找到的周边坐标
              (define neighborhood (set))
-
-             ;; 遍历当前候选
+             ;; 遍历 c 里的每个坐标
              (for ([cand (in-set c)])
                (define ccolor (grid-ref grid cand))
-
-               ;; 判断是否加入此对象
                (define add?
                  (if univalued?
-                     (equal? ccolor val)
-                     ;; 若不需单色，则只要不是 bg (when without-bg?=#t)
-                     (not (and bg (equal? ccolor bg))))
-               ) ;; ← 对应 (define add?
+                     ;; 单色 => ccolor 必须 == seed-color
+                     (equal? ccolor seed-color)
+                     ;; 多色 => 只要 != bg
+                     (not (and bg (equal? ccolor bg)))))
 
                (when add?
-                 ;; 把 (ccolor, cand) 加入对象
+                 ;; 将坐标加进对象
                  (set! o (set-add o (list ccolor cand)))
                  ;; 标记占用
                  (set! occupied (set-add occupied cand))
-                 ;; 找邻居并放入 neighborhood
+
+                 ;; 如果尚未 multi-color?，且发现了新的颜色 => multi-color? = #t
+                 (when (and (not multi-color?)
+                            (not (set-member? found-colors ccolor)))
+                   (set! multi-color? #t))
+
+                 (set! found-colors (set-add found-colors ccolor))
+
+                 ;; 扩展邻居
                  (define neighs (neigh-fn cand h w))
                  (for ([n neighs])
-                   (set! neighborhood (set-add neighborhood n))
-                 ) ;; ← 对应 (for ([n neighs])
-               ) ;; ← 对应 (when add?
-             ) ;; ← 对应 (for ([cand (in-set c)])
+                   (set! neighborhood (set-add neighborhood n)))))
 
-             ;; 新一轮候选 = neighborhood - occupied
-             (loop (set-subtract neighborhood occupied) o)
-            ] ;; ← 对应 [else
-          ) ;; ← 对应 (cond
-        ) ;; ← 对应 (let loop
-      ) ;; ← 对应 (when (not (and bg...
-    ) ;; ← 对应 (when (not (set-member...
-  ) ;; ← 对应 (for ([loc (in-list locs)])
-  ;; 返回所有对象 (每个对象也是 set)
-  ;;; (displayln "-----------objects function-----------")
+             ;; 继续下一个 BFS 轮次
+             (loop (set-subtract neighborhood occupied)
+                   o
+                   found-colors)])))))
   ;;; (displayln objs)
-  objs
-) ;; ← 对应 (define (objects ...
+  objs)

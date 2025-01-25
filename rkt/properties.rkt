@@ -2,6 +2,7 @@
 
 (require racket/set
          racket/list
+        ;;;  "data-structures.rkt"
          "objects.rkt")
 
 (provide (all-defined-out))
@@ -373,23 +374,70 @@
     ;;; (define coords (asindices obj))
     ;;; (shift-coords-to-0-0 coords)))
 
-(define (shift-obj-to-0-0-0 obj)
-  ;; 如果 obj 为空，就直接返回一个空 set
+
+
+;; 假设结构体定义类似:
+;; (struct ObjectInfo
+;;   (obj univalued? diagonal? without-bg? origin-color origin-position otherinfo)
+;;   #:transparent)
+
+(define (shift-obj-to-0-0-0 objbig)
+  ;; Step 1: 判断 objbig 是否 ObjectInfo
+  (cond
+    [(ObjectInfo? objbig)
+     ;; 从 objbig 中提取原 BFS 集合
+     (define orig-obj (ObjectInfo-obj objbig))
+     (define shifted-obj (shift-pure-obj-to-0-0-0 orig-obj))
+     ;; 把 shifted-obj “拼”回一个新的 ObjectInfo，保留其余字段
+     (ObjectInfo
+      shifted-obj
+      (ObjectInfo-univalued? objbig)
+      (ObjectInfo-diagonal? objbig)
+      (ObjectInfo-without-bg? objbig)
+      (ObjectInfo-origin-color objbig)
+      (ObjectInfo-origin-position objbig)
+      (ObjectInfo-otherinfo objbig))]
+
+    ;; Step 2: 如果不是 ObjectInfo，就假设它是纯 BFS set
+    [(set? objbig)
+     (shift-pure-obj-to-0-0-0 objbig)]
+
+    [else
+     (error "shift-obj-to-0-0-0: unsupported argument type" objbig)]))
+
+
+;; 把“纯对象集合(set)”平移到 (0,0)，并把颜色设为 0
+(define (shift-pure-obj-to-0-0-0 obj)
   (if (set-empty? obj)
       (set)
       (let* ([obj-list (set->list obj)]
-             ;; obj-list 里每个元素 e = '(color (r c))
-             ;; 先把 (r c) 收集下来，方便算 min-row 和 min-col
-             [rc-list (map (λ (e) (cadr e)) obj-list)]
-             [min-row (apply min (map first rc-list))]
-             [min-col (apply min (map second rc-list))])
+             [rc-list  (map (λ(e) (cadr e)) obj-list)]
+             [min-row  (apply min (map first rc-list))]
+             [min-col  (apply min (map second rc-list))])
         (for/set ([e (in-list obj-list)])
           ;; e = '(color (r c))
-          (define color 0)  ; 你想要的默认颜色
           (define r (first (cadr e)))
           (define c (second (cadr e)))
-          ;; 生成新的 '(color (r' c'))
-          (list color (list (- r min-row) (- c min-col)))))))
+          (list 0 (list (- r min-row) (- c min-col)))))))
+
+
+;;; (define (shift-obj-to-0-0-0 obj)
+;;;   ;; 如果 obj 为空，就直接返回一个空 set
+;;;   (if (set-empty? obj)
+;;;       (set)
+;;;       (let* ([obj-list (set->list obj)]
+;;;              ;; obj-list 里每个元素 e = '(color (r c))
+;;;              ;; 先把 (r c) 收集下来，方便算 min-row 和 min-col
+;;;              [rc-list (map (λ (e) (cadr e)) obj-list)]
+;;;              [min-row (apply min (map first rc-list))]
+;;;              [min-col (apply min (map second rc-list))])
+;;;         (for/set ([e (in-list obj-list)])
+;;;           ;; e = '(color (r c))
+;;;           (define color 0)  ; 你想要的默认颜色
+;;;           (define r (first (cadr e)))
+;;;           (define c (second (cadr e)))
+;;;           ;; 生成新的 '(color (r' c'))
+;;;           (list color (list (- r min-row) (- c min-col)))))))
 
 
 (define (all-objects-00-c0-from-objs all-objs)

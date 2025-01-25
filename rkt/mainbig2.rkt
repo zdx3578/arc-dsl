@@ -180,7 +180,7 @@
       (define out-obj-set (all-objects-00-c0-from-objs out-obj-set0))
       (for/and ([out-obj (in-set out-obj-set)])
         (for/or ([in-obj (in-set input-obj-set)])
-          (synthesize-transformation in-obj out-obj))))))
+          (synthesize-transformation (ObjectInfo-obj in-obj) (ObjectInfo-obj out-obj) ))))))
 
 (define (process-single-file-logging json-data)
   (define fn (hash-ref json-data 'filename))
