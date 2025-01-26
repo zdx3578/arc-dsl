@@ -148,7 +148,7 @@
      (define tf (lookup-trans-by-name name-result))
      (define c (TransformationInfo-code tf))
      (displayln (format "#hash((e . ~a))" c))
-     #t]
+     c ]
     [else
      (define all-conditions
        (and (>= e 0)
@@ -167,20 +167,90 @@
 ;; ========================================================
 ;; 以下保留你原先的 process-single-file / main
 ;; ========================================================
+;;; (define (process-single-file json-data)
+;;;   (define train-data (hash-ref json-data 'train))
+;;;   (for/and ([pair (in-list train-data)])
+;;;     (define input-grid (Grid (hash-ref pair 'input)))
+;;;     (define output-grid (Grid (hash-ref pair 'output)))
+;;;     (define input-obj-set0 (all-objects-from-grid input-grid))
+;;;     (define input-obj-set (all-objects-00-c0-from-objs input-obj-set0))
+
+;;;     (for/or ([out-param (in-list param-combinations)])
+;;;       (define out-obj-set0 (objects-with-params output-grid out-param))
+;;;       (define out-obj-set (all-objects-00-c0-from-objs out-obj-set0))
+;;;       (for/and ([out-obj (in-set out-obj-set)])
+;;;         (for/or ([in-obj (in-set input-obj-set)])
+;;;           (synthesize-transformation (ObjectInfo-obj in-obj) (ObjectInfo-obj out-obj) ))))))
+
+
 (define (process-single-file json-data)
   (define train-data (hash-ref json-data 'train))
+
+  ;; 对级记录 (List of PairMatchRecord) for this file
+  (define pair-records '())
+
   (for/and ([pair (in-list train-data)])
-    (define input-grid (Grid (hash-ref pair 'input)))
+    ;; 1) 取出 grids
+    (define input-grid  (Grid (hash-ref pair 'input)))
     (define output-grid (Grid (hash-ref pair 'output)))
-    (define input-obj-set0 (all-objects-from-grid input-grid))
-    (define input-obj-set (all-objects-00-c0-from-objs input-obj-set0))
+
+    ;; 2) 提取 input-obj, output-obj
+    (define input-obj-set0  (all-objects-from-grid input-grid))
+    (define input-obj-set   (all-objects-00-c0-from-objs input-obj-set0))
+
+    ;; 这里存放 "参数级" 信息 => list of ParamMatchRecord
+    (define param-records '())
 
     (for/or ([out-param (in-list param-combinations)])
       (define out-obj-set0 (objects-with-params output-grid out-param))
-      (define out-obj-set (all-objects-00-c0-from-objs out-obj-set0))
-      (for/and ([out-obj (in-set out-obj-set)])
-        (for/or ([in-obj (in-set input-obj-set)])
-          (synthesize-transformation (ObjectInfo-obj in-obj) (ObjectInfo-obj out-obj) ))))))
+      (define out-obj-set  (all-objects-00-c0-from-objs out-obj-set0))
+
+      ;; 这里我们想记录对象级匹配, for this param
+      (define object-match-list '())
+
+      ;; param 下, “所有 out-obj 必须可解”
+      ;; => for/and
+      (define param-success?
+        (for/and ([out-obj (in-set out-obj-set)])
+          (for/or ([in-obj (in-set input-obj-set)])
+            (let ([ok? (synthesize-transformation
+                        (ObjectInfo-obj in-obj)
+                        (ObjectInfo-obj out-obj))])
+              (when ok?
+                ;; 这里 “对象级”成功 => 记录 ObjectMatchRecord
+                ;; transform-code 由 synthesize-transformation 里记录or返回
+                ;; 先示例: 强行写 '??? => 以后你可以让 synthesize-transformation 返回 code
+                (set! object-match-list
+                      (cons (ObjectMatchRecord in-obj out-obj '??? '())
+                            object-match-list)))
+              ok?))))
+
+      (when param-success?
+        ;; 该 param 整体成功 => 记录 ParamMatchRecord
+        (define pmr (ParamMatchRecord out-param object-match-list))
+        (set! param-records (cons pmr param-records))
+        #t))  ;; 只要有一个 param 成功 => for/or => #t
+
+    ;; 如果 param-records 里不为空 => 说明本训练对成功
+    (unless (null? param-records)
+      ;; 构造 PairMatchRecord
+      (define pair-rec
+        (PairMatchRecord input-grid output-grid param-records))
+      ;; 全局 or 局部存
+      (set! pair-records
+            (cons pair-rec pair-records)))
+
+    ;; for/and expects #t if success => pair is matched
+    (not (null? param-records)))  ;; => #t if this pair success
+
+  ;; 所有 pair 处理完 => 把 pair-records 存到 全局 pair-match-records
+  (for ([pr (in-list pair-records)])
+    (set! pair-match-records (cons pr pair-match-records)))
+
+  #t) ;; or whatever
+
+
+
 
 (define (process-single-file-logging json-data)
   (define fn (hash-ref json-data 'filename))

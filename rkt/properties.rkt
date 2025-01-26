@@ -323,6 +323,18 @@
    (list #t #t #f)
    (list #t #t #t)))
 
+
+  ;;;  (define param-combinations
+  ;;; (list
+  ;;;  (list #t #t #t)
+  ;;;  (list #f #f #t)
+  ;;;  (list #t #f #t)
+  ;;;  (list #f #t #t)
+  ;;;  (list #t #f #f)
+  ;;;  (list #f #t #f)
+  ;;;  (list #t #t #f)
+  ;;;  (list #f #f #f )))
+
 (define (objects-with-params grid bools)
   (define b1 (list-ref bools 0))
   (define b2 (list-ref bools 1))
