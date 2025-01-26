@@ -381,6 +381,18 @@
 ;;   (obj univalued? diagonal? without-bg? origin-color origin-position otherinfo)
 ;;   #:transparent)
 
+(define (make-ObjectInfo objinfo new-obj)
+  (ObjectInfo
+   new-obj
+   (ObjectInfo-univalued? objinfo)
+   (ObjectInfo-diagonal? objinfo)
+   (ObjectInfo-without-bg? objinfo)
+   (ObjectInfo-origin-color objinfo)
+   (ObjectInfo-origin-position objinfo)
+   (ObjectInfo-bounding-box objinfo)
+   (ObjectInfo-color-ranking objinfo)
+   (ObjectInfo-otherinfo objinfo)))
+
 (define (shift-obj-to-0-0-0 objbig)
   ;; Step 1: 判断 objbig 是否 ObjectInfo
   (cond
@@ -388,22 +400,39 @@
      ;; 从 objbig 中提取原 BFS 集合
      (define orig-obj (ObjectInfo-obj objbig))
      (define shifted-obj (shift-pure-obj-to-0-0-0 orig-obj))
-     ;; 把 shifted-obj “拼”回一个新的 ObjectInfo，保留其余字段
-     (ObjectInfo
-      shifted-obj
-      (ObjectInfo-univalued? objbig)
-      (ObjectInfo-diagonal? objbig)
-      (ObjectInfo-without-bg? objbig)
-      (ObjectInfo-origin-color objbig)
-      (ObjectInfo-origin-position objbig)
-      (ObjectInfo-otherinfo objbig))]
 
-    ;; Step 2: 如果不是 ObjectInfo，就假设它是纯 BFS set
+     (make-ObjectInfo objbig shifted-obj )]
+
     [(set? objbig)
+     ;; 如果传入的是纯 set，直接平移
      (shift-pure-obj-to-0-0-0 objbig)]
-
     [else
      (error "shift-obj-to-0-0-0: unsupported argument type" objbig)]))
+
+
+;;; (define (shift-obj-to-0-0-0 objbig)
+;;;   ;; Step 1: 判断 objbig 是否 ObjectInfo
+;;;   (cond
+;;;     [(ObjectInfo? objbig)
+;;;      ;; 从 objbig 中提取原 BFS 集合
+;;;      (define orig-obj (ObjectInfo-obj objbig))
+;;;      (define shifted-obj (shift-pure-obj-to-0-0-0 orig-obj))
+;;;      ;; 把 shifted-obj “拼”回一个新的 ObjectInfo，保留其余字段
+;;;      (ObjectInfo
+;;;       shifted-obj
+;;;       (ObjectInfo-univalued? objbig)
+;;;       (ObjectInfo-diagonal? objbig)
+;;;       (ObjectInfo-without-bg? objbig)
+;;;       (ObjectInfo-origin-color objbig)
+;;;       (ObjectInfo-origin-position objbig)
+;;;       (ObjectInfo-otherinfo objbig))]
+
+;;;     ;; Step 2: 如果不是 ObjectInfo，就假设它是纯 BFS set
+;;;     [(set? objbig)
+;;;      (shift-pure-obj-to-0-0-0 objbig)]
+
+;;;     [else
+;;;      (error "shift-obj-to-0-0-0: unsupported argument type" objbig)]))
 
 
 ;; 把“纯对象集合(set)”平移到 (0,0)，并把颜色设为 0

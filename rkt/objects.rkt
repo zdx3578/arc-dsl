@@ -103,75 +103,117 @@
 
 (provide          (struct-out ObjectInfo) )
 
+(provide objects)
 
 
+;; -----------------------
+;; 1) 新的 ObjectInfo 结构体
+;; -----------------------
 (struct ObjectInfo
-  (obj               ;; set of '(color (row col))'
-   univalued?        ;; 是否仅保留单一颜色
-   diagonal?         ;; 是否允许对角扩散
-   without-bg?       ;; 是否需要排除背景色
-   origin-color      ;; 如果对象保持单色则为种子颜色，否则 -1 或 'multi'
-   origin-position   ;; 对象的最小(row,col)，或别的定位
+  (obj
+   univalued?
+   diagonal?
+   without-bg?
+   origin-color
+   origin-position
+   bounding-box        ;; (list minr minc maxr maxc)
+   color-ranking       ;; string or list
    otherinfo)
   #:transparent)
 
-(provide objects)
 
+;; 辅助函数: BFS 结束后, 根据对象 => 求 bounding-box
+(define (compute-bbox obj-set)
+  ;; obj_set 里每个元素形如 '(color (r c))
+  ;; 如果 obj_set 为空, 就返回 '(0 0 0 0) or '(#f #f #f #f)
+  (if (set-empty? obj-set)
+      '(0 0 0 0)
+      (let* ([o-list (set->list obj-set)]
+             [rows (map (lambda (x) (first (cadr x))) o-list)]
+             [cols (map (lambda (x) (second (cadr x))) o-list)]
+             [minr (apply min rows)]
+             [maxr (apply max rows)]
+             [minc (apply min cols)]
+             [maxc (apply max cols)])
+        (list minr minc maxr maxc))))
+
+;; 辅助函数: 统计颜色频次 => 返回按降序排列的字符串
+(define (color-frequency-ranking obj-set)
+  (if (set-empty? obj-set)
+      ;; 如果对象为空，返回空列表
+      '()
+      (let ([color-hash (make-hash)])
+        ;; 1) 统计每种颜色出现次数
+        (for ([elem (in-set obj-set)])
+          ;; elem 形如 '(color (r c))，取第一个就是 color
+          (define col (first elem))
+          (hash-update! color-hash col add1 0))
+
+        ;; 2) 转为可排序列表：形如 '((color1 . count1) (color2 . count2) ...)
+        (define color-count-list
+          (hash-map color-hash (lambda (k v)
+                                 (cons k v))))
+
+        ;; 3) 按 count 降序排序
+        (define sorted
+          (sort color-count-list
+                (lambda (a b)
+                  (> (cdr a) (cdr b)))))
+
+        ;; 4) 将每个元素转成 '(color count) 形式返回
+        (map (lambda (pair)
+               (list (car pair) (cdr pair)))
+             sorted))))
+
+
+
+
+;; 主函数: objects
 (define (objects grid univalued? diagonal? without-bg?)
-  ;; 1) 根据 without-bg? 确定背景色
   (define bg
     (if without-bg?
-        (mostcolor grid)  ;; 你已有的获取“最常见颜色”的函数
+        (mostcolor grid)
         #f))
-
   (define h (grid-height grid))
   (define w (grid-width grid))
 
-  ;; 把所有坐标 [(0 0), (0 1) ... (h-1 w-1)] 放入一个 list
   (define locs
     (for*/list ([i (in-range h)]
                 [j (in-range w)])
       (list i j)))
 
-  ;; 已占用的坐标
   (define occupied (set))
-
-  ;; 最终返回的对象集 (每个元素是一个 ObjectInfo)
   (define objs (set))
 
-  ;; 若 diagonal?=#t，允许对角；否则仅四邻居
   (define neigh-fn
     (if diagonal? neighbors dneighbors))
 
-  ;; 遍历每个坐标
   (for ([loc (in-list locs)])
     (unless (set-member? occupied loc)
       (define seed-color (grid-ref grid loc))
-      ;; 若 seed-color == bg 并且 without-bg?=#t，则跳过
       (unless (and bg (equal? seed-color bg))
-        ;; 准备 BFS/DFS
-        (define obj (set (list seed-color loc))) ;; 该对象起步
-        (define cands (set loc))                  ;; 待扩展坐标
-        ;; BFS 种子颜色
+        (define obj (set (list seed-color loc)))
+        (define cands (set loc))
         (define origin-color seed-color)
-        ;; 标志：是否出现多颜色
         (define multi-color? #f)
-        ;; BFS
+
         (let loop ([c cands]
                    [o obj]
                    [found-colors (set seed-color)])
           (cond
             [(set-empty? c)
-             ;; BFS结束 => 求 min-row, min-col
-             (define o-list (set->list o)) ; e.g. '((color (r c)) ...)
-             (define minr (apply min (map (lambda (x) (first (cadr x))) o-list)))
-             (define minc (apply min (map (lambda (x) (second (cadr x))) o-list)))
+             ;; BFS结束
+             ;; => 1) bounding box
+             (define bounding (compute-bbox o))
+             ;; => 2) 若 multi-color?=#t => origin-color = -1
+             (define final-color (if multi-color? -1 origin-color))
+             ;; => 3) 颜色频次排序
+             (define rank (color-frequency-ranking o))
 
-             ;; 若 multi-color?=#t，则最终 origin-color = -1
-             (define final-color
-               (if multi-color? -1 origin-color))
+             (define o-list (set->list o))
+             (define minr (first bounding))
+             (define minc (second bounding))
 
-             ;; 加入 objs 集
              (set! objs
                    (set-add objs
                             (ObjectInfo
@@ -181,42 +223,33 @@
                              without-bg?
                              final-color
                              (list minr minc)
-                             #f)))  ; otherinfo => #f 占位
-             ]
+                             bounding
+                             rank
+                             #f)))]
 
             [else
              (define neighborhood (set))
-             ;; 遍历 c 里的每个坐标
              (for ([cand (in-set c)])
                (define ccolor (grid-ref grid cand))
                (define add?
                  (if univalued?
-                     ;; 单色 => ccolor 必须 == seed-color
                      (equal? ccolor seed-color)
-                     ;; 多色 => 只要 != bg
                      (not (and bg (equal? ccolor bg)))))
-
                (when add?
-                 ;; 将坐标加进对象
                  (set! o (set-add o (list ccolor cand)))
-                 ;; 标记占用
                  (set! occupied (set-add occupied cand))
-
-                 ;; 如果尚未 multi-color?，且发现了新的颜色 => multi-color? = #t
                  (when (and (not multi-color?)
                             (not (set-member? found-colors ccolor)))
                    (set! multi-color? #t))
-
                  (set! found-colors (set-add found-colors ccolor))
-
-                 ;; 扩展邻居
                  (define neighs (neigh-fn cand h w))
                  (for ([n neighs])
                    (set! neighborhood (set-add neighborhood n)))))
 
-             ;; 继续下一个 BFS 轮次
              (loop (set-subtract neighborhood occupied)
                    o
                    found-colors)])))))
   ;;; (displayln objs)
   objs)
+
+
