@@ -129,6 +129,9 @@
 ;; ========================================================
 (define (simple-check in-obj out-obj)
   (for/or ([tf (in-list transformations)])
+    ;;; (displayln "simple-check")
+    ;;; (displayln (TransformationInfo-name tf))
+    ;;; (sleep 1)
     (define cfn (TransformationInfo-check-fn tf))
     (when (and cfn (cfn in-obj out-obj))
       (TransformationInfo-name tf))))
@@ -252,11 +255,15 @@
                           (cons (ObjectMatchRecord in-obj out-obj '??? '())
                                 object-match-list)))
                   ok?))))
+          (displayln object-match-list)
+          ;;; (sleep 2)
 
           ;; 如果 param 成功 => 加入 param-match-record
           (if param-success?
               (cons (ParamMatchRecord out-param object-match-list) acc-params)
               acc-params)))
+      ;;; displayln acc-param
+      displayln param-records
 
       ;; 根据 param-records 是否为空，判断此 pair 是否成功
       (define this-pair-success? (not (null? param-records)))
@@ -268,6 +275,9 @@
            (cons (PairMatchRecord input-grid output-grid param-records)
                  acc-pairs)
            acc-pairs))))
+
+  displayln
+  displayln collected-pairs
 
   ;; 3) 把本文件处理得到的所有 PairMatchRecord 累加进全局
   (set! pair-match-records (append collected-pairs pair-match-records))
