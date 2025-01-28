@@ -114,8 +114,8 @@
    univalued?
    diagonal?
    without-bg?
-   origin-color
-   origin-position
+  ;;;  origin-color
+  ;;;  origin-position
    bounding-box        ;; (list minr minc maxr maxc)
    color-ranking       ;; string or list
    otherinfo)
@@ -221,8 +221,8 @@
                              univalued?
                              diagonal?
                              without-bg?
-                             final-color
-                             (list minr minc)
+                            ;;;  final-color
+                            ;;;  (list minr minc)
                              bounding
                              rank
                              #f)))]

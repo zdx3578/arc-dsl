@@ -151,7 +151,7 @@
      (define tf (lookup-trans-by-name name-result))
      (define c (TransformationInfo-code tf))
      (displayln (format "#hash((e . ~a))" c))
-     #t ]
+     c ]
     [else
      (define all-conditions
        (and (>= e 0)
@@ -205,6 +205,7 @@
 
 
 
+
 ;; 全局收集
 (define pair-match-records '())
 
@@ -248,7 +249,7 @@
                                           (ObjectInfo-obj out-obj))])
                                 (when ok?
                                   (set! object-match-list
-                                        (cons (ObjectMatchRecord in-obj out-obj '??? '())
+                                        (cons (ObjectMatchRecord in-obj out-obj ok? '())
                                               object-match-list)))
                                 ok?))))
 
@@ -256,12 +257,14 @@
                         (if param-success?
                             (cons (ParamMatchRecord out-param object-match-list)
                                   acc-params)
-                            acc-params))])
+                            acc-params))
+                            ])
 
                  ;; ★ 在内层 for/fold 结束后输出调试日志
                  (displayln (format "[DEBUG] Done param-combinations for this pair. param-records => ~s"
                                     local-param-records))
-                 local-param-records))
+                 local-param-records)
+              )
 
              ;; 判断该 pair 是否成功
              (define this-pair-success? (not (null? param-records)))
