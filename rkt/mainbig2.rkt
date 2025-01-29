@@ -286,22 +286,23 @@
 (define (post-process-rules!)
   (for ([pmr (in-list pair-match-records)])
     ;; 先做统计:
-    (define diag-hash (analyze-pair-match-record pmr))
-    ;; 构造一个 if-rule
-    (define candidate-rule (build-if-rule-based-on-stats diag-hash))
+    (begin
+      (define diag-hash (analyze-pair-match-record pmr))
+      (define candidate-rule (build-if-rule-based-on-stats diag-hash))
+      (displayln (format "Generated if-rule => ~s" candidate-rule))
+      (let ([success?
+            (for/and ([param-rec (in-list (PairMatchRecord-param-match-records pmr))])
+              (define omrs (ParamMatchRecord-object-matches param-rec))
+              (for/and ([omr (in-list omrs)])
+                (define in-obj-info (ObjectMatchRecord-in-obj omr))
+                (define out-obj     (ObjectMatchRecord-out-obj omr))
+                (equal? (interp-DSLCond candidate-rule in-obj-info) out-obj)))])
 
-    (displayln (format "Generated if-rule => ~s" candidate-rule))
+        (displayln (format "Check if-rule success? ~a" success?)))
+      ;; 让 begin 的最后是一个表达式:
+      'done)
+    ))
 
-    ;; 验证一下在本 PairMatchRecord 是否能匹配
-    (define success?
-      (for/and ([param-rec (in-list (PairMatchRecord-param-match-records pmr))])
-        (define omrs (ParamMatchRecord-object-matches param-rec))
-        (for/and ([omr (in-list omrs)])
-          (define in-obj-info (ObjectMatchRecord-in-obj omr))
-          (define out-obj     (ObjectMatchRecord-out-obj omr))
-          (equal? (interp-DSLCond candidate-rule in-obj-info) out-obj)))))
-
-    (displayln (format "Check if-rule success? ~a" success?)))
 
 ;; ---------------------------------------------------------------------
 ;; 7) process-single-file / main (示例)
@@ -355,15 +356,12 @@
                                         (cons (ObjectMatchRecord in-obj out-obj ok? '())
                                               object-match-list)))
                                 ok?))))
-
                         ;; 如果 param-success? => 新增一个 ParamMatchRecord
                         (if param-success?
                             (cons (ParamMatchRecord out-param object-match-list)
                                   acc-params)
                             acc-params))
                             ])
-
-
                  ;; ★ 在内层 for/fold 结束后输出调试日志
                  (displayln (format "[DEBUG] Done param-combinations for this pair. param-records => ~s"
                                     local-param-records))
