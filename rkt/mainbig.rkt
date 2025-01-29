@@ -129,6 +129,9 @@
 ;; ========================================================
 (define (simple-check in-obj out-obj)
   (for/or ([tf (in-list transformations)])
+    ;;; (displayln "simple-check")
+    ;;; (displayln (TransformationInfo-name tf))
+    ;;; (sleep 1)
     (define cfn (TransformationInfo-check-fn tf))
     (when (and cfn (cfn in-obj out-obj))
       (TransformationInfo-name tf))))
@@ -148,7 +151,7 @@
      (define tf (lookup-trans-by-name name-result))
      (define c (TransformationInfo-code tf))
      (displayln (format "#hash((e . ~a))" c))
-     #t]
+     c ]
     [else
      (define all-conditions
        (and (>= e 0)
@@ -167,26 +170,154 @@
 ;; ========================================================
 ;; 以下保留你原先的 process-single-file / main
 ;; ========================================================
-(define (process-single-file json-data)
-  (define train-data (hash-ref json-data 'train))
-  (for/and ([pair (in-list train-data)])
-    (define input-grid (Grid (hash-ref pair 'input)))
-    (define output-grid (Grid (hash-ref pair 'output)))
-    (define input-obj-set0 (all-objects-from-grid input-grid))
-    (define input-obj-set (all-objects-00-c0-from-objs input-obj-set0))
+;;; (define (process-single-file json-data)
+;;;   (define train-data (hash-ref json-data 'train))
+;;;   (for/and ([pair (in-list train-data)])
+;;;     (define input-grid (Grid (hash-ref pair 'input)))
+;;;     (define output-grid (Grid (hash-ref pair 'output)))
+;;;     (define input-obj-set0 (all-objects-from-grid input-grid))
+;;;     (define input-obj-set (all-objects-00-c0-from-objs input-obj-set0))
 
-    (for/or ([out-param (in-list param-combinations)])
-      (define out-obj-set0 (objects-with-params output-grid out-param))
-      (define out-obj-set (all-objects-00-c0-from-objs out-obj-set0))
-      (for/and ([out-obj (in-set out-obj-set)])
-        (for/or ([in-obj (in-set input-obj-set)])
-          (synthesize-transformation in-obj out-obj))))))
+;;;     (for/or ([out-param (in-list param-combinations)])
+;;;       (define out-obj-set0 (objects-with-params output-grid out-param))
+;;;       (define out-obj-set (all-objects-00-c0-from-objs out-obj-set0))
+;;;       (for/and ([out-obj (in-set out-obj-set)])
+;;;         (for/or ([in-obj (in-set input-obj-set)])
+;;;           (synthesize-transformation (ObjectInfo-obj in-obj) (ObjectInfo-obj out-obj) ))))))
+
+;; 每个对象级成功匹配
+(struct ObjectMatchRecord
+  (in-obj out-obj transform-code details)
+  #:transparent)
+
+;; 针对某个 out-param 的匹配成果，收集所有 (ObjectMatchRecord)
+(struct ParamMatchRecord
+  (param
+   object-matches)  ;; list of ObjectMatchRecord
+  #:transparent)
+
+;; 针对一个训练对 (input-grid, output-grid) 的转换集合
+(struct PairMatchRecord
+  (input-grid
+   output-grid
+   param-match-records)  ;; list of ParamMatchRecord
+  #:transparent)
+
+
+
+
+;; 全局收集
+(define pair-match-records '())
+
+(define (process-single-file json-data)
+  ;; 1) 读取训练数据
+  (define train-data (hash-ref json-data 'train))
+
+  ;; 2) 用一个 let 包裹外层 for/fold，捕获其多值结果以便打印
+  (define-values (all-succeeded? collected-pairs)
+    (let-values ([(res-succeeded? res-pairs)
+           (for/fold ([acc-succeeded? #t]    ;; 到目前为止是否全部成功
+                      [acc-pairs      '()])   ;; 收集的 PairMatchRecord
+                     ([pair (in-list train-data)])
+             ;; ---------------------------------------
+             ;;   针对单个 pair 的处理
+             ;; ---------------------------------------
+             (define input-grid  (Grid (hash-ref pair 'input)))
+             (define output-grid (Grid (hash-ref pair 'output)))
+
+             ;; 提取 input-obj
+             (define input-obj-set0 (all-objects-from-grid input-grid))
+             (define input-obj-set  (all-objects-00-c0-from-objs input-obj-set0))
+
+             ;; 内层 for/fold: 收集所有能匹配成功的 param => param-records
+             (define param-records
+               (let ([local-param-records
+                      (for/fold ([acc-params '()])
+                                ([out-param (in-list param-combinations)])
+                        ;; 取出 output objs
+                        (define out-obj-set0 (objects-with-params output-grid out-param))
+                        (define out-obj-set  (all-objects-00-c0-from-objs out-obj-set0))
+
+                        (define object-match-list '())
+                        ;; param 下: “所有 out-obj 必须可解” => for/and
+                        (define param-success?
+                          (for/and ([out-obj (in-set out-obj-set)])
+                            ;; 只要有一个 in-obj 能成功 => for/or
+                            (for/or ([in-obj (in-set input-obj-set)])
+                              (let ([ok? (synthesize-transformation
+                                          (ObjectInfo-obj in-obj)
+                                          (ObjectInfo-obj out-obj))])
+                                (when ok?
+                                  (set! object-match-list
+                                        (cons (ObjectMatchRecord in-obj out-obj ok? '())
+                                              object-match-list)))
+                                ok?))))
+
+                        ;; 如果 param-success? => 新增一个 ParamMatchRecord
+                        (if param-success?
+                            (cons (ParamMatchRecord out-param object-match-list)
+                                  acc-params)
+                            acc-params))
+                            ])
+
+
+                 ;; ★ 在内层 for/fold 结束后输出调试日志
+                 (displayln (format "[DEBUG] Done param-combinations for this pair. param-records => ~s"
+                                    local-param-records))
+                 local-param-records)
+              )
+
+             ;; 判断该 pair 是否成功
+             (define this-pair-success? (not (null? param-records)))
+
+             ;; 构造外层新的累积状态
+             (define new-succeeded? (and acc-succeeded? this-pair-success?))
+             (define new-pairs
+               (if this-pair-success?
+                   (cons (PairMatchRecord input-grid output-grid param-records)
+                         acc-pairs)
+                   acc-pairs))
+
+             ;; ★ 在外层 for/fold 这一轮迭代结束前输出调试日志
+             (displayln (format "[DEBUG] after handling ONE pair => success?=~a, total-collected-pairs=~a"
+                                this-pair-success?
+                                (length new-pairs)))
+
+             (values new-succeeded? new-pairs))])  ;; 结束 for/fold
+
+      ;; ★ for/fold 全部结束后再打印一次整体结果
+      (displayln (format "[DEBUG] all pairs processed => all-succeeded?=~a, total=~a"
+                         res-succeeded?
+                         (length res-pairs)))
+      (values res-succeeded? res-pairs)))
+
+  ;; 3) 把本文件处理的 PairMatchRecord 累加到全局
+  (set! pair-match-records (append collected-pairs pair-match-records))
+
+  ;; ★ 显示一下最终的 pair-match-records
+  (displayln (format "[DEBUG] appended => pair-match-records total=~a"
+                     (length pair-match-records)))
+
+  ;; 4) 返回是否全部成功
+  all-succeeded?)
+
+;; 可进一步封装一个 process-single-file-logging 或 main 函数
+;; 这里仅演示如何在关键处理点输出调试信息
+
+
+;; 测试：
+;; (process-single-file some-json-data)
+;; => 若所有 pair 都成功匹配，则返回 #t，否则返回 #f
+;; 同时所有 PairMatchRecord 已经被放进全局 pair-match-records 里了。
+
+
 
 (define (process-single-file-logging json-data)
   (define fn (hash-ref json-data 'filename))
+  (displayln (format " [ ] START => ~a" fn))
   (define success? (process-single-file json-data))
   (if success?
-      (displayln (format "[] SUCCESS => ~a" fn))
+      (displayln (format " [ ] SUCCESS => ~a" fn))
       (displayln (format "[] FAIL    => ~a" fn)))
   success?)
 

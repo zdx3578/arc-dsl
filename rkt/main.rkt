@@ -1,173 +1,324 @@
 #lang rosette
 
-;; -------------------------------------------------------
-;; 0) 引入我们需要的模块
-;; -------------------------------------------------------
 (require racket/set
          rosette/lib/match
-        ;;;  racket/control
-         "objects.rkt"          ;; (objects grid b1 b2 b3)
+         "objects.rkt"
          "properties.rkt"
-         "json-reader.rkt"      ;; (read-all-json-files dir)
-         "data-structures.rkt") ;; (struct Grid ...) 等
+         "json-reader.rkt"
+         "data-structures.rkt")
+
+;; ========================================================
+;; 1) 统一 DSL 结构 + 构造器宏
+;; ========================================================
+;; 只有一个 struct: (DSL op maybe-sub)
+;;  - op:     symbol, e.g. 'NoOp, 'Rot90, 'CMirror, etc.
+;;  - sub:    #f if no sub, or (DSL ...) if has sub
+(struct DSL (op sub) #:transparent)
+
+;; 定义一组宏，让写法和原先类似:
+(define-syntax-rule (NoOp)
+  (DSL 'NoOp #f))
+
+(define-syntax-rule (Rot90 sub)
+  (DSL 'Rot90 sub))
+
+(define-syntax-rule (HMirror sub)
+  (DSL 'HMirror sub))
+
+(define-syntax-rule (VMirror sub)
+  (DSL 'VMirror sub))
+
+(define-syntax-rule (CMirror sub)
+  (DSL 'CMirror sub))
+
+(define-syntax-rule (DMirror sub)
+  (DSL 'DMirror sub))
+
+;; 组合操作
+;;  - 这里可以把 Compose(e1, e2) 直接存在 sub 里,
+;;    例如 sub = (list e1 e2).
+(define-syntax-rule (Compose e1 e2)
+  (DSL 'Compose (list e1 e2)))
 
 
+;; ========================================================
+;; 2) TransformationInfo + transformations 表
+;; ========================================================
+(struct TransformationInfo (name code apply-fn check-fn dsl-maker) #:transparent)
 
-;; -------------------------------------------------------
-;; 2) DSL 结构体
-;; -------------------------------------------------------
-(struct NoOp ()          #:transparent)
-(struct Rot90 (sub)      #:transparent)
-(struct HMirror (sub)    #:transparent)
-(struct VMirror (sub)    #:transparent)
-(struct Compose (e1 e2)  #:transparent)
+(define transformations
+  (list
+   (TransformationInfo
+    'NoOp
+    0
+    (lambda (obj) obj)
+    (lambda (i o) (equal? i o))
+    (lambda (sub) (NoOp))) ;; sub => #f
 
-;; -------------------------------------------------------
-;; 3) 解释器：在执行每个操作前，先调检查器
-;; -------------------------------------------------------
+   (TransformationInfo
+    'Rot90
+    1
+    (lambda (obj) (if (valid-rot90? obj) (rotate90 obj) #f))
+    (lambda (i o) (equal? (rotate90 i) o))
+    (lambda (sub) (Rot90 sub)))
+
+   (TransformationInfo
+    'HMirror
+    2
+    (lambda (obj) (if (valid-hmirror? obj) (hmirror obj) #f))
+    (lambda (i o) (equal? (hmirror i) o))
+    (lambda (sub) (HMirror sub)))
+
+   (TransformationInfo
+    'VMirror
+    3
+    (lambda (obj) (if (valid-vmirror? obj) (vmirror obj) #f))
+    (lambda (i o) (equal? (vmirror i) o))
+    (lambda (sub) (VMirror sub)))
+
+   (TransformationInfo
+    'CMirror
+    4
+    (lambda (obj)  (cmirror obj) )
+    (lambda (i o) (equal? (cmirror i) o))
+    (lambda (sub) (CMirror sub)))
+
+   (TransformationInfo
+    'DMirror
+    5
+    (lambda (obj) (dmirror obj) )
+    (lambda (i o) (equal? (dmirror i) o))
+    (lambda (sub) (DMirror sub)))
+   ))
+
+(define (lookup-trans-by-name nm)
+  (for/first ([tf (in-list transformations)])
+    (when (eq? nm (TransformationInfo-name tf))
+      tf)))
+
+(define (lookup-trans-by-code c)
+  (for/first ([tf (in-list transformations)])
+    (when (= c (TransformationInfo-code tf))
+      tf)))
+
+;; ========================================================
+;; 3) interp: 通过 (DSL 'Compose (list e1 e2)) 等区分
+;; ========================================================
 (define (interp expr obj)
   (match expr
-    [(NoOp)
-     obj]
-
-    [(Rot90 sub)
-     (define sub-out (interp sub obj))
-     (if (valid-rot90? sub-out)
-         (rotate90 sub-out)
-         #f)]
-
-    [(HMirror sub)
-     (define sub-out (interp sub obj))
-     (if (valid-hmirror? sub-out)
-         (hmirror sub-out)
-         #f)]
-
-    [(VMirror sub)
-     (define sub-out (interp sub obj))
-     (if (valid-vmirror? sub-out)
-         (vmirror sub-out)
-         #f)]
-
-    [(Compose e1 e2)
+    ;; 组合操作: (DSL 'Compose (list e1 e2))
+    [(DSL 'Compose (list e1 e2))
      (define r1 (interp e1 obj))
-     (if r1
-         (interp e2 r1)
+     (if r1 (interp e2 r1) #f)]
+
+    ;; 单操作, 没有子表达式: (DSL 'NoOp #f)
+    [(DSL op #f)
+     (define tf (lookup-trans-by-name op))
+     (if tf ((TransformationInfo-apply-fn tf) obj) #f)]
+
+    ;; 单操作, 有一个 sub: (DSL 'Rot90 sub)
+    [(DSL op sub)
+     (define sub-out (interp sub obj))
+     (if sub-out
+         (let ([tf (lookup-trans-by-name op)])
+           (if tf ((TransformationInfo-apply-fn tf) sub-out) #f))
          #f)]))
 
-
-
-
-
-;; -------------------------------------------------------
-;; 4) 合成逻辑：我们用整型 e 代替符号，范围是 [0..3]
-;; -------------------------------------------------------
-
+;; ========================================================
+;; 4) 合成逻辑
+;; ========================================================
 (define (simple-check in-obj out-obj)
-  (cond
-    [(equal? in-obj out-obj)
-     'NoOp]
-    [(equal? (rotate90 in-obj) out-obj)
-     'Rot90]
-    [(equal? (hmirror in-obj) out-obj)
-     'HMirror]
-    [(equal? (vmirror in-obj) out-obj)
-     'VMirror]
-    [else
-     #f]))  ;; #f 表示没找到匹配的变换
-
-
+  (for/or ([tf (in-list transformations)])
+    ;;; (displayln "simple-check")
+    ;;; (displayln (TransformationInfo-name tf))
+    ;;; (sleep 1)
+    (define cfn (TransformationInfo-check-fn tf))
+    (when (and cfn (cfn in-obj out-obj))
+      (TransformationInfo-name tf))))
 
 (define-symbolic e integer?)
 
 (define (translate e)
-  (cond
-    [(= e 0) (NoOp)]
-    [(= e 1) (Rot90 (NoOp))]
-    [(= e 2) (HMirror (NoOp))]
-    [(= e 3) (VMirror (NoOp))]
-    [else (error "unrecognized transformation code" e)]))
+  (define found (lookup-trans-by-code e))
+  (if found
+      ((TransformationInfo-dsl-maker found) (NoOp))  ; default sub => NoOp
+      (error "unrecognized transformation code" e)))
 
 (define (synthesize-transformation input-obj output-obj)
-  ;; 1. 先做一次简单的快速检测
-  (define check-result (simple-check input-obj output-obj))
-
+  (define name-result (simple-check input-obj output-obj))
   (cond
-    ;; 1.1 如果简单检测到变换成功，就返回 #t
-    [check-result
-    ;;;  (displayln (string-append "inoutobj found => " (symbol->string check-result)))
-     ;; 如果需要，可以打印出不同 e 的值:
-     (displayln
-      (string-append
-       "#hash((e . "
-       (case check-result
-         [(NoOp)     "0"]
-         [(Rot90)    "1"]
-         [(HMirror)  "2"]
-         [(VMirror)  "3"])
-       "))"))
-    ;;;  (displayln input-obj)
-     ;; 直接返回 #t 表示成功
-     #t]
-
-    ;; 1.2 否则进入 SMT 求解
+    [(symbol? name-result)
+     (define tf (lookup-trans-by-name name-result))
+     (define c (TransformationInfo-code tf))
+     (displayln (format "#hash((e . ~a))" c))
+     c ]
     [else
      (define all-conditions
-       (and
-        (>= e 0)
-        (< e 4)
-        (equal? (interp (translate e) input-obj) output-obj)))
-
+       (and (>= e 0)
+            (< e (length transformations))
+            (equal? (interp (translate e) input-obj) output-obj)))
      (define result (solve (assert all-conditions)))
      (cond
        [(sat? result)
         (displayln "inoutobj found by SMT!")
         (displayln input-obj)
         (displayln (model result))
-        ;; 表示成功
         #t]
+       [(unsat? result) #f]
+       [else (displayln "SMT result: unknown...") #f])]))
 
-       [(unsat? result)
-        ;;; (displayln "            .              .             ")
-        ;; 表示失败
-        #f]
+;; ========================================================
+;; 以下保留你原先的 process-single-file / main
+;; ========================================================
+;;; (define (process-single-file json-data)
+;;;   (define train-data (hash-ref json-data 'train))
+;;;   (for/and ([pair (in-list train-data)])
+;;;     (define input-grid (Grid (hash-ref pair 'input)))
+;;;     (define output-grid (Grid (hash-ref pair 'output)))
+;;;     (define input-obj-set0 (all-objects-from-grid input-grid))
+;;;     (define input-obj-set (all-objects-00-c0-from-objs input-obj-set0))
 
-       [else
-        (displayln "SMT result: unknown...")
-        ;; 也返回 #f，表示暂时无解
-        #f])]))
+;;;     (for/or ([out-param (in-list param-combinations)])
+;;;       (define out-obj-set0 (objects-with-params output-grid out-param))
+;;;       (define out-obj-set (all-objects-00-c0-from-objs out-obj-set0))
+;;;       (for/and ([out-obj (in-set out-obj-set)])
+;;;         (for/or ([in-obj (in-set input-obj-set)])
+;;;           (synthesize-transformation (ObjectInfo-obj in-obj) (ObjectInfo-obj out-obj) ))))))
+
+;; 每个对象级成功匹配
+(struct ObjectMatchRecord
+  (in-obj out-obj transform-code details)
+  #:transparent)
+
+;; 针对某个 out-param 的匹配成果，收集所有 (ObjectMatchRecord)
+(struct ParamMatchRecord
+  (param
+   object-matches)  ;; list of ObjectMatchRecord
+  #:transparent)
+
+;; 针对一个训练对 (input-grid, output-grid) 的转换集合
+(struct PairMatchRecord
+  (input-grid
+   output-grid
+   param-match-records)  ;; list of ParamMatchRecord
+  #:transparent)
 
 
-;; 处理单个文件
+
+
+;; 全局收集
+(define pair-match-records '())
+
 (define (process-single-file json-data)
+  ;; 1) 读取训练数据
   (define train-data (hash-ref json-data 'train))
-  (for/and ([pair (in-list train-data)]) ; 所有 pair 必须成功
-    (define input-grid (Grid (hash-ref pair 'input)))
-    (define output-grid (Grid (hash-ref pair 'output)))
-    ;;; (define input-obj-set (all-objects-from-grid input-grid))
-    (define input-obj-set0 (all-objects-from-grid input-grid))
-    (define  input-obj-set (all-objects-00-c0-from-objs input-obj-set0))
-    ;;; (define output-obj-setall (all-objects-from-grid output-grid))
 
-    ;; 检查是否存在参数组合满足所有输出对象
-    (for/or ([out-param (in-list param-combinations)]) ; 存在即成功
-      (define out-obj-set0 (objects-with-params output-grid out-param))
-      (define  out-obj-set (all-objects-00-c0-from-objs out-obj-set0))
-      (for/and ([out-obj (in-set out-obj-set)]) ; 所有 out-obj 必须可解
-        (for/or ([in-obj (in-set input-obj-set)]) ; 存在可转换的 in-obj
-          (synthesize-transformation in-obj out-obj))))))
+  ;; 2) 用一个 let 包裹外层 for/fold，捕获其多值结果以便打印
+  (define-values (all-succeeded? collected-pairs)
+    (let-values ([(res-succeeded? res-pairs)
+           (for/fold ([acc-succeeded? #t]    ;; 到目前为止是否全部成功
+                      [acc-pairs      '()])   ;; 收集的 PairMatchRecord
+                     ([pair (in-list train-data)])
+             ;; ---------------------------------------
+             ;;   针对单个 pair 的处理
+             ;; ---------------------------------------
+             (define input-grid  (Grid (hash-ref pair 'input)))
+             (define output-grid (Grid (hash-ref pair 'output)))
 
+             ;; 提取 input-obj
+             (define input-obj-set0 (all-objects-from-grid input-grid))
+             (define input-obj-set  (all-objects-00-c0-from-objs input-obj-set0))
+
+             ;; 内层 for/fold: 收集所有能匹配成功的 param => param-records
+             (define param-records
+               (let ([local-param-records
+                      (for/fold ([acc-params '()])
+                                ([out-param (in-list param-combinations)])
+                        ;; 取出 output objs
+                        (define out-obj-set0 (objects-with-params output-grid out-param))
+                        (define out-obj-set  (all-objects-00-c0-from-objs out-obj-set0))
+
+                        (define object-match-list '())
+                        ;; param 下: “所有 out-obj 必须可解” => for/and
+                        (define param-success?
+                          (for/and ([out-obj (in-set out-obj-set)])
+                            ;; 只要有一个 in-obj 能成功 => for/or
+                            (for/or ([in-obj (in-set input-obj-set)])
+                              (let ([ok? (synthesize-transformation
+                                          (ObjectInfo-obj in-obj)
+                                          (ObjectInfo-obj out-obj))])
+                                (when ok?
+                                  (set! object-match-list
+                                        (cons (ObjectMatchRecord in-obj out-obj ok? '())
+                                              object-match-list)))
+                                ok?))))
+
+                        ;; 如果 param-success? => 新增一个 ParamMatchRecord
+                        (if param-success?
+                            (cons (ParamMatchRecord out-param object-match-list)
+                                  acc-params)
+                            acc-params))
+                            ])
+
+
+                 ;; ★ 在内层 for/fold 结束后输出调试日志
+                 (displayln (format "[DEBUG] Done param-combinations for this pair. param-records => ~s"
+                                    local-param-records))
+                 local-param-records)
+              )
+
+             ;; 判断该 pair 是否成功
+             (define this-pair-success? (not (null? param-records)))
+
+             ;; 构造外层新的累积状态
+             (define new-succeeded? (and acc-succeeded? this-pair-success?))
+             (define new-pairs
+               (if this-pair-success?
+                   (cons (PairMatchRecord input-grid output-grid param-records)
+                         acc-pairs)
+                   acc-pairs))
+
+             ;; ★ 在外层 for/fold 这一轮迭代结束前输出调试日志
+             (displayln (format "[DEBUG] after handling ONE pair => success?=~a, total-collected-pairs=~a"
+                                this-pair-success?
+                                (length new-pairs)))
+
+             (values new-succeeded? new-pairs))])  ;; 结束 for/fold
+
+      ;; ★ for/fold 全部结束后再打印一次整体结果
+      (displayln (format "[DEBUG] all pairs processed => all-succeeded?=~a, total=~a"
+                         res-succeeded?
+                         (length res-pairs)))
+      (values res-succeeded? res-pairs)))
+
+  ;; 3) 把本文件处理的 PairMatchRecord 累加到全局
+  (set! pair-match-records (append collected-pairs pair-match-records))
+
+  ;; ★ 显示一下最终的 pair-match-records
+  (displayln (format "[DEBUG] appended => pair-match-records total=~a"
+                     (length pair-match-records)))
+
+  ;; 4) 返回是否全部成功
+  all-succeeded?)
+
+;; 可进一步封装一个 process-single-file-logging 或 main 函数
+;; 这里仅演示如何在关键处理点输出调试信息
+
+
+;; 测试：
+;; (process-single-file some-json-data)
+;; => 若所有 pair 都成功匹配，则返回 #t，否则返回 #f
+;; 同时所有 PairMatchRecord 已经被放进全局 pair-match-records 里了。
 
 
 
 (define (process-single-file-logging json-data)
   (define fn (hash-ref json-data 'filename))
+  (displayln (format " [ ] START => ~a" fn))
   (define success? (process-single-file json-data))
   (if success?
-      (displayln (format "[] SUCCESS => ~a" fn))
-      (begin
-        (displayln (format "[] FAIL    => ~a" fn))
-        ;;; (sleep 1)
-        ))
+      (displayln (format " [ ] SUCCESS => ~a" fn))
+      (displayln (format "[] FAIL    => ~a" fn)))
   success?)
 
 (define (main dir)
@@ -180,12 +331,9 @@
 
   (displayln (format "[] total-successful-files = ~a" total-success)))
 
-
 (provide main)
 
-
 (module+ main
-  ;; 命令行解析
   (command-line
     #:args (dir)
     "Usage: racket your-file.rkt <dir>"
