@@ -331,8 +331,8 @@
              (define output-grid (Grid (hash-ref pair 'output)))
 
              ;; 提取 input-obj
-             (define input-obj-set0 (all-objects-from-grid input-grid))
-             (define input-obj-set  (all-objects-00-c0-from-objs input-obj-set0))
+             (define input-obj-set (all-objects-from-grid input-grid))
+            ;;;  (define input-obj-set  (all-objects-00-c0-from-objs input-obj-set0))
 
              ;; 内层 for/fold: 收集所有能匹配成功的 param => param-records
              (define param-records
@@ -340,23 +340,39 @@
                       (for/fold ([acc-params '()])
                                 ([out-param (in-list param-combinations)])
                         ;; 取出 output objs
-                        (define out-obj-set0 (objects-with-params output-grid out-param))
-                        (define out-obj-set  (all-objects-00-c0-from-objs out-obj-set0))
+                        (define out-obj-set (objects-with-params output-grid out-param))
+                        ;;; (define out-obj-set  (all-objects-00-c0-from-objs out-obj-set0))
 
                         (define object-match-list '())
                         ;; param 下: “所有 out-obj 必须可解” => for/and
                         (define param-success?
                           (for/and ([out-obj (in-set out-obj-set)])
                             ;; 只要有一个 in-obj 能成功 => for/or
-                            (for/or ([in-obj (in-set input-obj-set)])
-                              (let ([ok? (synthesize-transformation
-                                          (ObjectInfo-obj in-obj)
-                                          (ObjectInfo-obj out-obj))])
-                                (when ok?
+                            (for/or([in-obj (in-set input-obj-set)])
+                              (let* ([code-regular
+                                    (synthesize-transformation
+                                      (ObjectInfo-obj in-obj)
+                                      (ObjectInfo-obj out-obj))]
+
+                                    ;; 若 regular-ok? 为 #f，才尝试 shift 匹配
+                                    [code-shift
+                                    (if code-regular
+                                        #f
+                                        (synthesize-transformation
+                                          (ObjectInfo-obj (shift-obj-to-0-0-0 in-obj))
+                                          (ObjectInfo-obj (shift-obj-to-0-0-0 out-obj))))]
+
+                                    ;; 两者有一个成功就算当前 (out-obj) 被匹配成功
+                                    [match-code (or code-regular code-shift)]
+                                  )
+                                (when match-code
                                   (set! object-match-list
-                                        (cons (ObjectMatchRecord in-obj out-obj ok? '())
+                                        (cons (ObjectMatchRecord in-obj out-obj match-code '())
                                               object-match-list)))
-                                ok?))))
+                                match-code))
+
+
+                                ))
                         ;; 如果 param-success? => 新增一个 ParamMatchRecord
                         (if param-success?
                             (cons (ParamMatchRecord out-param object-match-list)
