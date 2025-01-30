@@ -401,6 +401,7 @@
    (ObjectInfo-without-bg? objinfo)
   ;;;  (ObjectInfo-origin-color objinfo)
   ;;;  (ObjectInfo-origin-position objinfo)
+   #t
    (ObjectInfo-bounding-box objinfo)
    (ObjectInfo-color-ranking objinfo)
    (ObjectInfo-otherinfo objinfo)))

@@ -1,49 +1,16 @@
 #lang rosette
 
-(require racket/set
-         rosette/lib/match
+(require rosette/lib/match
+         racket/hash
+        ;;;  racket/list
          "objects.rkt"
          "properties.rkt"
          "json-reader.rkt"
          "data-structures.rkt")
 
-;; ========================================================
-;; 1) 统一 DSL 结构 + 构造器宏
-;; ========================================================
-;; 只有一个 struct: (DSL op maybe-sub)
-;;  - op:     symbol, e.g. 'NoOp, 'Rot90, 'CMirror, etc.
-;;  - sub:    #f if no sub, or (DSL ...) if has sub
-(struct DSL (op sub) #:transparent)
-
-;; 定义一组宏，让写法和原先类似:
-(define-syntax-rule (NoOp)
-  (DSL 'NoOp #f))
-
-(define-syntax-rule (Rot90 sub)
-  (DSL 'Rot90 sub))
-
-(define-syntax-rule (HMirror sub)
-  (DSL 'HMirror sub))
-
-(define-syntax-rule (VMirror sub)
-  (DSL 'VMirror sub))
-
-(define-syntax-rule (CMirror sub)
-  (DSL 'CMirror sub))
-
-(define-syntax-rule (DMirror sub)
-  (DSL 'DMirror sub))
-
-;; 组合操作
-;;  - 这里可以把 Compose(e1, e2) 直接存在 sub 里,
-;;    例如 sub = (list e1 e2).
-(define-syntax-rule (Compose e1 e2)
-  (DSL 'Compose (list e1 e2)))
-
-
-;; ========================================================
-;; 2) TransformationInfo + transformations 表
-;; ========================================================
+;; -----------------------------------------------------------
+;; 1) transformations + apply-op
+;; -----------------------------------------------------------
 (struct TransformationInfo (name code apply-fn check-fn dsl-maker) #:transparent)
 
 (define transformations
@@ -79,31 +46,69 @@
    (TransformationInfo
     'CMirror
     4
-    (lambda (obj)  (cmirror obj) )
+    (lambda (obj) (cmirror obj))
     (lambda (i o) (equal? (cmirror i) o))
     (lambda (sub) (CMirror sub)))
 
    (TransformationInfo
     'DMirror
     5
-    (lambda (obj) (dmirror obj) )
+    (lambda (obj) (dmirror obj))
     (lambda (i o) (equal? (dmirror i) o))
     (lambda (sub) (DMirror sub)))
    ))
+
+;; 查找 transformation
+(define (lookup-trans-by-code c)
+  (for/first ([tf (in-list transformations)])
+    (when (= c (TransformationInfo-code tf))
+      tf)))
 
 (define (lookup-trans-by-name nm)
   (for/first ([tf (in-list transformations)])
     (when (eq? nm (TransformationInfo-name tf))
       tf)))
 
-(define (lookup-trans-by-code c)
-  (for/first ([tf (in-list transformations)])
-    (when (= c (TransformationInfo-code tf))
-      tf)))
+;; 统一 apply-op: code => transformations
+(define (apply-op code obj)
+  (define tf (lookup-trans-by-code code))
+  (if tf
+      ((TransformationInfo-apply-fn tf) obj)
+      #f))
 
-;; ========================================================
-;; 3) interp: 通过 (DSL 'Compose (list e1 e2)) 等区分
-;; ========================================================
+;; -----------------------------------------------------------
+;; 2) DSL 定义 & interp (含 Compose)
+;; -----------------------------------------------------------
+;; 与之前一样的 DSL (单操作 + Compose):
+(struct DSL (op sub) #:transparent)
+
+(define-syntax-rule (NoOp)
+  (DSL 'NoOp #f))
+
+(define-syntax-rule (Rot90 sub)
+  (DSL 'Rot90 sub))
+
+(define-syntax-rule (HMirror sub)
+  (DSL 'HMirror sub))
+
+(define-syntax-rule (VMirror sub)
+  (DSL 'VMirror sub))
+
+(define-syntax-rule (CMirror sub)
+  (DSL 'CMirror sub))
+
+(define-syntax-rule (DMirror sub)
+  (DSL 'DMirror sub))
+
+(define-syntax-rule (Compose e1 e2)
+  (DSL 'Compose (list e1 e2)))
+
+;; 如果 op 是 symbol, 需把 'Rot90 => code=1
+(define (trans-name->code nm)
+  (define tf (lookup-trans-by-name nm))
+  (if tf (TransformationInfo-code tf) #f))
+
+;; 原先的 interp
 (define (interp expr obj)
   (match expr
     ;; 组合操作: (DSL 'Compose (list e1 e2))
@@ -111,18 +116,88 @@
      (define r1 (interp e1 obj))
      (if r1 (interp e2 r1) #f)]
 
-    ;; 单操作, 没有子表达式: (DSL 'NoOp #f)
+    ;; 单操作, 没子
     [(DSL op #f)
-     (define tf (lookup-trans-by-name op))
-     (if tf ((TransformationInfo-apply-fn tf) obj) #f)]
+     (define c (trans-name->code op))
+     (apply-op c obj)]
 
-    ;; 单操作, 有一个 sub: (DSL 'Rot90 sub)
+    ;; 单操作, 有 sub
     [(DSL op sub)
      (define sub-out (interp sub obj))
      (if sub-out
-         (let ([tf (lookup-trans-by-name op)])
-           (if tf ((TransformationInfo-apply-fn tf) sub-out) #f))
+         (apply-op (trans-name->code op) sub-out)
          #f)]))
+
+;; ---------------------------------------------------------------------
+;; 3) 条件化 DSL: If cond => subT else subF, or Base
+;; ---------------------------------------------------------------------
+;; 3.1 条件结构:
+(struct Cond (prop val) #:transparent)
+;; prop = 'diagonal? / 'univalued? / ...; val = #t / #f / ...
+;; 未来可扩展 bounding-box-size / color / etc.
+
+;; 3.2 条件化 DSL 结构:
+;;   'Base => (DSLCond 'Base code #f #f #f)
+;;   'If   => (DSLCond 'If #f cond subT subF)
+;; 此处用五元组，第一字段存tag, 第二存op, 后面三个当 cond/subT/subF
+(struct DSLCond (tag op cond subT subF) #:transparent)
+
+;; 3.3 条件解释器
+(define (interp-condition cond obj-info)
+  (match-define (Cond prop val) cond)
+  (match prop
+    ['diagonal?  (equal? (ObjectInfo-diagonal? obj-info) val)]
+    ['univalued? (equal? (ObjectInfo-univalued? obj-info) val)]
+    [_ #f]))
+
+;; 解释 DSLCond
+(define (interp-DSLCond dsl obj-info)
+  (match dsl
+    ;; Base => single transform code
+    [(DSLCond 'Base code #f #f #f)
+     (apply-op code (ObjectInfo-obj obj-info))]
+
+    ;; If => if cond => subT else => subF
+    [(DSLCond 'If #f cond subT subF)
+     (if (interp-condition cond obj-info)
+         (interp-DSLCond subT obj-info)
+         (interp-DSLCond subF obj-info))]
+    [_ #f]))
+
+;; ---------------------------------------------------------------------
+;; 4) 统计分析: 在 ParamMatchRecord 层面统计 (diagonal? => transform-code)
+;; ---------------------------------------------------------------------
+(struct ObjectMatchRecord (in-obj out-obj transform-code details) #:transparent)
+(struct ParamMatchRecord (param object-matches) #:transparent)
+(struct PairMatchRecord (input-grid output-grid param-match-records) #:transparent)
+
+(define (analyze-param-match-record pmr)
+  ;; pmr: (ParamMatchRecord param object-matches)
+  ;; 返回一个 hash: key=(list diag? code), val=出现次数
+  (define omrs (ParamMatchRecord-object-matches pmr))
+  (define diag-count (make-hash))
+
+  (for ([omr (in-list omrs)])
+    (define in-obj-info (ObjectMatchRecord-in-obj omr)) ;; 这里 in-obj-info = (ObjectInfo ...)
+    (define diag?       (ObjectInfo-diagonal? in-obj-info))
+    (define tcode       (ObjectMatchRecord-transform-code omr))
+    (hash-update! diag-count
+                  (list diag? tcode)
+                  (λ (old) (add1 old))
+                  0))
+  diag-count)
+
+(define (analyze-pair-match-record pmRec)
+  (define pmrs (PairMatchRecord-param-match-records pmRec))
+  (for/fold ([acc (make-hash)]) ([p (in-list pmrs)])
+    (define local-hash (analyze-param-match-record p))
+    ;; 合并 local-hash 到 acc
+    (for ([k (in-hash-keys local-hash)])
+      (define val (hash-ref local-hash k))
+      (hash-update! acc k (λ (old) (+ old val)) 0))
+    acc))
+
+
 
 ;; ========================================================
 ;; 4) 合成逻辑
@@ -167,44 +242,74 @@
        [(unsat? result) #f]
        [else (displayln "SMT result: unknown...") #f])]))
 
-;; ========================================================
-;; 以下保留你原先的 process-single-file / main
-;; ========================================================
-;;; (define (process-single-file json-data)
-;;;   (define train-data (hash-ref json-data 'train))
-;;;   (for/and ([pair (in-list train-data)])
-;;;     (define input-grid (Grid (hash-ref pair 'input)))
-;;;     (define output-grid (Grid (hash-ref pair 'output)))
-;;;     (define input-obj-set0 (all-objects-from-grid input-grid))
-;;;     (define input-obj-set (all-objects-00-c0-from-objs input-obj-set0))
+;; ---------------------------------------------------------------------
+;; 5) 用统计结果启发式构造 if-then DSLCond
+;;    假设只关心 diagonal? => code
+;; ---------------------------------------------------------------------
+;; 从统计结果 (hash (list diag? code) => count)，找出 #t时出现最多的 code & #f时最多的 code
+(define (argmax pred lst)
+  (if (null? lst)
+      #f
+      (let ([best (car lst)])
+        (for/fold ([acc best]) ([x (in-list (cdr lst))])
+          (if (pred x acc) x acc)))))
 
-;;;     (for/or ([out-param (in-list param-combinations)])
-;;;       (define out-obj-set0 (objects-with-params output-grid out-param))
-;;;       (define out-obj-set (all-objects-00-c0-from-objs out-obj-set0))
-;;;       (for/and ([out-obj (in-set out-obj-set)])
-;;;         (for/or ([in-obj (in-set input-obj-set)])
-;;;           (synthesize-transformation (ObjectInfo-obj in-obj) (ObjectInfo-obj out-obj) ))))))
+(define (build-if-rule-based-on-stats diag-hash)
+  ;; 找 #t 下计数最大的 transform-code
+  (define diag-true-code
+    (let ([pairs (for/list ([k (in-hash-keys diag-hash)])
+                   (match k
+                     [(list #t tcode)
+                      (values tcode (hash-ref diag-hash k))]
+                     [_ (values #f 0)]))])
+      (car (argmax (lambda (a b) (> (cdr a) (cdr b))) pairs))))
 
-;; 每个对象级成功匹配
-(struct ObjectMatchRecord
-  (in-obj out-obj transform-code details)
-  #:transparent)
+  ;; 找 #f 下计数最大的 transform-code
+  (define diag-false-code
+    (let ([pairs (for/list ([k (in-hash-keys diag-hash)])
+                   (match k
+                     [(list #f tcode)
+                      (values tcode (hash-ref diag-hash k))]
+                     [_ (values #f 0)]))])
+      (car (argmax (lambda (a b) (> (cdr a) (cdr b))) pairs))))
 
-;; 针对某个 out-param 的匹配成果，收集所有 (ObjectMatchRecord)
-(struct ParamMatchRecord
-  (param
-   object-matches)  ;; list of ObjectMatchRecord
-  #:transparent)
+  (DSLCond 'If
+           #f
+           (Cond 'diagonal? #t)
+           (DSLCond 'Base (or diag-true-code 0) #f #f #f)
+           (DSLCond 'Base (or diag-false-code 0) #f #f #f)))
 
-;; 针对一个训练对 (input-grid, output-grid) 的转换集合
-(struct PairMatchRecord
-  (input-grid
-   output-grid
-   param-match-records)  ;; list of ParamMatchRecord
-  #:transparent)
+;; ---------------------------------------------------------------------
+;; 6) “后处理”阶段：对 pair-match-records 分析 & 构造 if-rule & 测试
+;; ---------------------------------------------------------------------
+;;; (define pair-match-records '())
+
+(define (post-process-rules!)
+  (for ([pmr (in-list pair-match-records)])
+    ;; 先做统计:
+    (begin
+      (define diag-hash (analyze-pair-match-record pmr))
+      (define candidate-rule (build-if-rule-based-on-stats diag-hash))
+      (displayln (format "Generated if-rule => ~s" candidate-rule))
+      (let ([success?
+            (for/and ([param-rec (in-list (PairMatchRecord-param-match-records pmr))])
+              (define omrs (ParamMatchRecord-object-matches param-rec))
+              (for/and ([omr (in-list omrs)])
+                (define in-obj-info (ObjectMatchRecord-in-obj omr))
+                (define out-obj     (ObjectMatchRecord-out-obj omr))
+                (equal? (interp-DSLCond candidate-rule in-obj-info) out-obj)))])
+
+        (displayln (format "Check if-rule success? ~a" success?)))
+      ;; 让 begin 的最后是一个表达式:
+      'done)
+    ))
 
 
-
+;; ---------------------------------------------------------------------
+;; 7) process-single-file / main (示例)
+;;    这里展示简单框架，保留你原先逻辑
+;; ---------------------------------------------------------------------
+;; 下面两个 struct, 只示意保留:
 
 ;; 全局收集
 (define pair-match-records '())
@@ -252,15 +357,12 @@
                                         (cons (ObjectMatchRecord in-obj out-obj ok? '())
                                               object-match-list)))
                                 ok?))))
-
                         ;; 如果 param-success? => 新增一个 ParamMatchRecord
                         (if param-success?
                             (cons (ParamMatchRecord out-param object-match-list)
                                   acc-params)
                             acc-params))
                             ])
-
-
                  ;; ★ 在内层 for/fold 结束后输出调试日志
                  (displayln (format "[DEBUG] Done param-combinations for this pair. param-records => ~s"
                                     local-param-records))
@@ -298,6 +400,8 @@
   (displayln (format "[DEBUG] appended => pair-match-records total=~a"
                      (length pair-match-records)))
 
+  ;;; (post-process-rules!)??????????
+
   ;; 4) 返回是否全部成功
   all-succeeded?)
 
@@ -328,6 +432,8 @@
       (if (process-single-file-logging json-data)
           1
           0)))
+
+
 
   (displayln (format "[] total-successful-files = ~a" total-success)))
 

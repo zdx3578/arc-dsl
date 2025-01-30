@@ -114,6 +114,7 @@
    univalued?
    diagonal?
    without-bg?
+   ismove00
   ;;;  origin-color
   ;;;  origin-position
    bounding-box        ;; (list minr minc maxr maxc)
@@ -221,6 +222,7 @@
                              univalued?
                              diagonal?
                              without-bg?
+                             #f
                             ;;;  final-color
                             ;;;  (list minr minc)
                              bounding

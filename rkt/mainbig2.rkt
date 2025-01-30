@@ -198,6 +198,7 @@
     acc))
 
 
+
 ;; ========================================================
 ;; 4) 合成逻辑
 ;; ========================================================
@@ -399,6 +400,8 @@
   (displayln (format "[DEBUG] appended => pair-match-records total=~a"
                      (length pair-match-records)))
 
+  ;;; (post-process-rules!)??????????
+
   ;; 4) 返回是否全部成功
   all-succeeded?)
 
@@ -429,6 +432,8 @@
       (if (process-single-file-logging json-data)
           1
           0)))
+
+
 
   (displayln (format "[] total-successful-files = ~a" total-success)))
 
