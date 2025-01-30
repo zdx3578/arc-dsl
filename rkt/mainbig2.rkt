@@ -267,36 +267,50 @@
 ;; ---------------------------------------------------------------------
 ;; 从统计结果 (hash (list diag? code) => count)，找出 #t时出现最多的 code & #f时最多的 code
 (define (argmax pred lst)
-  (if (null? lst)
-      #f
-      (let ([best (car lst)])
-        (for/fold ([acc best]) ([x (in-list (cdr lst))])
-          (if (pred x acc) x acc)))))
+  ;; pred: (lambda (x y) (boolean?)) 判断 x 是否比 y “更好”
+  ;; lst : list of elements (each element is a pair/list)
+  (cond
+    [(null? lst) #f]
+    [else
+     (for/fold ([best (car lst)])
+               ([x (in-list (cdr lst))])
+       (if (pred x best) x best))]))
 
 (define (build-if-rule-based-on-stats diag-hash)
-  ;; 找 #t 下计数最大的 transform-code
+  ;; diag-hash: (Hash (list diag? code) => count)
+  ;; 1) 找 (#t, code) 出现次数最多的 code
   (define diag-true-code
-    (let ([pairs (for/list ([k (in-hash-keys diag-hash)])
-                   (match k
-                     [(list #t tcode)
-                      (values tcode (hash-ref diag-hash k))]
-                     [_ (values #f 0)]))])
-      (car (argmax (lambda (a b) (> (cdr a) (cdr b))) pairs))))
+    (let ([pairs
+           (for/list ([k (in-hash-keys diag-hash)])
+             (match k
+               [(list #t tcode)
+                (list tcode (hash-ref diag-hash k))]
+               [_
+                (list #f 0)]))])   ;; 返回 '(tcode count) or '(#f 0)
 
-  ;; 找 #f 下计数最大的 transform-code
+      (define best (argmax (lambda (a b) (> (cadr a) (cadr b))) pairs))
+      (if best (car best) 0)))  ;; 取 best 的第一个元素就是 tcode，第二个是 count
+
+  ;; 2) 找 (#f, code) 出现次数最多的 code
   (define diag-false-code
-    (let ([pairs (for/list ([k (in-hash-keys diag-hash)])
-                   (match k
-                     [(list #f tcode)
-                      (values tcode (hash-ref diag-hash k))]
-                     [_ (values #f 0)]))])
-      (car (argmax (lambda (a b) (> (cdr a) (cdr b))) pairs))))
+    (let ([pairs
+           (for/list ([k (in-hash-keys diag-hash)])
+             (match k
+               [(list #f tcode)
+                (list tcode (hash-ref diag-hash k))]
+               [_
+                (list #f 0)]))])
 
+      (define best (argmax (lambda (a b) (> (cadr a) (cadr b))) pairs))
+      (if best (car best) 0)))
+
+  ;; 3) 构造一个简单的单层 if-rule: if diagonal? => diag-true-code else diag-false-code
   (DSLCond 'If
            #f
            (Cond 'diagonal? #t)
-           (DSLCond 'Base (or diag-true-code 0) #f #f #f)
-           (DSLCond 'Base (or diag-false-code 0) #f #f #f)))
+           (DSLCond 'Base diag-true-code #f #f #f)
+           (DSLCond 'Base diag-false-code #f #f #f)))
+
 
 ;; ---------------------------------------------------------------------
 ;; 6) “后处理”阶段：对 pair-match-records 分析 & 构造 if-rule & 测试
