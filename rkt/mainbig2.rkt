@@ -202,14 +202,33 @@
 ;; ========================================================
 ;; 4) 合成逻辑
 ;; ========================================================
+;;; (define (simple-check in-obj out-obj)
+;;;   (for/or ([tf (in-list transformations)])
+;;;     ;;; (displayln "simple-check")
+;;;     ;;; (displayln (TransformationInfo-name tf))
+;;;     ;;; (sleep 1)
+;;;     (define cfn (TransformationInfo-check-fn tf))
+;;;     (when (and cfn (cfn in-obj out-obj))
+;;;       (TransformationInfo-name tf))))
 (define (simple-check in-obj out-obj)
-  (for/or ([tf (in-list transformations)])
-    ;;; (displayln "simple-check")
-    ;;; (displayln (TransformationInfo-name tf))
-    ;;; (sleep 1)
-    (define cfn (TransformationInfo-check-fn tf))
-    (when (and cfn (cfn in-obj out-obj))
-      (TransformationInfo-name tf))))
+  (define successful-transformations  ; 在外部定义累积列表
+    (for/fold ([result '()  ])               ; 初始值是空列表
+              ([tf (in-list transformations)])
+      (define cfn (TransformationInfo-check-fn tf))
+      (if (and cfn (cfn in-obj out-obj))
+          (cons (TransformationInfo-name tf) result)  ; 如果转换成功，添加到列表前面
+          result)))  ; 如果转换失败，则继续原列表
+
+  (begin
+    ;;; (displayln (format "All--------------------- successful transformations: ~a" successful-transformations))
+    successful-transformations))  ; 返回所有成功的转换记录
+
+
+
+
+
+
+
 
 (define-symbolic e integer?)
 
@@ -222,11 +241,11 @@
 (define (synthesize-transformation input-obj output-obj)
   (define name-result (simple-check input-obj output-obj))
   (cond
-    [(symbol? name-result)
-     (define tf (lookup-trans-by-name name-result))
-     (define c (TransformationInfo-code tf))
-     (displayln (format "#hash((e . ~a))" c))
-     c ]
+    [(not (empty? name-result))
+    ;;;  (define tf (lookup-trans-by-name name-result))
+    ;;;  (define c (TransformationInfo-code tf))
+     (displayln (format "#hash((e . ~a))" name-result))
+     name-result ]
     [else
      (define all-conditions
        (and (>= e 0)
@@ -284,25 +303,57 @@
 ;; ---------------------------------------------------------------------
 ;;; (define pair-match-records '())
 
-(define (post-process-rules!)
-  (for ([pmr (in-list pair-match-records)])
-    ;; 先做统计:
-    (begin
-      (define diag-hash (analyze-pair-match-record pmr))
-      (define candidate-rule (build-if-rule-based-on-stats diag-hash))
-      (displayln (format "Generated if-rule => ~s" candidate-rule))
-      (let ([success?
-            (for/and ([param-rec (in-list (PairMatchRecord-param-match-records pmr))])
-              (define omrs (ParamMatchRecord-object-matches param-rec))
-              (for/and ([omr (in-list omrs)])
-                (define in-obj-info (ObjectMatchRecord-in-obj omr))
-                (define out-obj     (ObjectMatchRecord-out-obj omr))
-                (equal? (interp-DSLCond candidate-rule in-obj-info) out-obj)))])
+;;; (define (post-process-rules!)
+;;;   (displayln (format "Check if-rule success? ==---------------------------------------------------------------------------------" ))
+;;;   (for ([pmr (in-list pair-match-records)])
+;;;     ;; 先做统计:
+;;;     (begin
+;;;       (define diag-hash (analyze-pair-match-record pmr))
+;;;       (define candidate-rule (build-if-rule-based-on-stats diag-hash))
+;;;       (displayln (format "Generated if-rule => ~s" candidate-rule))
+;;;       (let ([success?
+;;;             (for/and ([param-rec (in-list (PairMatchRecord-param-match-records pmr))])
+;;;               (define omrs (ParamMatchRecord-object-matches param-rec))
+;;;               (for/and ([omr (in-list omrs)])
+;;;                 (define in-obj-info (ObjectMatchRecord-in-obj omr))
+;;;                 (define out-obj     (ObjectMatchRecord-out-obj omr))
+;;;                 (equal? (interp-DSLCond candidate-rule in-obj-info) out-obj)))])
 
-        (displayln (format "Check if-rule success? ~a" success?)))
-      ;; 让 begin 的最后是一个表达式:
-      'done)
-    ))
+;;;         (displayln (format "Check if-rule success? ~a" success?)))
+;;;       ;; 让 begin 的最后是一个表达式:
+;;;       'done)
+;;;     ))
+
+;; 假设仅做一个简单的统计 => 生成一个 candidate-rule
+;; 再验证 candidate-rule 在 pair-match-records 里是否都能成功
+(define (post-process-rules! pmrs)
+  (define diag-hash (make-hash))  ;; 用来全局计数
+  ;; 先把 pmrs 里所有的对象匹配情况汇总
+  (for ([pmr (in-list pmrs)])
+    (define local-hash (analyze-pair-match-record pmr)) ; 这是你之前的函数
+    ;; 合并到 diag-hash
+    (for ([k (in-hash-keys local-hash)])
+      (define val (hash-ref local-hash k))
+      (hash-update! diag-hash k (λ (old) (+ old val)) 0)))
+
+  ;; 构造 if-rule
+  (define candidate-rule (build-if-rule-based-on-stats diag-hash)) ;; 也是你之前的函数
+
+  ;; 逐条验证
+  (define success?
+    (for/and ([pmr (in-list pmrs)])
+      (for/and ([param-rec (in-list (PairMatchRecord-param-match-records pmr))])
+        (define omrs (ParamMatchRecord-object-matches param-rec))
+        (for/and ([omr (in-list omrs)])
+          (define in-obj-info (ObjectMatchRecord-in-obj omr))
+          (define out-obj     (ObjectMatchRecord-out-obj omr))
+          (equal? (interp-DSLCond candidate-rule in-obj-info) out-obj)))))
+
+  (displayln (format "Generated if-rule => ~s" candidate-rule))
+  (displayln (format "Check if-rule success? ~a" success?))
+
+  candidate-rule)
+
 
 
 ;; ---------------------------------------------------------------------
@@ -383,6 +434,8 @@
                  (displayln (format "[DEBUG] Done param-combinations for this pair. param-records => ~s"
                                     local-param-records))
                  local-param-records)
+
+                ;;;  post-process-rules!local-param-records
               )
 
              ;; 判断该 pair 是否成功
@@ -417,6 +470,19 @@
                      (length pair-match-records)))
 
   ;;; (post-process-rules!)??????????
+    ;; 3) 做后处理: 生成 if-rule / 统计
+  (define candidate-rule (post-process-rules! pair-match-records))
+
+  ;; 4) 若有 test 数据则验证
+  (define test-data (hash-ref json-data 'test #f))
+  (define test-success? (if test-data
+                           (verify-test-data test-data candidate-rule)  ;; 上面示例
+                           #t)) ;; 如果没有 test 就算成功
+
+  (displayln (format "Test-data check => ~a" test-success?))
+
+  ;; 最终只要所有 pair 匹配成功 + 测试成功 => 整体成功
+  test-success?
 
   ;; 4) 返回是否全部成功
   all-succeeded?)
@@ -439,7 +505,29 @@
   (if success?
       (displayln (format " [ ] SUCCESS => ~a" fn))
       (displayln (format "[] FAIL    => ~a" fn)))
+
+  ;;; post-process-rules!
+  (set! pair-match-records '())  ;; 清空全局记录   下一个文件处理的时候是空状态
+
   success?)
+
+
+
+;; 假设 candidate-rule 是一个 DSLCond
+(define (apply-if-rule in-grid rule)
+  ;; 拿到 in-grid 的所有 objs，或者根据需要处理
+  ;; 这里只示意：针对每个对象 interpret 后构造一个新的输出网格
+  ;; 实际的实现取决于你自己的结构
+  #f)  ;; TODO: 你要自行实现
+
+
+(define (verify-test-data test-data candidate-rule)
+  (for/and ([td (in-list test-data)])
+    (define in-grid  (Grid (hash-ref td 'input)))
+    (define out-grid (Grid (hash-ref td 'output)))    ;; 真值
+    (define predicted (apply-if-rule in-grid candidate-rule))
+    (equal? predicted out-grid)))  ;; 看你如何定义 equals
+
 
 (define (main dir)
   (define all-json (read-all-json-files dir))
