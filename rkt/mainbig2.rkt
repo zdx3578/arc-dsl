@@ -315,28 +315,7 @@
 ;; ---------------------------------------------------------------------
 ;; 6) “后处理”阶段：对 pair-match-records 分析 & 构造 if-rule & 测试
 ;; ---------------------------------------------------------------------
-;;; (define pair-match-records '())
 
-;;; (define (post-process-rules!)
-;;;   (displayln (format "Check if-rule success? ==---------------------------------------------------------------------------------" ))
-;;;   (for ([pmr (in-list pair-match-records)])
-;;;     ;; 先做统计:
-;;;     (begin
-;;;       (define diag-hash (analyze-pair-match-record pmr))
-;;;       (define candidate-rule (build-if-rule-based-on-stats diag-hash))
-;;;       (displayln (format "Generated if-rule => ~s" candidate-rule))
-;;;       (let ([success?
-;;;             (for/and ([param-rec (in-list (PairMatchRecord-param-match-records pmr))])
-;;;               (define omrs (ParamMatchRecord-object-matches param-rec))
-;;;               (for/and ([omr (in-list omrs)])
-;;;                 (define in-obj-info (ObjectMatchRecord-in-obj omr))
-;;;                 (define out-obj     (ObjectMatchRecord-out-obj omr))
-;;;                 (equal? (interp-DSLCond candidate-rule in-obj-info) out-obj)))])
-
-;;;         (displayln (format "Check if-rule success? ~a" success?)))
-;;;       ;; 让 begin 的最后是一个表达式:
-;;;       'done)
-;;;     ))
 
 ;; 假设仅做一个简单的统计 => 生成一个 candidate-rule
 ;; 再验证 candidate-rule 在 pair-match-records 里是否都能成功
@@ -352,6 +331,7 @@
 
   ;; 构造 if-rule
   (define candidate-rule (build-if-rule-based-on-stats diag-hash)) ;; 也是你之前的函数
+  (displayln candidate-rule)
 
   ;; 逐条验证
   (define success?
@@ -412,32 +392,31 @@
                         ;; param 下: “所有 out-obj 必须可解” => for/and
                         (define param-success?
                           (for/and ([out-obj (in-set out-obj-set)])
-                            ;; 只要有一个 in-obj 能成功 => for/or
-                            (for/or([in-obj (in-set input-obj-set)])
-                              (let* ([code-regular
-                                    (synthesize-transformation
-                                      (ObjectInfo-obj in-obj)
-                                      (ObjectInfo-obj out-obj))]
-
-                                    ;; 若 regular-ok? 为 #f，才尝试 shift 匹配
-                                    [code-shift
-                                    (if code-regular
-                                        #f
-                                        (synthesize-transformation
-                                          (ObjectInfo-obj (shift-obj-to-0-0-0 in-obj))
-                                          (ObjectInfo-obj (shift-obj-to-0-0-0 out-obj))))]
-
-                                    ;; 两者有一个成功就算当前 (out-obj) 被匹配成功
-                                    [match-code (or code-regular code-shift)]
-                                  )
-                                (when match-code
-                                  (set! object-match-list
-                                        (cons (ObjectMatchRecord in-obj out-obj match-code '())
-                                              object-match-list)))
-                                match-code))
-
-
-                                ))
+                            ;; 第 1 步：遍历 input-obj-set，做 regular 的匹配
+                            (let ([found-regular?
+                                  (for/or ([in-obj (in-set input-obj-set)])
+                                    (let ([code-regular
+                                            (synthesize-transformation
+                                              (ObjectInfo-obj in-obj)
+                                              (ObjectInfo-obj out-obj))])
+                                      (when code-regular
+                                        (set! object-match-list
+                                              (cons (ObjectMatchRecord in-obj out-obj code-regular '())
+                                                    object-match-list)))
+                                      code-regular))])
+                              ;; 第 2 步：如果上面那一步 found-regular? 为 #f，就再尝试 shift 匹配
+                              (or found-regular?
+                                  (for/or ([in-obj (in-set input-obj-set)])
+                                    (let ([code-shift
+                                          (synthesize-transformation
+                                            (ObjectInfo-obj (shift-obj-to-0-0-0 in-obj))
+                                            (ObjectInfo-obj (shift-obj-to-0-0-0 out-obj)))])
+                                      (when code-shift
+                                        (set! object-match-list
+                                              (cons (ObjectMatchRecord in-obj out-obj code-shift '())
+                                                    object-match-list)))
+                                      code-shift))))
+                                )                                )
                         ;; 如果 param-success? => 新增一个 ParamMatchRecord
                         (if param-success?
                             (cons (ParamMatchRecord out-param object-match-list)
