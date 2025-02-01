@@ -140,80 +140,91 @@
 ;;    均对 bounding box 做变换: (row,col) -> (row',col')
 ;; -----------------------------------------------------------------------------
 
-;; (hmirror obj) => 上下翻转 (horizontal mirror)
-;; row' = (rmax + rmin) - row, col' = col
-(define (hmirror obj)
-  (unless (object? obj)
-    (error "hmirror: expected object but got" obj))
-  (define-values (rmin rmax cmin cmax) (object-bbox obj))
-  (for/set ([e (in-set obj)])
-    (define cval (first e))
-    (define ro (first (second e)))
-    (define co (second (second e)))
-    (list cval (list (- (+ rmax rmin) ro) co))))
+; ;; (hmirror obj) => 上下翻转 (horizontal mirror)
+; ;; row' = (rmax + rmin) - row, col' = col
+; (define (hmirror obj)
+;   (unless (object? obj)
+;     (error "hmirror: expected object but got" obj))
+;   (define-values (rmin rmax cmin cmax) (object-bbox obj))
+;   (for/set ([e (in-set obj)])
+;     (define cval (first e))
+;     (define ro (first (second e)))
+;     (define co (second (second e)))
+;     (list cval (list (- (+ rmax rmin) ro) co))))
 
-;; (vmirror obj) => 左右翻转 (vertical mirror)
-;; row' = row, col' = (cmax + cmin) - col
-(define (vmirror obj)
-  (unless (object? obj)
-    (error "vmirror: expected object but got" obj))
-  (define-values (rmin rmax cmin cmax) (object-bbox obj))
-  (for/set ([e (in-set obj)])
-    (define cval (first e))
-    (define ro (first (second e)))
-    (define co (second (second e)))
-    (list cval (list ro (- (+ cmax cmin) co)))))
+; ; (define (hmirror obj grid-height)
+; ;   (unless (object? obj)
+; ;     (error "hmirror: expected object but got" obj))
+; ;   ;; 假设行坐标从 0 到 (grid-height - 1)
+; ;   (for/set ([e (in-set obj)])
+; ;     (define cval (first e))
+; ;     (define ro (first (second e)))
+; ;     (define co (second (second e)))
+; ;     (list cval (list (- (sub1 grid-height) ro) co))))
 
-;; (dmirror obj) => 沿正对角线翻转 (对 bounding box 的左上->右下)
-;; (r, c) -> (rmin + (c-cmin), cmin + (r-rmin))
-(define (dmirror obj)
-  (unless (object? obj)
-    (error "dmirror: expected object but got" obj))
-  (define-values (rmin rmax cmin cmax) (object-bbox obj))
-  (for/set ([e (in-set obj)])
-    (define cval (first e))
-    (define ro (first (second e)))
-    (define co (second (second e)))
-    (list cval
-          (list (+ rmin (- co cmin))
-                (+ cmin (- ro rmin))))))
 
-;; (cmirror obj) => 沿反对角线翻转 (左下->右上)
-;; 一种简易方式: = vmirror(dmirror(vmirror obj)) 或自己写公式
-(define (cmirror obj)
-  (vmirror (dmirror (vmirror obj))))
+; ;; (vmirror obj) => 左右翻转 (vertical mirror)
+; ;; row' = row, col' = (cmax + cmin) - col
+; (define (vmirror obj)
+;   (unless (object? obj)
+;     (error "vmirror: expected object but got" obj))
+;   (define-values (rmin rmax cmin cmax) (object-bbox obj))
+;   (for/set ([e (in-set obj)])
+;     (define cval (first e))
+;     (define ro (first (second e)))
+;     (define co (second (second e)))
+;     (list cval (list ro (- (+ cmax cmin) co)))))
 
-;; -----------------------------------------------------------------------------
-;; 5. 旋转 90/180 (如需 270可再叠加)
-;; -----------------------------------------------------------------------------
+; ;; (dmirror obj) => 沿正对角线翻转 (对 bounding box 的左上->右下)
+; ;; (r, c) -> (rmin + (c-cmin), cmin + (r-rmin))
+; (define (dmirror obj)
+;   (unless (object? obj)
+;     (error "dmirror: expected object but got" obj))
+;   (define-values (rmin rmax cmin cmax) (object-bbox obj))
+;   (for/set ([e (in-set obj)])
+;     (define cval (first e))
+;     (define ro (first (second e)))
+;     (define co (second (second e)))
+;     (list cval
+;           (list (+ rmin (- co cmin))
+;                 (+ cmin (- ro rmin))))))
 
-;; rotate90: bounding box-based 90度旋转
-;; local (r, c) => (c, height-1-r)，然后映射回全局
-(define (rotate90 obj)
-  (unless (object? obj)
-    (error "rotate90: expected object but got" obj))
-  (define-values (rmin rmax cmin cmax) (object-bbox obj))
-  (define nr (add1 (- rmax rmin))) ;; bounding-box 高度
-  ;; (nc (add1 (- cmax cmin))) ;; 宽度 - 如果需要可用
-  (for/set ([e (in-set obj)])
-    (define colr (first e))
-    (define oldr (first (second e)))
-    (define oldc (second (second e)))
-    ;; 移动到 (rmin,cmin) 为基准
-    (define local-r (- oldr rmin))
-    (define local-c (- oldc cmin))
-    ;; 旋转公式 => newr = local-c, newc = (nr - 1 - local-r)
-    (define newr local-c)
-    (define newc (- (sub1 nr) local-r))
-    ;; 再加回 (rmin, cmin)
-    (list colr (list (+ rmin newr) (+ cmin newc)))))
+; ;; (cmirror obj) => 沿反对角线翻转 (左下->右上)
+; ;; 一种简易方式: = vmirror(dmirror(vmirror obj)) 或自己写公式
+; (define (cmirror obj)
+;   (vmirror (dmirror (vmirror obj))))
 
-;; rotate180: 两次90 或直接坐标公式
-(define (rotate180 obj)
-  (rotate90 (rotate90 obj)))
-  ;; 或者用公式也行:
-  ;; (define-values (rmin rmax cmin cmax) (object-bbox obj))
-  ;; ...
+; ;; -----------------------------------------------------------------------------
+; ;; 5. 旋转 90/180 (如需 270可再叠加)
+; ;; -----------------------------------------------------------------------------
+
+; ;; rotate90: bounding box-based 90度旋转
+; ;; local (r, c) => (c, height-1-r)，然后映射回全局
+; (define (rotate90 obj)
+;   (unless (object? obj)
+;     (error "rotate90: expected object but got" obj))
+;   (define-values (rmin rmax cmin cmax) (object-bbox obj))
+;   (define nr (add1 (- rmax rmin))) ;; bounding-box 高度
+;   ;; (nc (add1 (- cmax cmin))) ;; 宽度 - 如果需要可用
+;   (for/set ([e (in-set obj)])
+;     (define colr (first e))
+;     (define oldr (first (second e)))
+;     (define oldc (second (second e)))
+;     ;; 移动到 (rmin,cmin) 为基准
+;     (define local-r (- oldr rmin))
+;     (define local-c (- oldc cmin))
+;     ;; 旋转公式 => newr = local-c, newc = (nr - 1 - local-r)
+;     (define newr local-c)
+;     (define newc (- (sub1 nr) local-r))
+;     ;; 再加回 (rmin, cmin)
+;     (list colr (list (+ rmin newr) (+ cmin newc)))))
+
+; ;; rotate180: 两次90 或直接坐标公式
+; (define (rotate180 obj)
+;   (rotate90 (rotate90 obj)))
+;   ;; 或者用公式也行:
+;   ;; (define-values (rmin rmax cmin cmax) (object-bbox obj))
+;   ;; ...
 
 
 ;; -------------------------------------------------------
@@ -234,43 +245,213 @@
       0
       (add1 (- cmax cmin)))) ;; 列的范围(含端点) => 高
 
-;; 判断 Rot90 的可行性(这里只是示例, 你可换成别的规则)
-(define (valid-rot90? obj)
-  (and (object? obj)
-       (not (set-empty? obj))          ;; 不要空对象
-       (> (object-width obj) 1)
-       (> (object-height obj) 1)))
+; ;; 判断 Rot90 的可行性(这里只是示例, 你可换成别的规则)
+; (define (valid-rot90? obj)
+;   (and (object? obj)
+;        (not (set-empty? obj))          ;; 不要空对象
+;        (> (object-width obj) 1)
+;        (> (object-height obj) 1)))
 
-;; 判断 HMirror 的可行性
-(define (valid-hmirror? obj)
-  (and (object? obj)
-       (not (set-empty? obj))
-       (> (object-width obj) 0)
-       ;; 当然你可以添加更多逻辑……
-       #t))
+; ;; 判断 HMirror 的可行性
+; (define (valid-hmirror? obj)
+;   (and (object? obj)
+;        (not (set-empty? obj))
+;        (> (object-width obj) 0)
+;        ;; 当然你可以添加更多逻辑……
+;        #t))
 
-;; 判断 VMirror 的可行性
-(define (valid-vmirror? obj)
-  (and (object? obj)
-       (not (set-empty? obj))
-       (> (object-height obj) 0)
-       #t))
-;; -----------------------------------------------------------------------------
-;; 使用示例（如要测试）:
-;; (define test-obj
-;;   (set '( (3 (0 0))
-;;           (3 (0 1))
-;;           (3 (1 0))
-;;           (3 (1 1)) )))
-;;
-;; (displayln (size test-obj))              ; => 4
-;; (displayln (shape test-obj))             ; => '(2 2)
-;; (displayln (asindices test-obj))         ; => #<set: (0 0) (0 1) (1 0) (1 1)>
-;; (displayln (palette test-obj))           ; => #<set: 3>
-;; (displayln (rotate90 test-obj))
-;; (displayln (hmirror test-obj))
-;; (displayln (cmirror test-obj))
-;; ...
+; ;; 判断 VMirror 的可行性
+; (define (valid-vmirror? obj)
+;   (and (object? obj)
+;        (not (set-empty? obj))
+;        (> (object-height obj) 0)
+;        #t))
+
+
+
+; ;; 对象判定 (供示例使用)
+; (define (object? s)
+;   (and (set? s)
+;        (for/and ([e (in-set s)])
+;          (and (list? e)
+;               (= (length e) 2)
+;               (list? (second e))
+;               (= (length (second e)) 2)))))
+; ;; 简单校验: 每个元素形如 (colorValue (r c))
+
+;;=====================================================
+;; 1) vmirror-set: 垂直镜像(左右翻转)
+;;    (r, c) => (r, (grid-width - 1 - c))
+;;=====================================================
+(define (vmirror-set obj grid-width)
+  (unless (object? obj)
+    (error "vmirror-set: expected an object set but got" obj))
+  (for/set ([e (in-set obj)])
+    (define color (first e))
+    (define ro    (first (second e)))
+    (define co    (second (second e)))
+    (list color (list ro (- (sub1 grid-width) co)))))
+
+
+;;=====================================================
+;; 2) hmirror-set: 水平镜像(上下翻转)
+;;    (r, c) => ((grid-height - 1 - r), c)
+;;=====================================================
+(define (hmirror-set obj grid-height)
+  (unless (object? obj)
+    (error "hmirror-set: expected an object set but got" obj))
+  (for/set ([e (in-set obj)])
+    (define color (first e))
+    (define ro    (first (second e)))
+    (define co    (second (second e)))
+    (list color (list (- (sub1 grid-height) ro) co))))
+
+
+;;=====================================================
+;; 3) dmirror-set: 沿主对角线 (左上 -> 右下) 翻转
+;;    通常 (r, c) => (c, r)
+;;    若 grid 高宽不一样，此操作可能导致出界，需自行处理
+;;=====================================================
+(define (dmirror-set obj grid-height grid-width)
+  (unless (object? obj)
+    (error "dmirror-set: expected an object set but got" obj))
+  (for/set ([e (in-set obj)])
+    (define color (first e))
+    (define ro    (first (second e)))
+    (define co    (second (second e)))
+    ;; 简单做 (r, c) => (c, r)
+    ;; 若 grid 高度 != 宽度，可能产生无效坐标(超出grid边界)
+    (list color (list co ro))))
+
+
+;;=====================================================
+;; 4) cmirror-set: 沿反对角线 (右上->左下) 翻转
+;;    若我们设想反对角线是 ↗，通常公式:
+;;    (r, c) => ( (grid-height - 1 - c),
+;;                (grid-width  - 1 - r) )
+;;=====================================================
+(define (cmirror-set obj grid-height grid-width)
+  (unless (object? obj)
+    (error "cmirror-set: expected an object set but got" obj))
+  (for/set ([e (in-set obj)])
+    (define color (first e))
+    (define ro    (first (second e)))
+    (define co    (second (second e)))
+    (list color
+          (list (- (sub1 grid-height) co)
+                (- (sub1 grid-width)  ro)))))
+
+
+;;=====================================================
+;; 5) rotate90-set: 逆时针 or 顺时针 90?
+;;    这里示例: (r, c) => (c, (grid-height - 1 - r))
+;;    表示逆时针旋转90(以左上角为原点)
+;;=====================================================
+(define (rotate90-set obj grid-height grid-width)
+  (unless (object? obj)
+    (error "rotate90-set: expected an object set but got" obj))
+  (for/set ([e (in-set obj)])
+    (define color (first e))
+    (define ro    (first (second e)))
+    (define co    (second (second e)))
+    ;; 旋转公式: newR = co, newC = (grid-height - 1 - ro)
+    (list color (list co (- (sub1 grid-height) ro)))))
+
+
+;;=====================================================
+;; 6) rotate180-set: 180 度 = 两次 90 或直接公式
+;;    这里直接用 (r, c) => (grid-height-1 - r, grid-width-1 - c)
+;;=====================================================
+(define (rotate180-set obj grid-height grid-width)
+  (unless (object? obj)
+    (error "rotate180-set: expected an object set but got" obj))
+  (for/set ([e (in-set obj)])
+    (define color (first e))
+    (define ro    (first (second e)))
+    (define co    (second (second e)))
+    (list color
+          (list (- (sub1 grid-height) ro)
+                (- (sub1 grid-width)  co)))))
+
+(define (objectinfo->obj+grid objinfo)
+  (define oldobj (ObjectInfo-obj objinfo))
+  (define grid-size (ObjectInfo-grid-bounding-box objinfo))
+  (define gheight (first grid-size))
+  (define gwidth  (second grid-size))
+  (values oldobj gheight gwidth))
+
+(define (update-objinfo-obj objinfo newobj)
+  (ObjectInfo
+   newobj
+   (ObjectInfo-configparam objinfo)
+   (ObjectInfo-ismove000 objinfo)
+   (ObjectInfo-grid-bounding-box objinfo)
+   (ObjectInfo-bounding-box objinfo)         ;; 若需要
+   (ObjectInfo-color-ranking objinfo)
+   (ObjectInfo-otherinfo objinfo)))
+
+
+(define (hmirror-info objinfo)
+  (unless (ObjectInfo? objinfo)
+    (error "hmirror-info: expected ObjectInfo but got" objinfo))
+  (define-values (oldobj gh gw) (objectinfo->obj+grid objinfo))
+  (define newobj (hmirror-set oldobj gh))
+  (update-objinfo-obj objinfo newobj))
+
+;;=====================================================
+;; 1) vmirror-info
+(define (vmirror-info objinfo)
+  (unless (ObjectInfo? objinfo)
+    (error "vmirror-info: expected ObjectInfo but got" objinfo))
+  (define-values (oldobj gh gw) (objectinfo->obj+grid objinfo))
+  (define newobj (vmirror-set oldobj gw))
+  (update-objinfo-obj objinfo newobj))
+
+;;=====================================================
+;; 3) dmirror-info
+;;=====================================================
+(define (dmirror-info objinfo)
+  (unless (ObjectInfo? objinfo)
+    (error "dmirror-info: expected ObjectInfo but got" objinfo))
+  (define-values (oldobj gh gw) (objectinfo->obj+grid objinfo))
+  (define newobj (dmirror-set oldobj gh gw))
+  (update-objinfo-obj objinfo newobj))
+
+;;=====================================================
+;; 4) cmirror-info
+;;=====================================================
+(define (cmirror-info objinfo)
+  (unless (ObjectInfo? objinfo)
+    (error "cmirror-info: expected ObjectInfo but got" objinfo))
+  (define-values (oldobj gh gw) (objectinfo->obj+grid objinfo))
+
+  (define newobj (cmirror-set oldobj gh gw))
+  (update-objinfo-obj objinfo newobj))
+
+;;=====================================================
+;; 5) rotate90-info
+;;=====================================================
+(define (rotate90-info objinfo)
+  (unless (ObjectInfo? objinfo)
+    (error "rotate90-info: expected ObjectInfo but got" objinfo))
+  (define-values (oldobj gh gw) (objectinfo->obj+grid objinfo))
+
+  (define newobj (rotate90-set oldobj gh gw))
+  (update-objinfo-obj objinfo newobj))
+
+;;=====================================================
+;; 6) rotate180-info
+;;=====================================================
+(define (rotate180-info objinfo)
+  (unless (ObjectInfo? objinfo)
+    (error "rotate180-info: expected ObjectInfo but got" objinfo))
+  (define-values (oldobj gh gw) (objectinfo->obj+grid objinfo))
+
+  (define newobj (rotate180-set oldobj gh gw))
+  (update-objinfo-obj objinfo newobj))
+
+
+
 
 (define (toindices piece)
   (cond
@@ -397,7 +578,8 @@
   (ObjectInfo
    new-obj
    (ObjectInfo-configparam objinfo)
-   '("---000---" #t)
+   '("000" #t)
+   (ObjectInfo-grid-bounding-box objinfo)
    (ObjectInfo-bounding-box objinfo)
    (ObjectInfo-color-ranking objinfo)
    (ObjectInfo-otherinfo objinfo)))
@@ -418,32 +600,6 @@
     [else
      (error "shift-obj-to-0-0-0: unsupported argument type" objbig)]))
 
-
-;;; (define (shift-obj-to-0-0-0 objbig)
-;;;   ;; Step 1: 判断 objbig 是否 ObjectInfo
-;;;   (cond
-;;;     [(ObjectInfo? objbig)
-;;;      ;; 从 objbig 中提取原 BFS 集合
-;;;      (define orig-obj (ObjectInfo-obj objbig))
-;;;      (define shifted-obj (shift-pure-obj-to-0-0-0 orig-obj))
-;;;      ;; 把 shifted-obj “拼”回一个新的 ObjectInfo，保留其余字段
-;;;      (ObjectInfo
-;;;       shifted-obj
-;;;       (ObjectInfo-univalued? objbig)
-;;;       (ObjectInfo-diagonal? objbig)
-;;;       (ObjectInfo-without-bg? objbig)
-;;;       (ObjectInfo-origin-color objbig)
-;;;       (ObjectInfo-origin-position objbig)
-;;;       (ObjectInfo-otherinfo objbig))]
-
-;;;     ;; Step 2: 如果不是 ObjectInfo，就假设它是纯 BFS set
-;;;     [(set? objbig)
-;;;      (shift-pure-obj-to-0-0-0 objbig)]
-
-;;;     [else
-;;;      (error "shift-obj-to-0-0-0: unsupported argument type" objbig)]))
-
-
 ;; 把“纯对象集合(set)”平移到 (0,0)，并把颜色设为 0
 (define (shift-pure-obj-to-0-0-0 obj)
   (if (set-empty? obj)
@@ -459,23 +615,7 @@
           (list 0 (list (- r min-row) (- c min-col)))))))
 
 
-;;; (define (shift-obj-to-0-0-0 obj)
-;;;   ;; 如果 obj 为空，就直接返回一个空 set
-;;;   (if (set-empty? obj)
-;;;       (set)
-;;;       (let* ([obj-list (set->list obj)]
-;;;              ;; obj-list 里每个元素 e = '(color (r c))
-;;;              ;; 先把 (r c) 收集下来，方便算 min-row 和 min-col
-;;;              [rc-list (map (λ (e) (cadr e)) obj-list)]
-;;;              [min-row (apply min (map first rc-list))]
-;;;              [min-col (apply min (map second rc-list))])
-;;;         (for/set ([e (in-list obj-list)])
-;;;           ;; e = '(color (r c))
-;;;           (define color 0)  ; 你想要的默认颜色
-;;;           (define r (first (cadr e)))
-;;;           (define c (second (cadr e)))
-;;;           ;; 生成新的 '(color (r' c'))
-;;;           (list color (list (- r min-row) (- c min-col)))))))
+
 
 
 (define (all-objects-00-c0-from-objs all-objs)
@@ -483,17 +623,6 @@
   (for/set ([obj (in-set all-objs)])
     ;;; (define coords (asindices obj))
     (shift-obj-to-0-0-0 obj)))
-
-;; -------------------------------------------------------------------
-;; 6. 使用示例 (取决于你的 grid 是什么)
-;; -------------------------------------------------------------------
-;; (define my-grid
-;;   '(...))
-;;
-;;; (define all-shapes (all-objects-shape-from-grid my-grid))
-;; (displayln shapes)
-;;
-;; shapes 里就包含了去重后的所有“对象形状”坐标集合
 
 
 

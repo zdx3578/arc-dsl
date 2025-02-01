@@ -113,6 +113,7 @@
   (obj
    configparam
    ismove000
+   grid-bounding-box
    bounding-box        ;; (list minr minc maxr maxc)
    color-ranking       ;; string or list
    otherinfo)
@@ -216,7 +217,8 @@
                             (ObjectInfo
                              o
                              (list  univalued?                              diagonal?                             without-bg?)
-                             (list  "---000---" #f)
+                             (list  "000" #f)
+                             (list  h w  )
                              bounding
                              rank
                              #f)))]

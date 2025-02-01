@@ -14,45 +14,49 @@
 (struct TransformationInfo (name code apply-fn check-fn dsl-maker) #:transparent)
 
 (define transformations
-  (list (TransformationInfo 'NoOp
-                            0
-                            (lambda (obj) obj)
-                            (lambda (i o) (equal? i o))
-                            (lambda (sub) (NoOp))) ;; sub => #f
-        (TransformationInfo 'Rot90
-                            1
-                            (lambda (obj)
-                              (if (valid-rot90? obj)
-                                  (rotate90 obj)
-                                  #f))
-                            (lambda (i o) (equal? (rotate90 i) o))
-                            (lambda (sub) (Rot90 sub)))
-        (TransformationInfo 'HMirror
-                            2
-                            (lambda (obj)
-                              (if (valid-hmirror? obj)
-                                  (hmirror obj)
-                                  #f))
-                            (lambda (i o) (equal? (hmirror i) o))
-                            (lambda (sub) (HMirror sub)))
-        (TransformationInfo 'VMirror
-                            3
-                            (lambda (obj)
-                              (if (valid-vmirror? obj)
-                                  (vmirror obj)
-                                  #f))
-                            (lambda (i o) (equal? (vmirror i) o))
-                            (lambda (sub) (VMirror sub)))
-        (TransformationInfo 'CMirror
-                            4
-                            (lambda (obj) (cmirror obj))
-                            (lambda (i o) (equal? (cmirror i) o))
-                            (lambda (sub) (CMirror sub)))
-        (TransformationInfo 'DMirror
-                            5
-                            (lambda (obj) (dmirror obj))
-                            (lambda (i o) (equal? (dmirror i) o))
-                            (lambda (sub) (DMirror sub)))))
+  (list
+   (TransformationInfo
+    'NoOp
+    0
+    (lambda (obj) obj)
+    (lambda (i o) (equal? i o))
+    (lambda (sub) (NoOp))) ;; sub => #f
+
+   (TransformationInfo
+    'Rot90
+    1
+    (lambda (obj)  (rotate90-info obj) )
+    (lambda (i o) (equal? (rotate90-info i) o))
+    (lambda (sub) (Rot90 sub)))
+
+   (TransformationInfo
+    'HMirror
+    2
+    (lambda (obj)  (hmirror-info obj))
+    (lambda (i o) (equal? (hmirror-info i) o))
+    (lambda (sub) (HMirror sub)))
+
+   (TransformationInfo
+    'VMirror
+    3
+    (lambda (obj)  (vmirror-info obj) )
+    (lambda (i o) (equal? (vmirror-info i) o))
+    (lambda (sub) (VMirror sub)))
+
+   (TransformationInfo
+    'CMirror
+    4
+    (lambda (obj) (cmirror-info obj))
+    (lambda (i o) (equal? (cmirror-info i) o))
+    (lambda (sub) (CMirror sub)))
+
+   (TransformationInfo
+    'DMirror
+    5
+    (lambda (obj) (dmirror-info obj))
+    (lambda (i o) (equal? (dmirror-info i) o))
+    (lambda (sub) (DMirror sub)))
+   ))
 
 ;; 查找 transformation
 (define (lookup-trans-by-code c)
@@ -225,38 +229,7 @@
      (for/fold ([best (car lst)]) ([x (in-list (cdr lst))])
        (if (pred x best) x best))]))
 
-(define (build-if-rule-based-on-stats diag-hash)
-  ;; diag-hash: (Hash (list diag? code) => count)
-  ;; 1) 找 (#t, code) 出现次数最多的 code
-  (define diag-true-code
-    (let ([pairs (for/list ([k (in-hash-keys diag-hash)])
-                   (match k
-                     [(list #t tcode) (list tcode (hash-ref diag-hash k))]
-                     [_ (list #f 0)]))]) ;; 返回 '(tcode count) or '(#f 0)
 
-      (define best (argmax (lambda (a b) (> (cadr a) (cadr b))) pairs))
-      (if best
-          (car best)
-          0))) ;; 取 best 的第一个元素就是 tcode，第二个是 count
-
-  ;; 2) 找 (#f, code) 出现次数最多的 code
-  (define diag-false-code
-    (let ([pairs (for/list ([k (in-hash-keys diag-hash)])
-                   (match k
-                     [(list #f tcode) (list tcode (hash-ref diag-hash k))]
-                     [_ (list #f 0)]))])
-
-      (define best (argmax (lambda (a b) (> (cadr a) (cadr b))) pairs))
-      (if best
-          (car best)
-          0)))
-
-  ;; 3) 构造一个简单的单层 if-rule: if diagonal? => diag-true-code else diag-false-code
-  (DSLCond 'If
-           #f
-           (Cond 'diagonal? #t)
-           (DSLCond 'Base diag-true-code #f #f #f)
-           (DSLCond 'Base diag-false-code #f #f #f)))
 
 ;; ---------------------------------------------------------------------
 ;; 4) 统计分析: 在 ParamMatchRecord 层面统计 (diagonal? => transform-code)
@@ -267,19 +240,23 @@
 
 (define (analyze-param-match-record pmr)
   ;; pmr: (ParamMatchRecord param object-matches)
-  ;; 返回一个 hash: key=(list diag? code), val=出现次数
+  ;; 返回一个 hash: key=transformName, val=出现次数
   (define omrs (ParamMatchRecord-object-matches pmr))
-  (define diag-count (make-hash))
+  (define transform-count (make-hash))
 
+  ;; 遍历所有 ObjectMatchRecord
   (for ([omr (in-list omrs)])
-    (define in-obj-info (ObjectMatchRecord-in-obj omr)) ;; 这里 in-obj-info = (ObjectInfo ...)
-    (define diag? (ObjectInfo-ismove000 in-obj-info))
-    (define tcode (ObjectMatchRecord-transform-code omr))
-    (hash-update! diag-count (list diag? tcode) (λ (old) (add1 old)) 0))
-  diag-count)
+    (define tcode-list (ObjectMatchRecord-transform-code omr)) ;; 现在是一个列表
+    ;; 遍历 transform-code 列表里的每个单独变换
+    (for ([single-code (in-list tcode-list)])
+      (hash-update! transform-count single-code (λ (old) (add1 old)) 0))) ;; 若不存在旧值，初始为0，然后加1
+
+  transform-count)
+
 
 (define (analyze-pair-match-record pmRec)
   (define pmrs (PairMatchRecord-param-match-records pmRec))
+  ;; acc = 全局 hash: key=transformName, val=累计出现次数
   (for/fold ([acc (make-hash)]) ([p (in-list pmrs)])
     (define local-hash (analyze-param-match-record p))
     ;; 合并 local-hash 到 acc
@@ -288,26 +265,46 @@
       (hash-update! acc k (λ (old) (+ old val)) 0))
     acc))
 
+(define (build-topN-transform-list transform-hash topN)
+  ;; transform-hash: key=transformName, val=出现次数
+  ;; 返回出现次数最多的前 topN 个变换的列表
+  (define pairs
+    (for/list ([k (in-hash-keys transform-hash)])
+      (cons k (hash-ref transform-hash k)))) ;; (transformName . count)
+  (define sorted (sort pairs (lambda (a b) (> (cdr a) (cdr b))))) ;; 从大到小
+  (define topN-list (map car (take sorted topN))) ;; 拿出 transformName
+  topN-list)
+
+
 ;; ---------------------------------------------------------------------
 ;; 6) “后处理”阶段：对 pair-match-records 分析 & 构造 if-rule & 测试
 ;; ---------------------------------------------------------------------
 ;; 假设仅做一个简单的统计 => 生成一个 candidate-rule
 ;; 再验证 candidate-rule 在 pair-match-records 里是否都能成功
 (define (post-process-rules! pmrs)
-  (define diag-hash (make-hash)) ;; 用来全局计数
+  (define transform-hash (make-hash))
   ;; 先把 pmrs 里所有的对象匹配情况汇总
   (for ([pmr (in-list pmrs)])
-    (define local-hash (analyze-pair-match-record pmr)) ; 这是你之前的函数
-    ;; 合并到 diag-hash
+    (define local-hash (analyze-pair-match-record pmr))
+    ;; 合并到 transform-hash
     (for ([k (in-hash-keys local-hash)])
       (define val (hash-ref local-hash k))
-      (hash-update! diag-hash k (λ (old) (+ old val)) 0)))
+      (hash-update! transform-hash k (λ (old) (+ old val)) 0)))
 
-  ;; 构造 if-rule
-  (define candidate-rule (build-if-rule-based-on-stats diag-hash)) ;; 也是你之前的函数
-  (displayln candidate-rule)
+  (define top3 (build-topN-transform-list transform-hash 3))
+  (displayln (format "Top 3 transforms => ~s" top3))
 
-  ;; 逐条验证
+  ;; 你可以把这个列表 top3 变换直接构造成一个 DSLCond
+  ;; 如果你已经不需要做 if-else，就可以省略 DSLCond 里的 'If
+  ;; 以下示例，仅放在 (DSLCond 'Base top3 #f #f #f)
+  (define candidate-rule
+    (DSLCond 'Base
+             top3   ;; 这里就把前3变换放进来
+             #f #f #f))
+
+  (displayln (format "Generated rule => ~s" candidate-rule))
+
+  ;; 然后像以前一样，遍历 pmrs 做验证
   (define success?
     (for/and ([pmr (in-list pmrs)])
       (for/and ([param-rec (in-list (PairMatchRecord-param-match-records pmr))])
@@ -317,10 +314,9 @@
           (define out-obj (ObjectMatchRecord-out-obj omr))
           (equal? (interp-DSLCond candidate-rule in-obj-info) out-obj)))))
 
-  (displayln (format "Generated if-rule => ~s" candidate-rule))
-  (displayln (format "Check if-rule success? ~a" success?))
-
+  (displayln (format "Check candidate-rule success? ~a" success?))
   candidate-rule)
+
 
 ;; 全局收集
 (define pair-match-records '())
@@ -363,23 +359,23 @@
                            (let ([found-regular?
                                   (for/or ([in-obj (in-set input-obj-set)])
                                     (let ([code-regular (synthesize-transformation
-                                                         (ObjectInfo-obj in-obj)
-                                                         (ObjectInfo-obj out-obj))])
+                                                          in-obj
+                                                          out-obj)])
                                       (when code-regular
                                         (set!
                                          object-match-list
-                                         (cons (ObjectMatchRecord in-obj out-obj code-regular '())
+                                         (cons (ObjectMatchRecord in-obj out-obj code-regular '("-----0-----" #f))
                                                object-match-list)))
                                       code-regular))])
                              ;; 第 2 步：如果上面那一步 found-regular? 为 #f，就再尝试 shift 匹配
                              (or found-regular?
                                  (for/or ([in-obj (in-set input-obj-set)])
                                    (let ([code-shift (synthesize-transformation
-                                                      (ObjectInfo-obj (shift-obj-to-0-0-0 in-obj))
-                                                      (ObjectInfo-obj (shift-obj-to-0-0-0 out-obj)))])
+                                                      ( shift-obj-to-0-0-0 in-obj)
+                                                      ( shift-obj-to-0-0-0 out-obj))])
                                      (when code-shift
                                        (set! object-match-list
-                                             (cons (ObjectMatchRecord in-obj out-obj code-shift '())
+                                             (cons (ObjectMatchRecord in-obj out-obj code-shift '("-----0-----" #t))
                                                    object-match-list)))
                                      code-shift))))))
                        ;; 如果 param-success? => 新增一个 ParamMatchRecord
