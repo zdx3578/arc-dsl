@@ -61,20 +61,45 @@
 ;; 查找 transformation
 (define (lookup-trans-by-code c)
   (for/first ([tf (in-list transformations)])
-    (when (= c (TransformationInfo-code tf))
-      tf)))
+    (if (= c (TransformationInfo-code tf))
+      tf
+      #f)))
 
 (define (lookup-trans-by-name nm)
   (for/first ([tf (in-list transformations)])
-    (when (eq? nm (TransformationInfo-name tf))
-      tf)))
+    (if (eq? nm (TransformationInfo-name tf))
+      tf
+      #f)))
 
 ;; 统一 apply-op: code => transformations
-(define (apply-op code obj)
-  (define tf (lookup-trans-by-code code))
-  (if tf
-      ((TransformationInfo-apply-fn tf) obj)
-      #f))
+;; 同时支持 integer/symbol/以及list-of-symbols
+(define (apply-op code-or-codes obj)
+  (cond
+    ;; 若是整数 => lookup-trans-by-code
+    [(integer? code-or-codes)
+     (define tf (lookup-trans-by-code code-or-codes))
+     (if tf ((TransformationInfo-apply-fn tf) obj) #f)]
+
+    ;; 若是符号 => lookup-trans-by-name
+    [(symbol? code-or-codes)
+     (define tf (lookup-trans-by-name code-or-codes))
+     (if tf ((TransformationInfo-apply-fn tf) obj) #f)]
+
+    ;; 若是列表(符号集合) => 依次 apply
+    [(and (list? code-or-codes)
+          (for/and ([c (in-list code-or-codes)]) (symbol? c)))
+     (for/fold ([acc obj])
+               ([c (in-list code-or-codes)])
+       (define tf (lookup-trans-by-name c))
+       (displayln (format "--------------apply-op: code-or-codes => ~a" c))
+       (displayln (format "apply-op: tf => ~a" tf))
+       (if tf ((TransformationInfo-apply-fn tf) acc)
+               acc)) ;; 失败则维持原样 or #f, 看需求
+     ]
+
+    [else
+     (error "apply-op: unexpected code/codes" code-or-codes)]))
+
 
 ;; -----------------------------------------------------------
 ;; 2) DSL 定义 & interp (含 Compose)
@@ -270,10 +295,18 @@
   ;; 返回出现次数最多的前 topN 个变换的列表
   (define pairs
     (for/list ([k (in-hash-keys transform-hash)])
-      (cons k (hash-ref transform-hash k)))) ;; (transformName . count)
-  (define sorted (sort pairs (lambda (a b) (> (cdr a) (cdr b))))) ;; 从大到小
-  (define topN-list (map car (take sorted topN))) ;; 拿出 transformName
+      (cons k (hash-ref transform-hash k)))) ;; => '((HMirror . 9) (CMirror . 5) ...)
+  (define sorted
+    (sort pairs (lambda (a b) (> (cdr a) (cdr b))))) ;; 按出现次数从大到小排序
+
+  ;; 可能 sorted 的长度 < topN => 用 (take sorted topN) 会报错
+  (define length-sorted (length sorted))
+  (define actual-count (min topN length-sorted))
+
+  ;; 若你想若数量不足，就仅返回所有
+  (define topN-list (map car (take sorted actual-count)))
   topN-list)
+
 
 
 ;; ---------------------------------------------------------------------
