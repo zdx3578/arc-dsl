@@ -113,8 +113,6 @@
   (obj
    configparam
    ismove000
-  ;;;  origin-color
-  ;;;  origin-position
    bounding-box        ;; (list minr minc maxr maxc)
    color-ranking       ;; string or list
    otherinfo)

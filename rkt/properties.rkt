@@ -397,10 +397,6 @@
   (ObjectInfo
    new-obj
    (ObjectInfo-configparam objinfo)
-  ;  (ObjectInfo-diagonal? objinfo)
-  ;  (ObjectInfo-without-bg? objinfo)
-  ;;;  (ObjectInfo-origin-color objinfo)
-  ;;;  (ObjectInfo-origin-position objinfo)
    '("---000---" #t)
    (ObjectInfo-bounding-box objinfo)
    (ObjectInfo-color-ranking objinfo)

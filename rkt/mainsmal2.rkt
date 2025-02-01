@@ -163,35 +163,7 @@
          (interp-DSLCond subF obj-info))]
     [_ #f]))
 
-;; ---------------------------------------------------------------------
-;; 4) 统计分析: 在 ParamMatchRecord 层面统计 (diagonal? => transform-code)
-;; ---------------------------------------------------------------------
-(struct ObjectMatchRecord (in-obj out-obj transform-code details) #:transparent)
-(struct ParamMatchRecord (param object-matches) #:transparent)
-(struct PairMatchRecord (input-grid output-grid param-match-records) #:transparent)
 
-(define (analyze-param-match-record pmr)
-  ;; pmr: (ParamMatchRecord param object-matches)
-  ;; 返回一个 hash: key=(list diag? code), val=出现次数
-  (define omrs (ParamMatchRecord-object-matches pmr))
-  (define diag-count (make-hash))
-
-  (for ([omr (in-list omrs)])
-    (define in-obj-info (ObjectMatchRecord-in-obj omr)) ;; 这里 in-obj-info = (ObjectInfo ...)
-    (define diag? (ObjectInfo-ismove000 in-obj-info))
-    (define tcode (ObjectMatchRecord-transform-code omr))
-    (hash-update! diag-count (list diag? tcode) (λ (old) (add1 old)) 0))
-  diag-count)
-
-(define (analyze-pair-match-record pmRec)
-  (define pmrs (PairMatchRecord-param-match-records pmRec))
-  (for/fold ([acc (make-hash)]) ([p (in-list pmrs)])
-    (define local-hash (analyze-param-match-record p))
-    ;; 合并 local-hash 到 acc
-    (for ([k (in-hash-keys local-hash)])
-      (define val (hash-ref local-hash k))
-      (hash-update! acc k (λ (old) (+ old val)) 0))
-    acc))
 
 (define (simple-check in-obj out-obj)
   (define successful-transformations ; 在外部定义累积列表
@@ -285,6 +257,36 @@
            (Cond 'diagonal? #t)
            (DSLCond 'Base diag-true-code #f #f #f)
            (DSLCond 'Base diag-false-code #f #f #f)))
+
+;; ---------------------------------------------------------------------
+;; 4) 统计分析: 在 ParamMatchRecord 层面统计 (diagonal? => transform-code)
+;; ---------------------------------------------------------------------
+(struct ObjectMatchRecord (in-obj out-obj transform-code details) #:transparent)
+(struct ParamMatchRecord (param object-matches) #:transparent)
+(struct PairMatchRecord (input-grid output-grid param-match-records) #:transparent)
+
+(define (analyze-param-match-record pmr)
+  ;; pmr: (ParamMatchRecord param object-matches)
+  ;; 返回一个 hash: key=(list diag? code), val=出现次数
+  (define omrs (ParamMatchRecord-object-matches pmr))
+  (define diag-count (make-hash))
+
+  (for ([omr (in-list omrs)])
+    (define in-obj-info (ObjectMatchRecord-in-obj omr)) ;; 这里 in-obj-info = (ObjectInfo ...)
+    (define diag? (ObjectInfo-ismove000 in-obj-info))
+    (define tcode (ObjectMatchRecord-transform-code omr))
+    (hash-update! diag-count (list diag? tcode) (λ (old) (add1 old)) 0))
+  diag-count)
+
+(define (analyze-pair-match-record pmRec)
+  (define pmrs (PairMatchRecord-param-match-records pmRec))
+  (for/fold ([acc (make-hash)]) ([p (in-list pmrs)])
+    (define local-hash (analyze-param-match-record p))
+    ;; 合并 local-hash 到 acc
+    (for ([k (in-hash-keys local-hash)])
+      (define val (hash-ref local-hash k))
+      (hash-update! acc k (λ (old) (+ old val)) 0))
+    acc))
 
 ;; ---------------------------------------------------------------------
 ;; 6) “后处理”阶段：对 pair-match-records 分析 & 构造 if-rule & 测试
