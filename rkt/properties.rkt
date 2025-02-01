@@ -396,12 +396,12 @@
 (define (make-ObjectInfo objinfo new-obj)
   (ObjectInfo
    new-obj
-   (ObjectInfo-univalued? objinfo)
-   (ObjectInfo-diagonal? objinfo)
-   (ObjectInfo-without-bg? objinfo)
+   (ObjectInfo-configparam objinfo)
+  ;  (ObjectInfo-diagonal? objinfo)
+  ;  (ObjectInfo-without-bg? objinfo)
   ;;;  (ObjectInfo-origin-color objinfo)
   ;;;  (ObjectInfo-origin-position objinfo)
-   #t
+   '("---000---" #t)
    (ObjectInfo-bounding-box objinfo)
    (ObjectInfo-color-ranking objinfo)
    (ObjectInfo-otherinfo objinfo)))

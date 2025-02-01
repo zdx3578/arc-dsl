@@ -146,8 +146,8 @@
 (define (interp-condition cond obj-info)
   (match-define (Cond prop val) cond)
   (match prop
-    ['diagonal? (equal? (ObjectInfo-diagonal? obj-info) val)]
-    ['univalued? (equal? (ObjectInfo-univalued? obj-info) val)]
+    ['diagonal? (equal? (ObjectInfo-ismove000 obj-info) val)]
+    ['univalued? (equal? (ObjectInfo-ismove000 obj-info) val)]
     [_ #f]))
 
 ;; 解释 DSLCond
@@ -178,7 +178,7 @@
 
   (for ([omr (in-list omrs)])
     (define in-obj-info (ObjectMatchRecord-in-obj omr)) ;; 这里 in-obj-info = (ObjectInfo ...)
-    (define diag? (ObjectInfo-diagonal? in-obj-info))
+    (define diag? (ObjectInfo-ismove000 in-obj-info))
     (define tcode (ObjectMatchRecord-transform-code omr))
     (hash-update! diag-count (list diag? tcode) (λ (old) (add1 old)) 0))
   diag-count)
@@ -193,17 +193,6 @@
       (hash-update! acc k (λ (old) (+ old val)) 0))
     acc))
 
-;; ========================================================
-;; 4) 合成逻辑
-;; ========================================================
-;;; (define (simple-check in-obj out-obj)
-;;;   (for/or ([tf (in-list transformations)])
-;;;     ;;; (displayln "simple-check")
-;;;     ;;; (displayln (TransformationInfo-name tf))
-;;;     ;;; (sleep 1)
-;;;     (define cfn (TransformationInfo-check-fn tf))
-;;;     (when (and cfn (cfn in-obj out-obj))
-;;;       (TransformationInfo-name tf))))
 (define (simple-check in-obj out-obj)
   (define successful-transformations ; 在外部定义累积列表
     ; 初始值是空列表

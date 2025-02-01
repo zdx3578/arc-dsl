@@ -111,10 +111,8 @@
 ;; -----------------------
 (struct ObjectInfo
   (obj
-   univalued?
-   diagonal?
-   without-bg?
-   ismove00
+   configparam
+   ismove000
   ;;;  origin-color
   ;;;  origin-position
    bounding-box        ;; (list minr minc maxr maxc)
@@ -219,12 +217,8 @@
                    (set-add objs
                             (ObjectInfo
                              o
-                             univalued?
-                             diagonal?
-                             without-bg?
-                             #f
-                            ;;;  final-color
-                            ;;;  (list minr minc)
+                             (list  univalued?                              diagonal?                             without-bg?)
+                             (list  "---000---" #f)
                              bounding
                              rank
                              #f)))]
