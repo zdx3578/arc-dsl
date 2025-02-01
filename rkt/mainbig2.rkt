@@ -197,8 +197,6 @@
       (hash-update! acc k (λ (old) (+ old val)) 0))
     acc))
 
-
-
 ;; ========================================================
 ;; 4) 合成逻辑
 ;; ========================================================
@@ -222,12 +220,6 @@
   (begin
     ;;; (displayln (format "All--------------------- successful transformations: ~a" successful-transformations))
     successful-transformations))  ; 返回所有成功的转换记录
-
-
-
-
-
-
 
 
 (define-symbolic e integer?)
@@ -311,12 +303,9 @@
            (DSLCond 'Base diag-true-code #f #f #f)
            (DSLCond 'Base diag-false-code #f #f #f)))
 
-
 ;; ---------------------------------------------------------------------
 ;; 6) “后处理”阶段：对 pair-match-records 分析 & 构造 if-rule & 测试
 ;; ---------------------------------------------------------------------
-
-
 ;; 假设仅做一个简单的统计 => 生成一个 candidate-rule
 ;; 再验证 candidate-rule 在 pair-match-records 里是否都能成功
 (define (post-process-rules! pmrs)
@@ -347,14 +336,6 @@
   (displayln (format "Check if-rule success? ~a" success?))
 
   candidate-rule)
-
-
-
-;; ---------------------------------------------------------------------
-;; 7) process-single-file / main (示例)
-;;    这里展示简单框架，保留你原先逻辑
-;; ---------------------------------------------------------------------
-;; 下面两个 struct, 只示意保留:
 
 ;; 全局收集
 (define pair-match-records '())
@@ -426,11 +407,7 @@
                  ;; ★ 在内层 for/fold 结束后输出调试日志
                  (displayln (format "[DEBUG] Done param-combinations for this pair. param-records => ~s"
                                     local-param-records))
-                 local-param-records)
-
-                ;;;  post-process-rules!local-param-records
-              )
-
+                 local-param-records)              )
              ;; 判断该 pair 是否成功
              (define this-pair-success? (not (null? param-records)))
 
@@ -461,8 +438,6 @@
   ;; ★ 显示一下最终的 pair-match-records
   (displayln (format "[DEBUG] appended => pair-match-records total=~a"
                      (length pair-match-records)))
-
-  ;;; (post-process-rules!)??????????
     ;; 3) 做后处理: 生成 if-rule / 统计
   (define candidate-rule (post-process-rules! pair-match-records))
 
@@ -473,23 +448,10 @@
                            #t)) ;; 如果没有 test 就算成功
 
   (displayln (format "Test-data check => ~a" test-success?))
-
   ;; 最终只要所有 pair 匹配成功 + 测试成功 => 整体成功
   test-success?
-
   ;; 4) 返回是否全部成功
   all-succeeded?)
-
-;; 可进一步封装一个 process-single-file-logging 或 main 函数
-;; 这里仅演示如何在关键处理点输出调试信息
-
-
-;; 测试：
-;; (process-single-file some-json-data)
-;; => 若所有 pair 都成功匹配，则返回 #t，否则返回 #f
-;; 同时所有 PairMatchRecord 已经被放进全局 pair-match-records 里了。
-
-
 
 (define (process-single-file-logging json-data)
   (define fn (hash-ref json-data 'filename))
@@ -498,10 +460,7 @@
   (if success?
       (displayln (format " [ ] SUCCESS => ~a" fn))
       (displayln (format "[] FAIL    => ~a" fn)))
-
-  ;;; post-process-rules!
   (set! pair-match-records '())  ;; 清空全局记录   下一个文件处理的时候是空状态
-
   success?)
 
 
@@ -529,8 +488,6 @@
       (if (process-single-file-logging json-data)
           1
           0)))
-
-
 
   (displayln (format "[] total-successful-files = ~a" total-success)))
 
