@@ -65,15 +65,32 @@
       tf
       #f)))
 
+; (define (lookup-trans-by-name nm)
+;   (for/first ([tf (in-list transformations)])
+;     (when (eq? nm (TransformationInfo-name tf))
+;       tf)))
+; (define (lookup-trans-by-name nm)
+;   (for/first ([tf (in-list transformations)])
+;     (and (eq? nm (TransformationInfo-name tf))
+;          tf)))
+
 (define (lookup-trans-by-name nm)
-  (for/first ([tf (in-list transformations)])
-    (if (eq? nm (TransformationInfo-name tf))
-      tf
-      #f)))
+  (let ([found (filter (lambda (tf)
+                         (eq? nm (TransformationInfo-name tf)))
+                       transformations)])
+    (if (null? found)
+        #f
+        (car found))))
+
+
+
+
 
 ;; 统一 apply-op: code => transformations
 ;; 同时支持 integer/symbol/以及list-of-symbols
 (define (apply-op code-or-codes obj)
+  ; (displayln (format "apply-op: code-or-codes => ~a" code-or-codes))
+  ; (displayln (format "apply-op: obj => ~a" obj))
   (cond
     ;; 若是整数 => lookup-trans-by-code
     [(integer? code-or-codes)
@@ -91,8 +108,14 @@
      (for/fold ([acc obj])
                ([c (in-list code-or-codes)])
        (define tf (lookup-trans-by-name c))
-       (displayln (format "--------------apply-op: code-or-codes => ~a" c))
-       (displayln (format "apply-op: tf => ~a" tf))
+      ;  (displayln "DEBUG: transformations => ")
+      ;   (displayln transformations)
+      ;   (for ([tf (in-list transformations)])
+      ;     (displayln (format "   transformation name=~a code=~a"
+      ;                       (TransformationInfo-name tf)
+      ;                       (TransformationInfo-code tf))))
+      ;  (displayln (format "--------------apply-op: code-or-codes => ~a" c))
+      ;  (displayln (format "apply-op: tf => ~a" tf))
        (if tf ((TransformationInfo-apply-fn tf) acc)
                acc)) ;; 失败则维持原样 or #f, 看需求
      ]
@@ -183,7 +206,7 @@
 (define (interp-DSLCond dsl obj-info)
   (match dsl
     ;; Base => single transform code
-    [(DSLCond 'Base code #f #f #f) (apply-op code (ObjectInfo-obj obj-info))]
+    [(DSLCond 'Base code #f #f #f) (apply-op code obj-info)]
 
     ;; If => if cond => subT else => subF
     [(DSLCond 'If #f cond subT subF)
@@ -345,6 +368,8 @@
         (for/and ([omr (in-list omrs)])
           (define in-obj-info (ObjectMatchRecord-in-obj omr))
           (define out-obj (ObjectMatchRecord-out-obj omr))
+          ; (displayln (format "in-obj-info => ~s" in-obj-info))
+          ; (displayln (format "out-obj => ~s" out-obj))
           (equal? (interp-DSLCond candidate-rule in-obj-info) out-obj)))))
 
   (displayln (format "Check candidate-rule success? ~a" success?))
