@@ -449,15 +449,31 @@
         ([(res-succeeded? res-pairs-ex)
           ;; 收集 (PairMatchRecordEx ...) 而非原始 PairMatchRecord
           (for/fold ([acc-succeeded? #t]
-                     [acc-pairs-ex '()])
+                      [acc-pairs-ex '()]
+                     [idx 0])
                     ([pair (in-list train-data)])
-            ;; 提取 input-grid, output-grid, 以及某个 pair-id (若需要)
             (define input-grid (Grid (hash-ref pair 'input)))
             (define output-grid (Grid (hash-ref pair 'output)))
-            (define the-pair-id (hash-ref pair 'id "unknown-pair-id"))
 
-            ;; 提取 input-obj
+            ;; 如果 JSON 里没有 id 字段, 则用 idx 生成, 否则用原 id.
+            (define raw-id (hash-ref pair 'id #f))
+            (define the-pair-id
+              (if raw-id
+                  raw-id
+                  (format "auto-pair-~a" idx)))
+
             (define input-obj-set (all-objects-from-grid input-grid))
+
+            ;          [acc-pairs-ex '()])
+            ;         ([pair (in-list train-data)])
+            ; ;; 提取 input-grid, output-grid, 以及某个 pair-id (若需要)
+            ; (define input-grid (Grid (hash-ref pair 'input)))
+            ; (define output-grid (Grid (hash-ref pair 'output)))
+            ; (define the-pair-id (hash-ref pair 'id "unknown-pair-id"))
+
+            ; ;; 提取 input-obj
+            ; (define input-obj-set (all-objects-from-grid input-grid))
+
 
             ;; 内层 for/fold: 收集所有能匹配成功的 param => param-records
             (define param-records
@@ -542,7 +558,7 @@
                   (cons new-pair-ex acc-pairs-ex)
                   acc-pairs-ex))
 
-            (values new-succeeded? new-pairs-ex))]) ;; for/fold end
+            (values new-succeeded? new-pairs-ex  (add1 idx) ))]) ;; for/fold end
 
       ;; for/fold 全结束后，输出调试日志
       (displayln
