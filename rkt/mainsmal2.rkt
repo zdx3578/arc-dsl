@@ -65,14 +65,7 @@
       tf
       #f)))
 
-; (define (lookup-trans-by-name nm)
-;   (for/first ([tf (in-list transformations)])
-;     (when (eq? nm (TransformationInfo-name tf))
-;       tf)))
-; (define (lookup-trans-by-name nm)
-;   (for/first ([tf (in-list transformations)])
-;     (and (eq? nm (TransformationInfo-name tf))
-;          tf)))
+
 
 (define (lookup-trans-by-name nm)
   (let ([found (filter (lambda (tf)
@@ -279,13 +272,6 @@
 
 
 
-;; ---------------------------------------------------------------------
-;; 4) 统计分析: 在 ParamMatchRecord 层面统计 (diagonal? => transform-code)
-;; ---------------------------------------------------------------------
-; (struct ObjectMatchRecord (in-obj out-obj transform-code details) #:transparent)
-; (struct ParamMatchRecord (param object-matches) #:transparent)
-; (struct PairMatchRecord (input-grid output-grid param-match-records) #:transparent)
-
 
 
 ;; --------------------------------------------
@@ -376,66 +362,6 @@
 
 
 
-
-
-; (define (analyze-single-param-match-record pmr)
-;   ;; pmr : (ParamMatchRecord param object-matches)
-;   (define omrs (ParamMatchRecord-object-matches pmr))
-;   (define transform-count (make-hash))
-
-;   (for ([omr (in-list omrs)])
-;     ;; 假设 transform-code 是一个列表
-;     (for ([code (in-list (ObjectMatchRecord-transform-code omr))])
-;       (hash-update! transform-count code add1 0)))
-
-;   transform-count)
-
-; (define (analyze-param-match-records pmrs)
-;   ;; pmrs: (listof ParamMatchRecord)
-;   ;;
-;   ;; 返回：param->(transform->count) 的哈希表
-;   (define param->transform-count (make-hash))
-
-;   (for ([pmr (in-list pmrs)])
-;     (define param-value (ParamMatchRecord-param pmr))
-;     (define local-transform-hash (analyze-single-param-match-record pmr))
-
-;     ;; 如果之前没出现过 param-value，就初始化空哈希表
-;     (define existing-hash
-;       (hash-ref param->transform-count param-value (lambda () (make-hash))))
-
-;     ;; 将 local-transform-hash 累加到 existing-hash
-;     (for ([transform-key (in-hash-keys local-transform-hash)])
-;       (define val (hash-ref local-transform-hash transform-key))
-;       (hash-update! existing-hash transform-key (λ (old) (+ old val)) 0))
-
-;     ;; 放回主哈希表
-;     (hash-set! param->transform-count param-value existing-hash))
-
-;   param->transform-count)
-
-;; 输入：一组 (ParamMatchRecord param object-matches) 的列表
-;; 输出：param->(transform->count)
-; (define (analyze-param-match-records pmrs)
-;   (define param->transform-count (make-hash))
-;   (for ([pmr (in-list pmrs)])
-;     (define param-value (ParamMatchRecord-param pmr))
-;     ;; 统计单条 pmr 的 transform->count
-;     (define single-hash (make-hash))
-;     (for ([omr (in-list (ParamMatchRecord-object-matches pmr))])
-;       ;; 假设 transform-code 是一个列表
-;       (for ([code (in-list (ObjectMatchRecord-transform-code omr))])
-;         (hash-update! single-hash code add1 0)))
-;     ;; 累加到大哈希
-;     (define existing-hash
-;       (hash-ref param->transform-count param-value (lambda () (make-hash))))
-;     (for ([t (in-hash-keys single-hash)])
-;       (define val (hash-ref single-hash t))
-;       (hash-update! existing-hash t (λ (old) (+ old val)) 0))
-;     (hash-set! param->transform-count param-value existing-hash))
-;   param->transform-count)
-
-
 (define (analyze-pair-match-record pmRec)
   ;; pmRec : (PairMatchRecord input-grid output-grid param-match-records)
   (define pmrs (PairMatchRecord-param-match-records pmRec))
@@ -510,120 +436,6 @@
   candidate-rule)
 
 
-
-;; 全局收集
-; (define pair-match-records '())
-
-; (define (process-single-file json-data)
-;   ;; 1 读取训练数据
-;   (define train-data (hash-ref json-data 'train))
-
-;   ;; 2) 用一个 let 包裹外层 for/fold，捕获其多值结果以便打印
-;   (define-values (all-succeeded? collected-pairs)
-;     (let-values
-;         ([(res-succeeded? res-pairs)
-;           ;; 收集的 PairMatchRecord
-;           (for/fold ([acc-succeeded? #t] ;; 到目前为止是否全部成功
-;                      [acc-pairs '()])
-;                     ([pair (in-list train-data)])
-;             ;; ---------------------------------------
-;             ;;   针对单个 pair 的处理
-;             ;; ---------------------------------------
-;             (define input-grid (Grid (hash-ref pair 'input)))
-;             (define output-grid (Grid (hash-ref pair 'output)))
-
-;             ;; 提取 input-obj
-;             (define input-obj-set (all-objects-from-grid input-grid))
-;             ;;;  (define input-obj-set  (all-objects-00-c0-from-objs input-obj-set0))
-
-;             ;; 内层 for/fold: 收集所有能匹配成功的 param => param-records
-;             (define param-records
-;               (let ([local-param-records
-;                      (for/fold ([acc-params '()]) ([out-param (in-list param-combinations)])
-;                        ;; 取出 output objs
-;                        (define out-obj-set (objects-with-params output-grid out-param))
-;                        ;;; (define out-obj-set  (all-objects-00-c0-from-objs out-obj-set0))
-
-;                        (define object-match-list '())
-;                        ;; param 下: “所有 out-obj 必须可解” => for/and
-;                        (define param-success?
-;                          (for/and ([out-obj (in-set out-obj-set)])
-;                            ;; 第 1 步：遍历 input-obj-set，做 regular 的匹配
-;                            (let ([found-regular?
-;                                   (for/or ([in-obj (in-set input-obj-set)])
-;                                     (let ([code-regular (synthesize-transformation
-;                                                           in-obj
-;                                                           out-obj)])
-;                                       (when code-regular
-;                                         (set!
-;                                          object-match-list
-;                                          (cons (ObjectMatchRecord in-obj out-obj code-regular '("-----0-----" #f))
-;                                                object-match-list)))
-;                                       code-regular))])
-;                              ;; 第 2 步：如果上面那一步 found-regular? 为 #f，就再尝试 shift 匹配
-;                              (or found-regular?
-;                                  (for/or ([in-obj (in-set input-obj-set)])
-;                                    (let ([code-shift (synthesize-transformation
-;                                                       ( shift-obj-to-0-0-0 in-obj)
-;                                                       ( shift-obj-to-0-0-0 out-obj))])
-;                                      (when code-shift
-;                                        (set! object-match-list
-;                                              (cons (ObjectMatchRecord in-obj out-obj code-shift '("-----0-----" #t))
-;                                                    object-match-list)))
-;                                      code-shift))))))
-;                        ;; 如果 param-success? => 新增一个 ParamMatchRecord
-;                        (if param-success?
-;                            (cons (ParamMatchRecord out-param object-match-list) acc-params)
-;                            acc-params))])
-;                 ;; ★ 在内层 for/fold 结束后输出调试日志
-;                 (displayln
-;                  (format "[DEBUG] Done param-combinations for this pair. param-records => ~s"
-;                          local-param-records))
-;                 local-param-records))
-;             ;; 判断该 pair 是否成功
-;             (define this-pair-success? (not (null? param-records)))
-
-;             ;; 构造外层新的累积状态
-;             (define new-succeeded? (and acc-succeeded? this-pair-success?))
-;             (define new-pairs
-;               (if this-pair-success?
-;                   (cons (PairMatchRecord input-grid output-grid param-records) acc-pairs)
-;                   acc-pairs))
-
-;             ;; ★ 在外层 for/fold 这一轮迭代结束前输出调试日志
-;             (displayln
-;              (format "[DEBUG] after handling ONE pair => success?=~a, total-collected-pairs=~a"
-;                      this-pair-success?
-;                      (length new-pairs)))
-
-;             (values new-succeeded? new-pairs))]) ;; 结束 for/fold
-
-;       ;; ★ for/fold 全部结束后再打印一次整体结果
-;       (displayln (format "[DEBUG] all pairs processed => all-succeeded?=~a, total=~a"
-;                          res-succeeded?
-;                          (length res-pairs)))
-;       (values res-succeeded? res-pairs)))
-
-;   ;; 3) 把本文件处理的 PairMatchRecord 累加到全局
-;   (set! pair-match-records (append collected-pairs pair-match-records))
-
-;   ;; ★ 显示一下最终的 pair-match-records
-;   (displayln (format "[DEBUG] appended => pair-match-records total=~a" (length pair-match-records)))
-;   ;; 3) 做后处理: 生成 if-rule / 统计
-;   (define candidate-rule (post-process-rules! pair-match-records))
-
-;   ;; 4) 若有 test 数据则验证
-;   (define test-data (hash-ref json-data 'test #f))
-;   (define test-success?
-;     (if test-data
-;         (verify-test-data test-data candidate-rule) ;; 上面示例
-;         #t)) ;; 如果没有 test 就算成功
-
-;   (displayln (format "Test-data check => ~a" test-success?))
-;   ;; 最终只要所有 pair 匹配成功 + 测试成功 => 整体成功
-;   test-success?
-;   ;; 4) 返回是否全部成功
-;   all-succeeded?)
 
 (define pair-match-records '()) ;; 假设的全局变量示例
 
