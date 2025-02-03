@@ -25,7 +25,8 @@
 
 
 
-
+(define (removef item lst)
+  (filter (lambda (x) (not (eq? x item))) lst))
 
 
 
