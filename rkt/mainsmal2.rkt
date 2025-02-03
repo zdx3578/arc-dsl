@@ -256,6 +256,7 @@
 (struct PairMatchRecord
   (input-grid
    output-grid
+   pair-id
    param-match-records)  ;; (listof ParamMatchRecord)
   #:transparent)
 
@@ -367,7 +368,7 @@
                   found-transform
                   #f #f #f)]
         [else
-         #f])) ;; #f 表示没法提炼出单一变换
+         (make-hash)])) ;; #f 表示没法提炼出单一变换
 
     (hash-set! param->rule param-key saved-rule))
 
@@ -473,8 +474,8 @@
        output-grid
        param-recs
        param-analysis
-       (format "pair-~a" idx)
-       #f))) ;; 先令 param-rules=#f
+       (PairMatchRecord-pair-id p)
+       (make-hash)))) ;; 先令 param-rules=#f
 
   ;; 进一步处理：对每个 PairMatchRecordEx, 补充 param-rules
   (define pair-records-ex-updated
@@ -581,7 +582,7 @@
                     (define this-pair-success? (not (null? param-match-records)))
                     (define new-succeeded? (and acc-succeeded? this-pair-success?))
 
-                    (define new-pair (PairMatchRecord input-grid output-grid param-match-records))
+                    (define new-pair (PairMatchRecord input-grid output-grid the-pair-id param-match-records))
                     (define new-acc-pairs (if this-pair-success?
                                               (cons new-pair acc-pairs-ex)
                                               acc-pairs-ex))
@@ -590,18 +591,8 @@
 
   ;; 把本文件处理结果追加到一个全局 pair-match-records 中
   (set! pair-match-records (append collected-pairs-ex pair-match-records))
-
-  ;; 做后处理: 生成 “统一规则”
-  (define candidate-rule (post-process-rules! pair-match-records))
-
-  ;; 若有 test 数据则验证
-  (define test-data (hash-ref json-data 'test #f))
-  (define test-success?
-    (if test-data
-        (verify-test-data test-data candidate-rule)
-        #t))
-
-  (displayln (format "Test-data check => ~a" test-success?))
+  ; (displayln (format "\n\n Total pair-match-records lenght ~a  content: => ~a" (length pair-match-records)  pair-match-records ))
+  (displayln (format "\n\n Total pair-match-records lenght ~a  content: => " (length pair-match-records)   ))
 
   ;; 这里再计算 globalParamAnalysis
   (define globalParamAnalysis
@@ -617,10 +608,24 @@
         output-grid
         param-recs
         param-analysis
-        (format "pair-~a" idx)
-        #f))))
+        (PairMatchRecord-pair-id pmr)
+        (make-hash)))))
 
-  (displayln (format "[DEBUG] globalParamAnalysis => ~s" globalParamAnalysis))
+  (displayln (format "\n [DEBUG] globalParamAnalysis => ~s" globalParamAnalysis))
+
+  ;; 做后处理: 生成 “统一规则”
+  (define candidate-rule (post-process-rules! pair-match-records))
+
+  ;; 若有 test 数据则验证
+  (define test-data (hash-ref json-data 'test #f))
+  (define test-success?
+    (if test-data
+        (verify-test-data test-data candidate-rule)
+        #t))
+
+  (displayln (format "Test-data check => ~a" test-success?))
+
+
 
   ;; 返回 (all-succeeded? globalParamAnalysis) 仅作演示
   (values all-succeeded? globalParamAnalysis))
