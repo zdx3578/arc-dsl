@@ -374,6 +374,10 @@
     acc))
 
 
+
+
+
+
 ; (define (analyze-single-param-match-record pmr)
 ;   ;; pmr : (ParamMatchRecord param object-matches)
 ;   (define omrs (ParamMatchRecord-object-matches pmr))
@@ -432,10 +436,10 @@
 ;   param->transform-count)
 
 
-; (define (analyze-pair-match-record pmRec)
-;   ;; pmRec : (PairMatchRecord input-grid output-grid param-match-records)
-;   (define pmrs (PairMatchRecord-param-match-records pmRec))
-;   (analyze-param-match-records pmrs))
+(define (analyze-pair-match-record pmRec)
+  ;; pmRec : (PairMatchRecord input-grid output-grid param-match-records)
+  (define pmrs (PairMatchRecord-param-match-records pmRec))
+  (analyze-param-match-records pmrs))
 
 
 
@@ -726,7 +730,7 @@
                   (cons new-pair-ex acc-pairs-ex)
                   acc-pairs-ex))
 
-            (values new-succeeded? new-pairs-ex))])] ;; for/fold end
+            (values new-succeeded? new-pairs-ex))]) ;; for/fold end
 
       ;; for/fold 全结束后，输出调试日志
       (displayln
