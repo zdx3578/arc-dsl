@@ -559,8 +559,9 @@
                                                 (set! object-match-list
                                                       (cons
                                                        (ObjectMatchRecord
-                                                        in-obj
-                                                        out-obj
+                                                        (smallnoobj-objinfo-obj in-obj)
+                                                        (smallnoobj-objinfo-obj out-obj)
+                                                        ; "in obj"  "out obj"
                                                         code-regular
                                                         '("-----0-----" #f))
                                                        object-match-list)))
@@ -575,8 +576,9 @@
                                                (set! object-match-list
                                                      (cons
                                                       (ObjectMatchRecord
-                                                       in-obj
-                                                       out-obj
+                                                       (smallnoobj-objinfo-obj in-obj)
+                                                       (smallnoobj-objinfo-obj out-obj)
+                                                      ; "in obj"  "out obj"
                                                        code-shift
                                                        '("-----0-----" #t))
                                                       object-match-list)))
@@ -585,9 +587,9 @@
                                    (cons (ParamMatchRecord out-param object-match-list)
                                          acc-params)
                                    acc-params))])
-                          ; (displayln
-                          ;   (format "[DEBUG] Done param-combinations for this pair. param-records => ~s"
-                          ;           local-param-records))
+                          (displayln
+                            (format "[DEBUG] Done param-combinations for this pair. param-records => ~s"
+                                    local-param-records))
                         local-param-records))
 
                     (define this-pair-success? (not (null? param-match-records)))

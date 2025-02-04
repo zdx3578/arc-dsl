@@ -387,7 +387,17 @@
    (ObjectInfo-configparam objinfo)
    (ObjectInfo-ismove000 objinfo)
    (ObjectInfo-grid-bounding-box objinfo)
-   (ObjectInfo-bounding-box objinfo)         ;; 若需要
+   (ObjectInfo-bounding-box objinfo)         
+   (ObjectInfo-color-ranking objinfo)
+   (ObjectInfo-otherinfo objinfo)))
+
+(define (smallnoobj-objinfo-obj objinfo )
+  (ObjectInfo
+   "pureOBJpass"
+   "parampass"
+   (ObjectInfo-ismove000 objinfo)
+   (ObjectInfo-grid-bounding-box objinfo)
+   (ObjectInfo-bounding-box objinfo)
    (ObjectInfo-color-ranking objinfo)
    (ObjectInfo-otherinfo objinfo)))
 
@@ -575,7 +585,7 @@
 ;;   (obj univalued? diagonal? without-bg? origin-color origin-position otherinfo)
 ;;   #:transparent)
 
-(define (make-ObjectInfo objinfo new-obj)
+(define (makeshift-ObjectInfo objinfo new-obj)
   (ObjectInfo
    new-obj
    (ObjectInfo-configparam objinfo)
@@ -593,7 +603,7 @@
      (define orig-obj (ObjectInfo-obj objbig))
      (define shifted-obj (shift-pure-obj-to-0-0-0 orig-obj))
 
-     (make-ObjectInfo objbig shifted-obj )]
+     (makeshift-ObjectInfo objbig shifted-obj )]
 
     [(set? objbig)
      ;; 如果传入的是纯 set，直接平移
