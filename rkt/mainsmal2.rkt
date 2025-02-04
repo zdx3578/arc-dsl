@@ -280,6 +280,7 @@
   (for ([omr (in-list (ParamMatchRecord-object-matches pmr))])
     (for ([code (in-list (ObjectMatchRecord-transform-code omr))])
       (hash-update! result code add1 0)))
+  (displayln (format "analyze-single-param-match-record => ~s" result))
   result)
 
 (define (analyze-param-match-records pmrs)
@@ -293,6 +294,7 @@
       (define val (hash-ref single-hash t))
       (hash-update! existing-hash t (λ (old) (+ old val)) 0))
     (hash-set! param->transform-count param-key existing-hash))
+  (displayln (format "analyze-param-match-records => ~s" param->transform-count))
   param->transform-count)
 
 ;; --------------------------------------------
@@ -306,6 +308,7 @@
       (define val (hash-ref other-sub t))
       (hash-update! main-sub t (λ (old) (+ old val)) 0))
     (hash-set! main param main-sub))
+    (displayln (format "merge-two-level-hash! => ~s" main))
   main)
 
 ;; --------------------------------------------
@@ -316,6 +319,7 @@
             ([prex (in-list pair-records-ex)])
     (define local-hash (PairMatchRecordEx-param-analysis prex))
     (merge-two-level-hash! acc local-hash)
+    ; (displayln (format "collect-global-param-analysis => ~s" acc))
     acc))
 
 ;; --------------------------------------------
@@ -360,6 +364,7 @@
     (define param-key (ParamMatchRecord-param pmr))
     (define omr-list (ParamMatchRecord-object-matches pmr))
     (define found-transform (extract-consistent-rule-for-param omr-list))
+    (displayln (format "build-param-rules fun : found transform => ~s" found-transform))
     (define saved-rule
       (cond
         [(symbol? found-transform)
@@ -368,6 +373,7 @@
                   found-transform
                   #f #f #f)]
         [else
+        (displayln (format "build-param-rules fun : save rule : ------- not found  => ~s" found-transform))
          (make-hash)])) ;; #f 表示没法提炼出单一变换
 
     (hash-set! param->rule param-key saved-rule))
@@ -380,6 +386,7 @@
 (define (post-process-pair-records-ex! pair-records-ex)
   (for ([prex (in-list pair-records-ex)])
     (define p-rules (build-param-rules-from-PairMatchRecordEx prex))
+    (displayln (format "post-process-pair-records-ex! p-rules  => ~s" p-rules))
     ;; 构造一个新的 PairMatchRecordEx，把 param-rules 填上
     (set-box!
      (box prex)
@@ -413,6 +420,7 @@
     (define candidate-rules-for-p
       (for/list ([prex (in-list pair-records-ex)])
         (hash-ref (PairMatchRecordEx-param-rules prex) p #f)))
+        (displayln (format "build-global-param-based-rule : candidate-rules-for-p => ~s" candidate-rules-for-p))
     ;; candidate-rules-for-p 可能收集到多个 DSLCond / #f
     ;; 简单做法：若有非#f的 rule 就 pick 第一个
     (define chosen
@@ -421,6 +429,7 @@
             #f
             (car non-false))))
     (hash-set! param->final-rule p chosen))
+    (displayln (format "build-global-param-based-rule : param->final-rule => ~s" param->final-rule))
 
   ;; 最后把 param->final-rule 做成一个 if-then DSLCond (或多层 if-then)
   ;; 这里示范只支持二元 param(可能是 #t/#f), 若是多元可做更复杂处理
@@ -574,9 +583,9 @@
                                    (cons (ParamMatchRecord out-param object-match-list)
                                          acc-params)
                                    acc-params))])
-                          (displayln
-                            (format "[DEBUG] Done param-combinations for this pair. param-records => ~s"
-                                    local-param-records))
+                          ; (displayln
+                          ;   (format "[DEBUG] Done param-combinations for this pair. param-records => ~s"
+                          ;           local-param-records))
                         local-param-records))
 
                     (define this-pair-success? (not (null? param-match-records)))
@@ -665,8 +674,12 @@
   (displayln (format "[] total-successful-files = ~a" total-success)))
 
 (provide main)
+
+(define dir "/Users/zhangdexiang/github/VSAHDC/arc-dsl/rkt/data")
+; (define dir "/Users/zhangdexiang/github/VSAHDC/arc-dsl/rkt/data")
+
 (module+ main
-  (command-line
-   #:args (dir)
-   "Usage: racket your-file.rkt <dir>"
-   (main dir)))
+  ; (command-line
+  ;  #:args (dir)
+  ;  "Usage: racket your-file.rkt <dir>"
+   (main dir))
