@@ -280,7 +280,7 @@
   (for ([omr (in-list (ParamMatchRecord-object-matches pmr))])
     (for ([code (in-list (ObjectMatchRecord-transform-code omr))])
       (hash-update! result code add1 0)))
-  (displayln (format "analyze-single-param-match-record => ~s" result))
+  ; (displayln (format "analyze-single-param-match-record => ~s" result))
   result)
 
 (define (analyze-param-match-records pmrs)
@@ -364,7 +364,7 @@
     (define param-key (ParamMatchRecord-param pmr))
     (define omr-list (ParamMatchRecord-object-matches pmr))
     (define found-transform (extract-consistent-rule-for-param omr-list))
-    (displayln (format "build-param-rules fun : found transform => ~s" found-transform))
+    ; (displayln (format "build-param-rules fun : found transform => ~s" found-transform))
     (define saved-rule
       (cond
         [(symbol? found-transform)
@@ -373,31 +373,29 @@
                   found-transform
                   #f #f #f)]
         [else
-        (displayln (format "build-param-rules fun : save rule : ------- not found  => ~s" found-transform))
+        ; (displayln (format "build-param-rules fun : save rule : ------- not found  => ~s" found-transform))
          (make-hash)])) ;; #f 表示没法提炼出单一变换
 
     (hash-set! param->rule param-key saved-rule))
 
   param->rule)
 
-;; --------------------------------------------
-;; post-process-pair-records-ex!: 对一批 PairMatchRecordEx 进一步完善其 param-rules
-;; --------------------------------------------
-(define (post-process-pair-records-ex! pair-records-ex)
-  (for ([prex (in-list pair-records-ex)])
+
+
+(define (post-process-pair-records-ex pair-records-ex)
+  (for/list ([prex (in-list pair-records-ex)])
+    ;; 生成新的 param-rules
     (define p-rules (build-param-rules-from-PairMatchRecordEx prex))
-    (displayln (format "post-process-pair-records-ex! p-rules  => ~s" p-rules))
-    ;; 构造一个新的 PairMatchRecordEx，把 param-rules 填上
-    (set-box!
-     (box prex)
-     (make-PairMatchRecordEx
-      (PairMatchRecordEx-input-grid prex)
-      (PairMatchRecordEx-output-grid prex)
-      (PairMatchRecordEx-param-match-records prex)
-      (PairMatchRecordEx-param-analysis prex)
-      (PairMatchRecordEx-pair-id prex)
-      p-rules)))
-  pair-records-ex)
+    (displayln (format "p-rules => ~s" p-rules))
+    ;; 返回一个新的 PairMatchRecordEx
+    (make-PairMatchRecordEx
+     (PairMatchRecordEx-input-grid prex)
+     (PairMatchRecordEx-output-grid prex)
+     (PairMatchRecordEx-param-match-records prex)
+     (PairMatchRecordEx-param-analysis prex)
+     (PairMatchRecordEx-pair-id prex)
+     p-rules)))
+
 
 ;; --------------------------------------------
 ;; 将每个 PairMatchRecordEx 里提炼出来的 param-rules, 全局合并成一个大的 if-then DSLCond
@@ -405,12 +403,13 @@
 ;; --------------------------------------------
 (define (build-global-param-based-rule pair-records-ex)
   ;; 先收集所有 param
-  (define param-set
-    (set))
+  (define param-set (mutable-set))
   (for ([prex (in-list pair-records-ex)])
     (define pr (PairMatchRecordEx-param-rules prex))
+    (displayln (format "build-global-param-based-rule : pr => ~s" pr))
     (for ([p (in-hash-keys pr)])
       (set-add! param-set p)))
+  (displayln (format "\nbuild-global-param-based-rule : param-set => ~s" param-set))
 
   ;; 这里示范：对 param-set 里每个 param 选一个“最常见/最简单”的 rule(或就直接用第一条)
   ;; 实际可以再合并“多文件/pair”的一致性；此处演示：直接 pick 第一个 PairMatchRecordEx 的 param-rules
@@ -420,7 +419,7 @@
     (define candidate-rules-for-p
       (for/list ([prex (in-list pair-records-ex)])
         (hash-ref (PairMatchRecordEx-param-rules prex) p #f)))
-        (displayln (format "build-global-param-based-rule : candidate-rules-for-p => ~s" candidate-rules-for-p))
+    (displayln (format "build-global-param-based-rule : candidate-rules-for-p => ~s" candidate-rules-for-p))
     ;; candidate-rules-for-p 可能收集到多个 DSLCond / #f
     ;; 简单做法：若有非#f的 rule 就 pick 第一个
     (define chosen
@@ -485,10 +484,13 @@
        param-analysis
        (PairMatchRecord-pair-id p)
        (make-hash)))) ;; 先令 param-rules=#f
-
+  ; (displayln (format "\nTotal pair-records-ex => ~a content ~s" (length pair-records-ex) pair-records-ex))
   ;; 进一步处理：对每个 PairMatchRecordEx, 补充 param-rules
   (define pair-records-ex-updated
-    (post-process-pair-records-ex! pair-records-ex))
+    (post-process-pair-records-ex pair-records-ex))
+
+    ; (displayln (format "\nTotal pair-records-ex-updated => ~a content ~s" (length pair-records-ex-updated) pair-records-ex-updated))
+
 
   ;; 然后可以尝试整合所有 pair => 生成一个全局大一统的 param-based 规则
   (define final-rule
