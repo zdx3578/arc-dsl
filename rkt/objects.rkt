@@ -245,7 +245,7 @@
              (loop (set-subtract neighborhood occupied)
                    o
                    found-colors)])))))
-  ;;; (displayln objs)
+  ; (displayln "from obj fun")
   objs)
 
 

@@ -143,89 +143,89 @@
 
 ; ;; (hmirror obj) => 上下翻转 (horizontal mirror)
 ; ;; row' = (rmax + rmin) - row, col' = col
-; (define (hmirror obj)
+(define (hmirror obj)
+  (unless (object? obj)
+    (error "hmirror: expected object but got" obj))
+  (define-values (rmin rmax cmin cmax) (object-bbox obj))
+  (for/set ([e (in-set obj)])
+    (define cval (first e))
+    (define ro (first (second e)))
+    (define co (second (second e)))
+    (list cval (list (- (+ rmax rmin) ro) co))))
+
+; (define (hmirror obj grid-height)
 ;   (unless (object? obj)
 ;     (error "hmirror: expected object but got" obj))
-;   (define-values (rmin rmax cmin cmax) (object-bbox obj))
+;   ;; 假设行坐标从 0 到 (grid-height - 1)
 ;   (for/set ([e (in-set obj)])
 ;     (define cval (first e))
 ;     (define ro (first (second e)))
 ;     (define co (second (second e)))
-;     (list cval (list (- (+ rmax rmin) ro) co))))
-
-; ; (define (hmirror obj grid-height)
-; ;   (unless (object? obj)
-; ;     (error "hmirror: expected object but got" obj))
-; ;   ;; 假设行坐标从 0 到 (grid-height - 1)
-; ;   (for/set ([e (in-set obj)])
-; ;     (define cval (first e))
-; ;     (define ro (first (second e)))
-; ;     (define co (second (second e)))
-; ;     (list cval (list (- (sub1 grid-height) ro) co))))
+;     (list cval (list (- (sub1 grid-height) ro) co))))
 
 
-; ;; (vmirror obj) => 左右翻转 (vertical mirror)
-; ;; row' = row, col' = (cmax + cmin) - col
-; (define (vmirror obj)
-;   (unless (object? obj)
-;     (error "vmirror: expected object but got" obj))
-;   (define-values (rmin rmax cmin cmax) (object-bbox obj))
-;   (for/set ([e (in-set obj)])
-;     (define cval (first e))
-;     (define ro (first (second e)))
-;     (define co (second (second e)))
-;     (list cval (list ro (- (+ cmax cmin) co)))))
+;; (vmirror obj) => 左右翻转 (vertical mirror)
+;; row' = row, col' = (cmax + cmin) - col
+(define (vmirror obj)
+  (unless (object? obj)
+    (error "vmirror: expected object but got" obj))
+  (define-values (rmin rmax cmin cmax) (object-bbox obj))
+  (for/set ([e (in-set obj)])
+    (define cval (first e))
+    (define ro (first (second e)))
+    (define co (second (second e)))
+    (list cval (list ro (- (+ cmax cmin) co)))))
 
-; ;; (dmirror obj) => 沿正对角线翻转 (对 bounding box 的左上->右下)
-; ;; (r, c) -> (rmin + (c-cmin), cmin + (r-rmin))
-; (define (dmirror obj)
-;   (unless (object? obj)
-;     (error "dmirror: expected object but got" obj))
-;   (define-values (rmin rmax cmin cmax) (object-bbox obj))
-;   (for/set ([e (in-set obj)])
-;     (define cval (first e))
-;     (define ro (first (second e)))
-;     (define co (second (second e)))
-;     (list cval
-;           (list (+ rmin (- co cmin))
-;                 (+ cmin (- ro rmin))))))
+;; (dmirror obj) => 沿正对角线翻转 (对 bounding box 的左上->右下)
+;; (r, c) -> (rmin + (c-cmin), cmin + (r-rmin))
+(define (dmirror obj)
+  (unless (object? obj)
+    (error "dmirror: expected object but got" obj))
+  (define-values (rmin rmax cmin cmax) (object-bbox obj))
+  (for/set ([e (in-set obj)])
+    (define cval (first e))
+    (define ro (first (second e)))
+    (define co (second (second e)))
+    (list cval
+          (list (+ rmin (- co cmin))
+                (+ cmin (- ro rmin))))))
 
-; ;; (cmirror obj) => 沿反对角线翻转 (左下->右上)
-; ;; 一种简易方式: = vmirror(dmirror(vmirror obj)) 或自己写公式
-; (define (cmirror obj)
-;   (vmirror (dmirror (vmirror obj))))
+;; (cmirror obj) => 沿反对角线翻转 (左下->右上)
+;; 一种简易方式: = vmirror(dmirror(vmirror obj)) 或自己写公式
+(define (cmirror obj)
+  (vmirror (dmirror (vmirror obj))))
 
-; ;; -----------------------------------------------------------------------------
-; ;; 5. 旋转 90/180 (如需 270可再叠加)
-; ;; -----------------------------------------------------------------------------
+;; -----------------------------------------------------------------------------
+;; 5. 旋转 90/180 (如需 270可再叠加)
+;; -----------------------------------------------------------------------------
 
-; ;; rotate90: bounding box-based 90度旋转
-; ;; local (r, c) => (c, height-1-r)，然后映射回全局
-; (define (rotate90 obj)
-;   (unless (object? obj)
-;     (error "rotate90: expected object but got" obj))
-;   (define-values (rmin rmax cmin cmax) (object-bbox obj))
-;   (define nr (add1 (- rmax rmin))) ;; bounding-box 高度
-;   ;; (nc (add1 (- cmax cmin))) ;; 宽度 - 如果需要可用
-;   (for/set ([e (in-set obj)])
-;     (define colr (first e))
-;     (define oldr (first (second e)))
-;     (define oldc (second (second e)))
-;     ;; 移动到 (rmin,cmin) 为基准
-;     (define local-r (- oldr rmin))
-;     (define local-c (- oldc cmin))
-;     ;; 旋转公式 => newr = local-c, newc = (nr - 1 - local-r)
-;     (define newr local-c)
-;     (define newc (- (sub1 nr) local-r))
-;     ;; 再加回 (rmin, cmin)
-;     (list colr (list (+ rmin newr) (+ cmin newc)))))
+;; rotate90: bounding box-based 90度旋转
+;; local (r, c) => (c, height-1-r)，然后映射回全局
+(define (rotate90 obj)
+  (unless (object? obj)
+    (error "rotate90: expected object but got" obj))
+  (define-values (rmin rmax cmin cmax) (object-bbox obj))
+  (define nr (add1 (- rmax rmin))) ;; bounding-box 高度
+  ;; (nc (add1 (- cmax cmin))) ;; 宽度 - 如果需要可用
+  (for/set ([e (in-set obj)])
+    (define colr (first e))
+    (define oldr (first (second e)))
+    (define oldc (second (second e)))
+    ;; 移动到 (rmin,cmin) 为基准
+    (define local-r (- oldr rmin))
+    (define local-c (- oldc cmin))
+    ;; 旋转公式 => newr = local-c, newc = (nr - 1 - local-r)
+    (define newr local-c)
+    (define newc (- (sub1 nr) local-r))
+    ;; 再加回 (rmin, cmin)
+    (list colr (list (+ rmin newr) (+ cmin newc)))))
 
-; ;; rotate180: 两次90 或直接坐标公式
-; (define (rotate180 obj)
-;   (rotate90 (rotate90 obj)))
-;   ;; 或者用公式也行:
-;   ;; (define-values (rmin rmax cmin cmax) (object-bbox obj))
-;   ;; ...
+;; rotate180: 两次90 或直接坐标公式
+(define (rotate180 obj)
+  (rotate90 (rotate90 obj)))
+  ;; 或者用公式也行:
+  ;; (define-values (rmin rmax cmin cmax) (object-bbox obj))
+  ;; ...
 
 
 ;; -------------------------------------------------------
@@ -387,7 +387,7 @@
    (ObjectInfo-configparam objinfo)
    (ObjectInfo-ismove000 objinfo)
    (ObjectInfo-grid-bounding-box objinfo)
-   (ObjectInfo-bounding-box objinfo)         
+   (ObjectInfo-bounding-box objinfo)
    (ObjectInfo-color-ranking objinfo)
    (ObjectInfo-otherinfo objinfo)))
 

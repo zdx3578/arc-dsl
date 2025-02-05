@@ -25,36 +25,36 @@
    (TransformationInfo
     'Rot90
     1
-    (lambda (obj)  (rotate90-info obj))
-    (lambda (i o) (equal? (rotate90-info i) o))
+    (lambda (obj)  (rotate90 obj))
+    (lambda (i o) (equal? (rotate90 i) o))
     (lambda (sub) (Rot90 sub)))
 
    (TransformationInfo
     'HMirror
     2
-    (lambda (obj)  (hmirror-info obj))
-    (lambda (i o) (equal? (hmirror-info i) o))
+    (lambda (obj)  (hmirror obj))
+    (lambda (i o) (equal? (hmirror i) o))
     (lambda (sub) (HMirror sub)))
 
    (TransformationInfo
     'VMirror
     3
-    (lambda (obj)  (vmirror-info obj))
-    (lambda (i o) (equal? (vmirror-info i) o))
+    (lambda (obj)  (vmirror obj))
+    (lambda (i o) (equal? (vmirror i) o))
     (lambda (sub) (VMirror sub)))
 
    (TransformationInfo
     'CMirror
     4
-    (lambda (obj) (cmirror-info obj))
-    (lambda (i o) (equal? (cmirror-info i) o))
+    (lambda (obj) (cmirror obj))
+    (lambda (i o) (equal? (cmirror i) o))
     (lambda (sub) (CMirror sub)))
 
    (TransformationInfo
     'DMirror
     5
-    (lambda (obj) (dmirror-info obj))
-    (lambda (i o) (equal? (dmirror-info i) o))
+    (lambda (obj) (dmirror obj))
+    (lambda (i o) (equal? (dmirror i) o))
     (lambda (sub) (DMirror sub)))
    ))
 
@@ -540,6 +540,7 @@
 
                     ;; 提取 input-obj
                     (define input-obj-set (all-objects-from-grid input-grid))
+                    (define input-obj-set000  (all-objects-00-c0-from-objs input-obj-set))
 
                     ;; 这里仅示意: 你自己定义 param-combinations / objects-with-params
                     (define param-match-records
@@ -547,14 +548,21 @@
                              (for/fold ([acc-params '()])
                                        ([out-param (in-list param-combinations)])
                                (define out-obj-set (objects-with-params output-grid out-param))
+                                ; (define out-obj-set000  (all-objects-00-c0-from-objs out-obj-set))
                                (define object-match-list '())
                                (define param-success?
                                  (for/and ([out-obj (in-set out-obj-set)])
+                                ; (for/and ([out-obj (in-set out-obj-set000)])
                                    (let ([found-regular?
                                           (for/or ([in-obj (in-set input-obj-set)])
+                                          ; (for/or ([in-obj (in-set input-obj-set000)])
                                             (let ([code-regular
                                                    (synthesize-transformation
-                                                    in-obj out-obj)])
+                                                    (ObjectInfo-obj in-obj)
+                                                    (ObjectInfo-obj out-obj)
+                                                    )])
+                                                  ; (displayln (format "[-~s-------------------------------DEBUG] synthesize-transformation =>  ~s ~s"
+                                                  ;           code-regular in-obj out-obj))
                                               (when code-regular
                                                 (set! object-match-list
                                                       (cons
@@ -567,32 +575,44 @@
                                                        object-match-list)))
                                               code-regular))])
                                      (or found-regular?
-                                         (for/or ([in-obj (in-set input-obj-set)])
+                                        ; (define out-obj000 (shift-obj-to-0-0-0 out-obj))
+                                         (for/or ([in-obj000 (in-set input-obj-set000)])
+                                        ;  (displayln (format " [DEBUG] in-obj  shift-obj-to-0-0-0 => " ))
                                            (let ([code-shift
                                                   (synthesize-transformation
-                                                   (shift-obj-to-0-0-0 in-obj)
-                                                   (shift-obj-to-0-0-0 out-obj))])
+                                                  ;  (shift-obj-to-0-0-0 in-obj)
+                                                  (ObjectInfo-obj in-obj000)
+                                                  (ObjectInfo-obj (shift-obj-to-0-0-0 out-obj))
+                                                  ; in-obj000
+                                                  ; out-obj000                                                  ; out-obj
+                                                  ;  (shift-obj-to-0-0-0 out-obj)
+                                                   )])
                                              (when code-shift
                                                (set! object-match-list
                                                      (cons
                                                       (ObjectMatchRecord
-                                                       (smallnoobj-objinfo-obj in-obj)
+                                                       (smallnoobj-objinfo-obj in-obj000)
                                                        (smallnoobj-objinfo-obj out-obj)
                                                       ; "in obj"  "out obj"
                                                        code-shift
                                                        '("-----0-----" #t))
                                                       object-match-list)))
                                              code-shift))))))
+                              ; (displayln                            (format "[--------------------------------DEBUG] Done object-match-list for this pair. param-records => ~s"
+                                    ; object-match-list))
+
                                (if param-success?
                                    (cons (ParamMatchRecord out-param object-match-list)
                                          acc-params)
                                    acc-params))])
-                          (displayln
-                            (format "[DEBUG] Done param-combinations for this pair. param-records => ~s"
-                                    local-param-records))
+                          ; (displayln                            (format "[--------------------------------DEBUG] Done param-combinations for this pair. param-records => ~s"
+                          ;           local-param-records))
                         local-param-records))
 
+
                     (define this-pair-success? (not (null? param-match-records)))
+                    ; (displayln                            (format "[--------------------------------DEBUG] Done param-combinations for this pair. param-records => ~s"
+                    ;                 param-match-records))
                     (define new-succeeded? (and acc-succeeded? this-pair-success?))
 
                     (define new-pair (PairMatchRecord input-grid output-grid the-pair-id param-match-records))
