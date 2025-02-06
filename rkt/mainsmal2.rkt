@@ -214,7 +214,7 @@
   (define name-result (simple-check input-obj output-obj))
   (cond
     [(not (empty? name-result))
-      (displayln (format "simple-check found! => ~a " name-result))
+      ; (displayln (format "simple-check found! => ~a " name-result))
      ;; 这里 name-result 可能是一个列表(比如'(HMirror)), 也可能多个
      name-result]
     [else
@@ -627,7 +627,7 @@
   ; (displayln (format "\n\n Total pair-match-records lenght ~a  content: => ~a" (length pair-match-records)  pair-match-records ))
   (displayln (format "\n\n Total pair-match-records lenght ~a  content: => " (length pair-match-records)   ))
 
-  ;; 这里再计算 globalParamAnalysis
+  ; 这里再计算 globalParamAnalysis
   (define globalParamAnalysis
     (collect-global-param-analysis
      (for/list ([pmr (in-list pair-match-records)]
@@ -661,7 +661,7 @@
 
 
   ;; 返回 (all-succeeded? globalParamAnalysis) 仅作演示
-  (values all-succeeded? globalParamAnalysis))
+  (values all-succeeded? "pass"))
 
 ;; 一个简单的包装: process-single-file-logging
 (define (process-single-file-logging json-data)
@@ -700,7 +700,7 @@
 (provide main)
 
 (define dir "/Users/zhangdexiang/github/VSAHDC/arc-dsl/rkt/data")
-; (define dir "/Users/zhangdexiang/github/VSAHDC/arc-dsl/rkt/data")
+; (define dir "/Users/zhangdexiang/github/VSAHDC/arc-dsl/rkt/training-data")
 
 (module+ main
   ; (command-line
