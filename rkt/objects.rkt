@@ -163,7 +163,19 @@
                (list (car pair) (cdr pair)))
              sorted))))
 
-
+(define (shift-pure-obj-to-0-0 obj)
+  (if (set-empty? obj)
+      (set)
+      (let* ([obj-list (set->list obj)]
+             [rc-list  (map (λ(e) (cadr e)) obj-list)]
+             [min-row  (apply min (map first rc-list))]
+             [min-col  (apply min (map second rc-list))])
+        (for/set ([e (in-list obj-list)])
+          ;; e = '(color (r c))
+          (define color (first e))
+          (define r (first (cadr e)))
+          (define c (second (cadr e)))
+          (list color (list (- r min-row) (- c min-col)))))))
 
 
 ;; 主函数: objects
@@ -215,7 +227,8 @@
              (set! objs
                    (set-add objs
                             (ObjectInfo
-                             o
+                            o
+                            ;  (shift-pure-obj-to-0-0 o)
                              (list  univalued?                              diagonal?                             without-bg?)
                              (list  "000" #f)
                              (list  h w  )

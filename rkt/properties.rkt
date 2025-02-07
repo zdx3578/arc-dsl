@@ -599,19 +599,19 @@
   ;; Step 1: 判断 objbig 是否 ObjectInfo
   (cond
     [(ObjectInfo? objbig)
-     ;; 从 objbig 中提取原 BFS 集合
-     (define orig-obj (ObjectInfo-obj objbig))
-     (define shifted-obj (shift-pure-obj-to-0-0-0 orig-obj))
+      ;; 从 objbig 中提取原 BFS 集合
+      (define orig-obj (ObjectInfo-obj objbig))
+      (define shifted-obj (shift-pure-obj-to-0-0-0 orig-obj))
 
-     (makeshift-ObjectInfo objbig shifted-obj )]
+      (makeshift-ObjectInfo objbig shifted-obj )]
 
     [(set? objbig)
      ;; 如果传入的是纯 set，直接平移
-     (shift-pure-obj-to-0-0-0 objbig)]
+      (shift-pure-obj-to-0-0-0 objbig)]
     [else
      (error "shift-obj-to-0-0-0: unsupported argument type" objbig)]))
 
-;; 把“纯对象集合(set)”平移到 (0,0)，并把颜色设为 0
+;; move to obj funciton  把“纯对象集合(set)”平移到 (0,0)，并把颜色设为 0
 (define (shift-pure-obj-to-0-0-0 obj)
   (if (set-empty? obj)
       (set)
@@ -621,11 +621,21 @@
              [min-col  (apply min (map second rc-list))])
         (for/set ([e (in-list obj-list)])
           ;; e = '(color (r c))
+          (define color (first e))
           (define r (first (cadr e)))
           (define c (second (cadr e)))
           (list 0 (list (- r min-row) (- c min-col)))))))
 
 
+; (define sameshapediffcolor)
+
+; (define sameobj-absolute)
+
+; (define sameobj-sameshape-diffcolor-diffpostion)
+
+; (define sameobj-sameshape-samecolor?-samepostion?)
+
+; (define sameobj-samepostion-diffcolor)
 
 
 
