@@ -538,7 +538,16 @@
             ([params (in-list param-combinations)])
     (set-union acc (objects-with-params grid params))))
 
-
+(define (all-objects-from-grid-with-ids grid pair-id)
+  (define counter 0)
+  (define (annotate-object obj)
+    (let* ([unique-id (format "~a-obj-~a" pair-id counter)]
+           [new-obj (hash-set obj 'unique-id unique-id)])
+      (set! counter (add1 counter))
+      new-obj))
+  (for/fold ([acc (set)])
+            ([params (in-list param-combinations)])
+    (set-union acc (set-map annotate-object (objects-with-params grid params)))))
 
 
 ;; 4. 将一组坐标平移到 (0, 0) 的辅助函数。

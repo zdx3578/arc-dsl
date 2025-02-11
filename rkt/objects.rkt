@@ -109,15 +109,7 @@
 ;; -----------------------
 ;; 1) 新的 ObjectInfo 结构体
 ;; -----------------------
-(struct ObjectInfo
-  (obj
-   configparam
-   ismove000
-   grid-bounding-box
-   bounding-box        ;; (list minr minc maxr maxc)
-   color-ranking       ;; string or list
-   otherinfo)
-  #:transparent)
+
 
 
 ;; 辅助函数: BFS 结束后, 根据对象 => 求 bounding-box
@@ -262,3 +254,12 @@
   objs)
 
 
+(struct ObjectInfo
+  (obj
+   configparam
+   ismove000
+   grid-bounding-box
+   bounding-box        ;; (list minr minc maxr maxc)
+   color-ranking       ;; string or list
+   otherinfo)
+  #:transparent)

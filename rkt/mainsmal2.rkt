@@ -216,7 +216,7 @@
     [(not (empty? name-result))
       ; (displayln (format "simple-check found! => ~a " name-result))
      ;; 这里 name-result 可能是一个列表(比如'(HMirror)), 也可能多个
-     name-result]
+     (reverse name-result)]
     [else
      (define all-conditions
        (and (>= e 0)
@@ -539,6 +539,7 @@
                     (set! outer-iter (add1 outer-iter))
 
                     ;; 提取 input-obj
+                    ; (define input-obj-set (all-objects-from-grid-with-ids input-grid the-pair-id))
                     (define input-obj-set (all-objects-from-grid input-grid))
                     (define input-obj-set000  (all-objects-00-c0-from-objs input-obj-set))
 
