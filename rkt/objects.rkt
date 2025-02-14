@@ -171,7 +171,7 @@
 
 
 ;; 主函数: objects
-(define (objects grid univalued? diagonal? without-bg?)
+(define (objects the-pair-id in-or-out grid univalued? diagonal? without-bg?)
   (define bg
     (if without-bg?
         (mostcolor grid)
@@ -219,14 +219,16 @@
              (set! objs
                    (set-add objs
                             (ObjectInfo
+                            the-pair-id
+                            in-or-out
+                            (list  univalued?                              diagonal?                             without-bg?)
                             o
-                            ;  (shift-pure-obj-to-0-0 o)
-                             (list  univalued?                              diagonal?                             without-bg?)
-                             (list  "000" #f)
-                             (list  h w  )
-                             bounding
-                             rank
-                             #f)))]
+                            #f
+                            #f
+                            (list  h w  )
+                            bounding
+                            rank
+                            #f)))]
 
             [else
              (define neighborhood (set))

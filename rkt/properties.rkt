@@ -376,7 +376,7 @@
 
 (define (objectinfo->obj+grid objinfo)
   (define oldobj (ObjectInfo-obj objinfo))
-  (define grid-size (grid-H-W objinfo))
+  (define grid-size (ObjectInfo-grid-H-W objinfo))
   (define gheight (first grid-size))
   (define gwidth  (second grid-size))
   (values oldobj gheight gwidth))
@@ -546,18 +546,18 @@
   ;;;  (list #t #t #f)
   ;;;  (list #f #f #f )))
 
-(define (objects-with-params grid bools)
+(define (objects-with-params the-pair-id in-or-out grid bools)
   (define b1 (list-ref bools 0))
   (define b2 (list-ref bools 1))
   (define b3 (list-ref bools 2))
-  (objects grid b1 b2 b3)) ;; 根据你的实际签名调整
+  (objects the-pair-id in-or-out grid b1 b2 b3)) ;; 根据你的实际签名调整
 
-(define (all-objects-from-grid grid)
+(define (all-objects-from-grid the-pair-id in-or-out grid)
   (for/fold ([acc (set)])
             ([params (in-list param-combinations)])
-    (set-union acc (objects-with-params grid params))))
+    (set-union acc (objects-with-params the-pair-id in-or-out grid params))))
 
-(define (all-objects-from-grid-with-ids grid pair-id)
+(define (all-objects-from-grid-withra-ids grid pair-id)
   (define counter 0)
   (define (annotate-object obj)
     (let* ([unique-id (format "~a-obj-~a" pair-id counter)]

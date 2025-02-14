@@ -174,8 +174,8 @@
 (define (interp-condition cond obj-info)
   (match-define (Cond prop val) cond)
   (match prop
-    ['diagonal?  (equal? (ObjectInfo-ismove000 obj-info) val)]
-    ['univalued? (equal? (ObjectInfo-ismove000 obj-info) val)]
+    ['diagonal?  (equal? (ObjectInfo-obj obj-info) val)]
+    ['univalued? (equal? (ObjectInfo-obj obj-info) val)]
     [_ #f])) ;; 需要自行扩展
 
 (define (interp-DSLCond dsl obj-info)
@@ -540,7 +540,7 @@
 
                     ;; 提取 input-obj
                     ; (define input-obj-set (all-objects-from-grid-with-ids input-grid the-pair-id))
-                    (define input-obj-set (all-objects-from-grid input-grid))
+                    (define input-obj-set (all-objects-from-grid the-pair-id 'in input-grid))
                     (define input-obj-set000  (all-objects-00-c0-from-objs input-obj-set))
 
                     ;; 这里仅示意: 你自己定义 param-combinations / objects-with-params
@@ -548,7 +548,7 @@
                       (let ([local-param-records
                              (for/fold ([acc-params '()])
                                        ([out-param (in-list param-combinations)])
-                               (define out-obj-set (objects-with-params output-grid out-param))
+                               (define out-obj-set (objects-with-params the-pair-id 'out output-grid out-param))
                                 ; (define out-obj-set000  (all-objects-00-c0-from-objs out-obj-set))
                                (define object-match-list '())
                                (define param-success?
@@ -582,8 +582,8 @@
                                            (let ([code-shift
                                                   (synthesize-transformation
                                                   ;  (shift-obj-to-0-0-0 in-obj)
-                                                  (ObjectInfo-obj in-obj000)
-                                                  (ObjectInfo-obj (shift-obj-to-0-0-0 out-obj))
+                                                  (ObjectInfo-obj-000 in-obj000)
+                                                  (ObjectInfo-obj-000 (shift-obj-to-0-0-0 out-obj))
                                                   ; in-obj000
                                                   ; out-obj000                                                  ; out-obj
                                                   ;  (shift-obj-to-0-0-0 out-obj)
