@@ -374,12 +374,55 @@
           (list (- (sub1 grid-height) ro)
                 (- (sub1 grid-width)  co)))))
 
+
+
+(define id-manager%
+  (class object%
+    ;; 初始化字段
+    (super-new)
+    (define tables (make-hash)) ; e.g. tables['shape'] = {'shape_1': 1, 'shape_2': 2, ...}
+    (define next-id (make-hash)) ; e.g. next_id['shape'] = 1
+
+    ;; 获取 ID 的方法
+    (define/public (get-id category value)
+      ;; 如果 category 不存在，则初始化
+      (when (not (hash-has-key? tables category))
+        (hash-set! tables category (make-hash))
+        (hash-set! next-id category 1))
+
+      ;; 获取当前 category 的表
+      (let ([category-table (hash-ref tables category)])
+        ;; 如果 value 不存在，则分配新的 ID
+        (when (not (hash-has-key? category-table value))
+          (hash-set! category-table value (hash-ref next-id category))
+          (hash-set! next-id category (+ (hash-ref next-id category) 1)))
+
+        ;; 返回对应的 ID
+        (hash-ref category-table value)))
+
+    ;; 打印所有对象及其 ID 的方法
+    (define/public (print-all-ids)
+      (for ([(category category-table) (in-hash tables)]) ; 遍历每个类别
+        (displayln (format "Category: ~a" category)) ; 打印类别名称
+        (for ([(value id) (in-hash category-table)]) ; 遍历类别中的对象及其 ID
+          (displayln (format "  Object: ~a -> ID: ~a" value id)))))
+
+    (define/public (reset)
+      ;; 清空 tables 和 next-id
+      (set! tables (make-hash))
+      (set! next-id (make-hash))
+      (displayln "All data has been reset."))))
+
+
+
 (define (objectinfo->obj+grid objinfo)
   (define oldobj (ObjectInfo-obj objinfo))
   (define grid-size (ObjectInfo-grid-H-W objinfo))
   (define gheight (first grid-size))
   (define gwidth  (second grid-size))
   (values oldobj gheight gwidth))
+
+(define manager (new id-manager%))
 
 (define (makeshift-ObjectInfo objinfo obj00 obj000 )
   (ObjectInfo
@@ -388,6 +431,7 @@
     (ObjectInfo-configparam objinfo)
     (ObjectInfo-obj objinfo)
     obj00
+    (send manager get-id "inOBJshape"  obj00 )
     obj000
     (ObjectInfo-grid-H-W objinfo)
     (ObjectInfo-bounding-box objinfo)
@@ -401,6 +445,7 @@
     (ObjectInfo-configparam objinfo)
     newobj
     (ObjectInfo-obj-00 objinfo)
+    (ObjectInfo-obj-ID objinfo)
     (ObjectInfo-obj-000 objinfo)
     (ObjectInfo-grid-H-W objinfo)
     (ObjectInfo-bounding-box objinfo)
@@ -412,9 +457,10 @@
     (ObjectInfo-pair-id objinfo)
     (ObjectInfo-in-or-out objinfo)
     (ObjectInfo-configparam objinfo)
-    "OBJpas"
-    "OBJpas"
-    "OBJpas"
+    ""
+    ""
+    (ObjectInfo-obj-ID objinfo)
+    ""
     (ObjectInfo-grid-H-W objinfo)
     (ObjectInfo-bounding-box objinfo)
     (ObjectInfo-color-ranking objinfo)
@@ -704,37 +750,6 @@
           record)))
     records))
 
-
-(define id-manager%
-  (class object%
-    ;; 初始化字段
-    (super-new)
-    (define tables (make-hash)) ; e.g. tables['shape'] = {'shape_1': 1, 'shape_2': 2, ...}
-    (define next-id (make-hash)) ; e.g. next_id['shape'] = 1
-
-    ;; 获取 ID 的方法
-    (define/public (get-id category value)
-      ;; 如果 category 不存在，则初始化
-      (when (not (hash-has-key? tables category))
-        (hash-set! tables category (make-hash))
-        (hash-set! next-id category 1))
-
-      ;; 获取当前 category 的表
-      (let ([category-table (hash-ref tables category)])
-        ;; 如果 value 不存在，则分配新的 ID
-        (when (not (hash-has-key? category-table value))
-          (hash-set! category-table value (hash-ref next-id category))
-          (hash-set! next-id category (+ (hash-ref next-id category) 1)))
-
-        ;; 返回对应的 ID
-        (hash-ref category-table value)))
-
-    ;; 打印所有对象及其 ID 的方法
-    (define/public (print-all-ids)
-      (for ([(category category-table) (in-hash tables)]) ; 遍历每个类别
-        (displayln (format "Category: ~a" category)) ; 打印类别名称
-        (for ([(value id) (in-hash category-table)]) ; 遍历类别中的对象及其 ID
-          (displayln (format "  Object: ~a -> ID: ~a" value id)))))))
 
 ;; 示例用法
 ; (define manager (new id-manager%)

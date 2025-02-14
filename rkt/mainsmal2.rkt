@@ -277,7 +277,7 @@
 ;; --------------------------------------------
 
 
-(define manager (new id-manager%))
+; (define manager (new id-manager%))
 ;; ---------------------------------------------------------------------
 ;; 一个演示性的 process-single-file 函数
 ;; 说明如何在得到 PairMatchRecordEx 后做后处理并生成最终规则
@@ -334,9 +334,11 @@
                                                        (ObjectMatchRecord
                                                         (smallnoobj-objinfo-obj in-obj)
                                                         (smallnoobj-objinfo-obj out-obj)
+                                                        ; (send manager get-id "inOBJshape" (smallnoobj-objinfo-obj in-obj ) )
+                                                        ; (send manager get-id "outOBJshape" (smallnoobj-objinfo-obj out-obj))
                                                         ; "in obj"  "out obj"
                                                         code-regular
-                                                        '("-0-"#f))
+                                                        '("00"))
                                                        object-match-list)))
                                               code-regular))])
                                      (or found-regular?
@@ -360,7 +362,7 @@
                                                        (smallnoobj-objinfo-obj out-obj)
                                                       ; "in obj"  "out obj"
                                                        code-shift
-                                                       '(-0-#t))
+                                                       '("00--0"))
                                                       object-match-list)))
                                              code-shift))))))
                               ; (displayln                            (format "\n\n[--------------------------------DEBUG] Done object-match-list for this pair. param-records => ~s"
@@ -393,7 +395,7 @@
   ; (displayln (format "\n\n Total pair-match-records lenght ~a  content: => ~a" (length pair-match-records)  pair-match-records ))
   (displayln (format "\n\n Total pair-match-records lenght ~a  content: => " (length pair-match-records)   ))
 
-
+  (send manager print-all-ids)
   ;; 返回 (all-succeeded? globalParamAnalysis) 仅作演示
   (values all-succeeded? "pass"))
 

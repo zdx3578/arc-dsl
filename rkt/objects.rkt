@@ -170,6 +170,7 @@
           (list color (list (- r min-row) (- c min-col)))))))
 
 
+
 ;; 主函数: objects
 (define (objects the-pair-id in-or-out grid univalued? diagonal? without-bg?)
   (define bg
@@ -224,6 +225,7 @@
                             (list  univalued?                              diagonal?                             without-bg?)
                             o
                             #f
+                             #f
                             #f
                             (list  h w  )
                             bounding
@@ -262,6 +264,7 @@
     configparam
     obj
     obj-00
+    obj-ID
     obj-000
     grid-H-W
     bounding-box        ;; (list minr minc maxr maxc)
