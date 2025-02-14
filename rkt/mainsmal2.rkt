@@ -277,10 +277,7 @@
 ;; --------------------------------------------
 
 
-
-
-
-
+(define manager (new id-manager%))
 ;; ---------------------------------------------------------------------
 ;; 一个演示性的 process-single-file 函数
 ;; 说明如何在得到 PairMatchRecordEx 后做后处理并生成最终规则
@@ -316,18 +313,18 @@
                              (for/fold ([acc-params '()])
                                        ([out-param (in-list param-combinations)])
                                (define out-obj-set (objects-with-params the-pair-id 'out output-grid out-param))
-                                ; (define out-obj-set000  (all-objects-00-c0-from-objs out-obj-set))
+                                (define out-obj-set000  (all-objects-00-c0-from-objs out-obj-set))
                                (define object-match-list '())
                                (define param-success?
-                                 (for/and ([out-obj (in-set out-obj-set)])
-                                ; (for/and ([out-obj (in-set out-obj-set000)])
+                                ;  (for/and ([out-obj (in-set out-obj-set)])
+                                (for/and ([out-obj (in-set out-obj-set000)])
                                    (let ([found-regular?
-                                          (for/or ([in-obj (in-set input-obj-set)])
+                                          (for/or ([in-obj (in-set input-obj-set000)])
                                           ; (for/or ([in-obj (in-set input-obj-set000)])
                                             (let ([code-regular
                                                    (synthesize-transformation
-                                                    (ObjectInfo-obj in-obj)
-                                                    (ObjectInfo-obj out-obj)
+                                                    (ObjectInfo-obj-00 in-obj)
+                                                    (ObjectInfo-obj-00 out-obj)
                                                     )])
                                                   ; (displayln (format "[-~s-------------------------------DEBUG] synthesize-transformation =>  ~s ~s"
                                                   ;           code-regular in-obj out-obj))
@@ -339,7 +336,7 @@
                                                         (smallnoobj-objinfo-obj out-obj)
                                                         ; "in obj"  "out obj"
                                                         code-regular
-                                                        '("-----0-----" #f))
+                                                        '("-0-"#f))
                                                        object-match-list)))
                                               code-regular))])
                                      (or found-regular?
@@ -363,12 +360,11 @@
                                                        (smallnoobj-objinfo-obj out-obj)
                                                       ; "in obj"  "out obj"
                                                        code-shift
-                                                       '("-----0-----" #t))
+                                                       '(-0-#t))
                                                       object-match-list)))
                                              code-shift))))))
                               ; (displayln                            (format "\n\n[--------------------------------DEBUG] Done object-match-list for this pair. param-records => ~s"
                               ;       object-match-list))
-
                               (display-param-records object-match-list)
 
                                (if param-success?
@@ -377,8 +373,8 @@
                                    acc-params))])
                           ; (displayln                            (format "\n\n[---------------------------local-param-records-----DEBUG] Done param-combinations for this pair. param-records => ~s"
                           ;           local-param-records))
+                          (display-param-records local-param-records)
                         local-param-records))
-
 
                     (define this-pair-success? (not (null? param-match-records)))
                     ; (displayln                            (format "[--------------------------------DEBUG] Done param-combinations for this pair. param-records => ~s"
@@ -396,9 +392,6 @@
   (set! pair-match-records (append collected-pairs-ex pair-match-records))
   ; (displayln (format "\n\n Total pair-match-records lenght ~a  content: => ~a" (length pair-match-records)  pair-match-records ))
   (displayln (format "\n\n Total pair-match-records lenght ~a  content: => " (length pair-match-records)   ))
-
-
-
 
 
   ;; 返回 (all-succeeded? globalParamAnalysis) 仅作演示

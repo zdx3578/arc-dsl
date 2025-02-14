@@ -411,7 +411,7 @@
   (ObjectInfo
     (ObjectInfo-pair-id objinfo)
     (ObjectInfo-in-or-out objinfo)
-    "parampas"
+    (ObjectInfo-configparam objinfo)
     "OBJpas"
     "OBJpas"
     "OBJpas"
@@ -621,10 +621,10 @@
     [(ObjectInfo? objbig)
       ;; 从 objbig 中提取原 BFS 集合
       (define orig-obj (ObjectInfo-obj objbig))
-      (define shifted-obj (shift-pure-obj-to-0-0-0 orig-obj))
+      (define obj000 (shift-pure-obj-to-0-0-0 orig-obj))
       (define obj00 (shift-pure-obj-to-00 orig-obj))
 
-      (makeshift-ObjectInfo objbig obj00 shifted-obj )]
+      (makeshift-ObjectInfo objbig obj00 obj000 )]
 
     [(set? objbig)
      ;; 如果传入的是纯 set，直接平移
@@ -691,19 +691,18 @@
   (for-each
     (lambda (record)
       ;; 打印当前记录（调试用）
-      (displayln (format "\n ~s" record))
+      (displayln (format "\nDEBUG] UP-record; ~s" record))
 
       ;; 判断当前记录是否包含子元素
       (when (list? record) ; 假设子元素是列表
         ;; 内层循环：遍历子元素
         (for-each
           (lambda (sub-record)
-            (displayln (format "\n[DEBUG]   Processing sub-record: ~s" sub-record))
+            (displayln (format "\n[DEBUG] sub-record: ~s" sub-record))
             ;; 在这里可以对子元素进行进一步处理
             )
           record)))
     records))
-
 
 
 (define id-manager%
@@ -715,28 +714,29 @@
 
     ;; 获取 ID 的方法
     (define/public (get-id category value)
-      ;; 如果 value 是集合，则递归处理集合中的每个元素
-      (if (set? value)
-          ;; 处理集合：为集合中的每个元素分配 ID
-          (for/hash ([item (in-set value)]) ; 遍历集合
-            (values item (get-id category item))) ; 递归调用 get-id
-          ;; 如果 value 是单个值，则按原逻辑处理
-          (begin
-            ;; 如果 category 不存在，则初始化
-            (when (not (hash-has-key? tables category))
-              (hash-set! tables category (make-hash))
-              (hash-set! next-id category 1))
+      ;; 如果 category 不存在，则初始化
+      (when (not (hash-has-key? tables category))
+        (hash-set! tables category (make-hash))
+        (hash-set! next-id category 1))
 
-            ;; 如果 value 不存在，则分配新的 ID
-            (let ([category-table (hash-ref tables category)])
-              (when (not (hash-has-key? category-table value))
-                (hash-set! category-table value (hash-ref next-id category))
-                (hash-set! next-id category (+ (hash-ref next-id category) 1))))
+      ;; 获取当前 category 的表
+      (let ([category-table (hash-ref tables category)])
+        ;; 如果 value 不存在，则分配新的 ID
+        (when (not (hash-has-key? category-table value))
+          (hash-set! category-table value (hash-ref next-id category))
+          (hash-set! next-id category (+ (hash-ref next-id category) 1)))
 
-            ;; 返回对应的 ID
-            (hash-ref (hash-ref tables category) value))))))
+        ;; 返回对应的 ID
+        (hash-ref category-table value)))
 
-; ;; 示例用法
+    ;; 打印所有对象及其 ID 的方法
+    (define/public (print-all-ids)
+      (for ([(category category-table) (in-hash tables)]) ; 遍历每个类别
+        (displayln (format "Category: ~a" category)) ; 打印类别名称
+        (for ([(value id) (in-hash category-table)]) ; 遍历类别中的对象及其 ID
+          (displayln (format "  Object: ~a -> ID: ~a" value id)))))))
+
+;; 示例用法
 ; (define manager (new id-manager%)
 
 ; ;; 单个值的情况
@@ -744,9 +744,18 @@
 ; (send manager get-id "shape" "shape_2") ; 返回 2
 
 ; ;; 集合的情况
-; (define shape-set (set "shape_3" "shape_4"))
-; (send manager get-id "shape" shape-set)
-; ;; 返回一个哈希表：'#hash(("shape_3" . 3) ("shape_4" . 4))
+; (define shape-set-1 (set "shape_3" "shape_4"))
+; (define shape-set-2 (set "shape_5" "shape_6"))
+
+; (send manager get-id "shape" shape-set-1) ; 返回 3
+; (send manager get-id "shape" shape-set-2) ; 返回 4
+
+; ;; 打印所有对象及其 ID
+; (send manager print-all-ids)
+
+
+
+
 
 
 
