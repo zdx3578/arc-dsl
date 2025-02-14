@@ -405,7 +405,7 @@
       (for ([(category category-table) (in-hash tables)]) ; 遍历每个类别
         (displayln (format "Category: ~a" category)) ; 打印类别名称
         (for ([(value id) (in-hash category-table)]) ; 遍历类别中的对象及其 ID
-          (displayln (format "  Object: ~a -> ID: ~a" value id)))))
+          (displayln (format "ID : ~a -> Object content -> : \n                  ~a" id value )))))
 
     (define/public (reset)
       ;; 清空 tables 和 next-id
@@ -431,7 +431,7 @@
     (ObjectInfo-configparam objinfo)
     (ObjectInfo-obj objinfo)
     obj00
-    (send manager get-id "inOBJshape"  obj00 )
+    (send manager get-id "OBJshape"  obj00 )
     obj000
     (ObjectInfo-grid-H-W objinfo)
     (ObjectInfo-bounding-box objinfo)
