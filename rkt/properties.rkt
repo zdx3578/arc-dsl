@@ -411,10 +411,10 @@
   (ObjectInfo
     (ObjectInfo-pair-id objinfo)
     (ObjectInfo-in-or-out objinfo)
-    "parampass"
-    "pureOBJpass"
-    (ObjectInfo-obj-00 objinfo)
-    (ObjectInfo-obj-000 objinfo)
+    "parampas"
+    "OBJpas"
+    "OBJpas"
+    "OBJpas"
     (ObjectInfo-grid-H-W objinfo)
     (ObjectInfo-bounding-box objinfo)
     (ObjectInfo-color-ranking objinfo)
@@ -681,6 +681,72 @@
     (shift-obj-to-0-0-0 obj)))
 
 
+
+
+
+
+
+(define (display-param-records records)
+  ;; 外层循环：遍历 local-param-records 的每个元素
+  (for-each
+    (lambda (record)
+      ;; 打印当前记录（调试用）
+      (displayln (format "\n ~s" record))
+
+      ;; 判断当前记录是否包含子元素
+      (when (list? record) ; 假设子元素是列表
+        ;; 内层循环：遍历子元素
+        (for-each
+          (lambda (sub-record)
+            (displayln (format "\n[DEBUG]   Processing sub-record: ~s" sub-record))
+            ;; 在这里可以对子元素进行进一步处理
+            )
+          record)))
+    records))
+
+
+
+(define id-manager%
+  (class object%
+    ;; 初始化字段
+    (super-new)
+    (define tables (make-hash)) ; e.g. tables['shape'] = {'shape_1': 1, 'shape_2': 2, ...}
+    (define next-id (make-hash)) ; e.g. next_id['shape'] = 1
+
+    ;; 获取 ID 的方法
+    (define/public (get-id category value)
+      ;; 如果 value 是集合，则递归处理集合中的每个元素
+      (if (set? value)
+          ;; 处理集合：为集合中的每个元素分配 ID
+          (for/hash ([item (in-set value)]) ; 遍历集合
+            (values item (get-id category item))) ; 递归调用 get-id
+          ;; 如果 value 是单个值，则按原逻辑处理
+          (begin
+            ;; 如果 category 不存在，则初始化
+            (when (not (hash-has-key? tables category))
+              (hash-set! tables category (make-hash))
+              (hash-set! next-id category 1))
+
+            ;; 如果 value 不存在，则分配新的 ID
+            (let ([category-table (hash-ref tables category)])
+              (when (not (hash-has-key? category-table value))
+                (hash-set! category-table value (hash-ref next-id category))
+                (hash-set! next-id category (+ (hash-ref next-id category) 1))))
+
+            ;; 返回对应的 ID
+            (hash-ref (hash-ref tables category) value))))))
+
+; ;; 示例用法
+; (define manager (new id-manager%)
+
+; ;; 单个值的情况
+; (send manager get-id "shape" "shape_1") ; 返回 1
+; (send manager get-id "shape" "shape_2") ; 返回 2
+
+; ;; 集合的情况
+; (define shape-set (set "shape_3" "shape_4"))
+; (send manager get-id "shape" shape-set)
+; ;; 返回一个哈希表：'#hash(("shape_3" . 3) ("shape_4" . 4))
 
 
 
