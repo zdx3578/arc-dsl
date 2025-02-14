@@ -376,30 +376,49 @@
 
 (define (objectinfo->obj+grid objinfo)
   (define oldobj (ObjectInfo-obj objinfo))
-  (define grid-size (ObjectInfo-grid-bounding-box objinfo))
+  (define grid-size (grid-H-W objinfo))
   (define gheight (first grid-size))
   (define gwidth  (second grid-size))
   (values oldobj gheight gwidth))
 
+(define (makeshift-ObjectInfo objinfo obj00 obj000 )
+  (ObjectInfo
+    (ObjectInfo-pair-id objinfo)
+    (ObjectInfo-in-or-out objinfo)
+    (ObjectInfo-configparam objinfo)
+    (ObjectInfo-obj objinfo)
+    obj00
+    obj000
+    (ObjectInfo-grid-H-W objinfo)
+    (ObjectInfo-bounding-box objinfo)
+    (ObjectInfo-color-ranking objinfo)
+    (ObjectInfo-otherinfo objinfo)))
+
 (define (update-objinfo-obj objinfo newobj)
   (ObjectInfo
-   newobj
-   (ObjectInfo-configparam objinfo)
-   (ObjectInfo-ismove000 objinfo)
-   (ObjectInfo-grid-bounding-box objinfo)
-   (ObjectInfo-bounding-box objinfo)
-   (ObjectInfo-color-ranking objinfo)
-   (ObjectInfo-otherinfo objinfo)))
+    (ObjectInfo-pair-id objinfo)
+    (ObjectInfo-in-or-out objinfo)
+    (ObjectInfo-configparam objinfo)
+    newobj
+    (ObjectInfo-obj-00 objinfo)
+    (ObjectInfo-obj-000 objinfo)
+    (ObjectInfo-grid-H-W objinfo)
+    (ObjectInfo-bounding-box objinfo)
+    (ObjectInfo-color-ranking objinfo)
+    (ObjectInfo-otherinfo objinfo)))
 
 (define (smallnoobj-objinfo-obj objinfo )
   (ObjectInfo
-   "pureOBJpass"
-   "parampass"
-   (ObjectInfo-ismove000 objinfo)
-   (ObjectInfo-grid-bounding-box objinfo)
-   (ObjectInfo-bounding-box objinfo)
-   (ObjectInfo-color-ranking objinfo)
-   (ObjectInfo-otherinfo objinfo)))
+    (ObjectInfo-pair-id objinfo)
+    (ObjectInfo-in-or-out objinfo)
+    "parampass"
+    "pureOBJpass"
+    (ObjectInfo-obj-00 objinfo)
+    (ObjectInfo-obj-000 objinfo)
+    (ObjectInfo-grid-H-W objinfo)
+    (ObjectInfo-bounding-box objinfo)
+    (ObjectInfo-color-ranking objinfo)
+    (ObjectInfo-otherinfo objinfo)))
 
 
 (define (hmirror-info objinfo)
@@ -594,15 +613,7 @@
 ;;   (obj univalued? diagonal? without-bg? origin-color origin-position otherinfo)
 ;;   #:transparent)
 
-(define (makeshift-ObjectInfo objinfo new-obj)
-  (ObjectInfo
-   new-obj
-   (ObjectInfo-configparam objinfo)
-   '("000" #t)
-   (ObjectInfo-grid-bounding-box objinfo)
-   (ObjectInfo-bounding-box objinfo)
-   (ObjectInfo-color-ranking objinfo)
-   (ObjectInfo-otherinfo objinfo)))
+
 
 (define (shift-obj-to-0-0-0 objbig)
   ;; Step 1: 判断 objbig 是否 ObjectInfo
@@ -611,8 +622,9 @@
       ;; 从 objbig 中提取原 BFS 集合
       (define orig-obj (ObjectInfo-obj objbig))
       (define shifted-obj (shift-pure-obj-to-0-0-0 orig-obj))
+      (define obj00 (shift-pure-obj-to-00 orig-obj))
 
-      (makeshift-ObjectInfo objbig shifted-obj )]
+      (makeshift-ObjectInfo objbig obj00 shifted-obj )]
 
     [(set? objbig)
      ;; 如果传入的是纯 set，直接平移
@@ -634,6 +646,20 @@
           (define r (first (cadr e)))
           (define c (second (cadr e)))
           (list 0 (list (- r min-row) (- c min-col)))))))
+
+(define (shift-pure-obj-to-00 obj)
+  (if (set-empty? obj)
+      (set)
+      (let* ([obj-list (set->list obj)]
+             [rc-list  (map (λ(e) (cadr e)) obj-list)]
+             [min-row  (apply min (map first rc-list))]
+             [min-col  (apply min (map second rc-list))])
+        (for/set ([e (in-list obj-list)])
+          ;; e = '(color (r c))
+          (define color (first e))
+          (define r (first (cadr e)))
+          (define c (second (cadr e)))
+          (list color (list (- r min-row) (- c min-col)))))))
 
 
 ; (define sameshapediffcolor)

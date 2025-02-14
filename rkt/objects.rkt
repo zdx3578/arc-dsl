@@ -255,11 +255,14 @@
 
 
 (struct ObjectInfo
-  (obj
-   configparam
-   ismove000
-   grid-bounding-box
-   bounding-box        ;; (list minr minc maxr maxc)
-   color-ranking       ;; string or list
-   otherinfo)
+  ( pair-id
+    in-or-out
+    configparam
+    obj
+    obj-00
+    obj-000
+    grid-H-W
+    bounding-box        ;; (list minr minc maxr maxc)
+    color-ranking       ;; string or list
+    otherinfo)
   #:transparent)
