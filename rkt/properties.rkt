@@ -422,7 +422,7 @@
   (define gwidth  (second grid-size))
   (values oldobj gheight gwidth))
 
-(define manager (new id-manager%))
+(define managerid (new id-manager%))
 
 (define (makeshift-ObjInf objinfo obj00 obj000 )
   (ObjInf
@@ -431,7 +431,7 @@
     (ObjInf-configparam objinfo)
     (ObjInf-obj objinfo)
     obj00
-    (send manager get-id "OBJshape"  obj00 )
+    (send managerid get-id "OBJshape"  obj00 )
     obj000
     (ObjInf-grid-H-W objinfo)
     (ObjInf-bounding-box objinfo)
@@ -737,14 +737,14 @@
   (for-each
     (lambda (record)
       ;; 打印当前记录（调试用）
-      (displayln (format "\n ~s" record))
+      (displayln (format "\ndprfunlog ~s" record))
 
       ;; 判断当前记录是否包含子元素
       (when (list? record) ; 假设子元素是列表
         ;; 内层循环：遍历子元素
         (for-each
           (lambda (sub-record)
-            (displayln (format "\n[DEBUG] sub-record: ~s" sub-record))
+            (displayln (format "\ndprfunlog sub-record: ~s" sub-record))
             ;; 在这里可以对子元素进行进一步处理
             )
           record)))

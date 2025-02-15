@@ -285,6 +285,7 @@
 (define pair-match-records '()) ;; “全局”收集
 
 (define (process-single-file json-data)
+  (define object-match-listall '())
   (define train-data (hash-ref json-data 'train))
   (define-values (all-succeeded? collected-pairs-ex)
     (let ([outer-iter 0])
@@ -339,7 +340,19 @@
                                                         ; "in obj"  "out obj"
                                                         code-regular
                                                         '("00"))
-                                                       object-match-list)))
+                                                       object-match-list))
+                                                ; (set! object-match-list
+                                                ;       (cons
+                                                ;        (ObjMR
+                                                ;         (smallnoobj-objinfo-obj in-obj)
+                                                ;         (smallnoobj-objinfo-obj out-obj)
+                                                ;         ; (send manager get-id "inOBJshape" (smallnoobj-objinfo-obj in-obj ) )
+                                                ;         ; (send manager get-id "outOBJshape" (smallnoobj-objinfo-obj out-obj))
+                                                ;         ; "in obj"  "out obj"
+                                                ;         code-regular
+                                                ;         '("00"))
+                                                ;        object-match-listall))
+                                              )
                                               code-regular))])
                                      (or found-regular?
                                         ; (define out-obj000 (shift-obj-to-0-0-0 out-obj))
@@ -363,7 +376,17 @@
                                                       ; "in obj"  "out obj"
                                                        code-shift
                                                        '("00--0"))
-                                                      object-match-list)))
+                                                      object-match-list))
+                                                ; (set! object-match-list
+                                                ;      (cons
+                                                ;       (ObjMR
+                                                ;        (smallnoobj-objinfo-obj in-obj000)
+                                                ;        (smallnoobj-objinfo-obj out-obj)
+                                                ;       ; "in obj"  "out obj"
+                                                ;        code-shift
+                                                ;        '("00--0"))
+                                                ;       object-match-listall))
+                                              )
                                              code-shift))))))
                               ; (displayln                            (format "\n\n[--------------------------------DEBUG] Done object-match-list for this pair. param-records => ~s"
                               ;       object-match-list))
@@ -395,8 +418,8 @@
   ; (displayln (format "\n\n Total pair-match-records lenght ~a  content: => ~a" (length pair-match-records)  pair-match-records ))
   (displayln (format "\n\n Total pair-match-records lenght ~a  content: => " (length pair-match-records)   ))
 
-  ; (send manager print-all-ids)
-
+  ; (send managerid print-all-ids)
+  (display-param-records object-match-listall)
 
   ;; 返回 (all-succeeded? globalParamAnalysis) 仅作演示
   (values all-succeeded? "pass"))
