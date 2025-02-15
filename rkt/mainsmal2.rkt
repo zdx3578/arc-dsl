@@ -395,7 +395,9 @@
   ; (displayln (format "\n\n Total pair-match-records lenght ~a  content: => ~a" (length pair-match-records)  pair-match-records ))
   (displayln (format "\n\n Total pair-match-records lenght ~a  content: => " (length pair-match-records)   ))
 
-  (send manager print-all-ids)
+  ; (send manager print-all-ids)
+
+
   ;; 返回 (all-succeeded? globalParamAnalysis) 仅作演示
   (values all-succeeded? "pass"))
 
