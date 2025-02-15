@@ -330,28 +330,13 @@
                                                   ; (displayln (format "[-~s-------------------------------DEBUG] synthesize-transformation =>  ~s ~s"
                                                   ;           code-regular in-obj out-obj))
                                               (when code-regular
-                                                (set! object-match-list
-                                                      (cons
-                                                       (ObjMR
-                                                        (smallnoobj-objinfo-obj in-obj)
-                                                        (smallnoobj-objinfo-obj out-obj)
-                                                        ; (send manager get-id "inOBJshape" (smallnoobj-objinfo-obj in-obj ) )
-                                                        ; (send manager get-id "outOBJshape" (smallnoobj-objinfo-obj out-obj))
-                                                        ; "in obj"  "out obj"
-                                                        code-regular
-                                                        '("00"))
-                                                       object-match-list))
-                                                ; (set! object-match-list
-                                                ;       (cons
-                                                ;        (ObjMR
-                                                ;         (smallnoobj-objinfo-obj in-obj)
-                                                ;         (smallnoobj-objinfo-obj out-obj)
-                                                ;         ; (send manager get-id "inOBJshape" (smallnoobj-objinfo-obj in-obj ) )
-                                                ;         ; (send manager get-id "outOBJshape" (smallnoobj-objinfo-obj out-obj))
-                                                ;         ; "in obj"  "out obj"
-                                                ;         code-regular
-                                                ;         '("00"))
-                                                ;        object-match-listall))
+                                                (let ([new-record (ObjMR
+                                                              (smallnoobj-objinfo-obj in-obj)
+                                                              (smallnoobj-objinfo-obj out-obj)
+                                                              code-regular
+                                                              '("00"))])
+                                                  (set! object-match-list (cons new-record object-match-list))
+                                                  (set! object-match-listall (cons new-record object-match-listall)))
                                               )
                                               code-regular))])
                                      (or found-regular?
@@ -360,32 +345,17 @@
                                         ;  (displayln (format " [DEBUG] in-obj  shift-obj-to-0-0-0 => " ))
                                            (let ([code-shift
                                                   (synthesize-transformation
-                                                  ;  (shift-obj-to-0-0-0 in-obj)
                                                   (ObjInf-obj-000 in-obj000)
                                                   (ObjInf-obj-000 (shift-obj-to-0-0-0 out-obj))
-                                                  ; in-obj000
-                                                  ; out-obj000                                                  ; out-obj
-                                                  ;  (shift-obj-to-0-0-0 out-obj)
                                                    )])
                                              (when code-shift
-                                               (set! object-match-list
-                                                     (cons
-                                                      (ObjMR
-                                                       (smallnoobj-objinfo-obj in-obj000)
-                                                       (smallnoobj-objinfo-obj out-obj)
-                                                      ; "in obj"  "out obj"
-                                                       code-shift
-                                                       '("00--0"))
-                                                      object-match-list))
-                                                ; (set! object-match-list
-                                                ;      (cons
-                                                ;       (ObjMR
-                                                ;        (smallnoobj-objinfo-obj in-obj000)
-                                                ;        (smallnoobj-objinfo-obj out-obj)
-                                                ;       ; "in obj"  "out obj"
-                                                ;        code-shift
-                                                ;        '("00--0"))
-                                                ;       object-match-listall))
+                                               (let ([new-record (ObjMR
+                                                              (smallnoobj-objinfo-obj in-obj000)
+                                                              (smallnoobj-objinfo-obj out-obj)
+                                                              code-shift
+                                                              '("00--0"))])
+                                                (set! object-match-list (cons new-record object-match-list))
+                                                (set! object-match-listall (cons new-record object-match-listall)))
                                               )
                                              code-shift))))))
                               ; (displayln                            (format "\n\n[--------------------------------DEBUG] Done object-match-list for this pair. param-records => ~s"
