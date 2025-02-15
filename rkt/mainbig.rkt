@@ -146,8 +146,8 @@
 (define (interp-condition cond obj-info)
   (match-define (Cond prop val) cond)
   (match prop
-    ['diagonal?  (equal? (ObjectInfo-diagonal? obj-info) val)]
-    ['univalued? (equal? (ObjectInfo-univalued? obj-info) val)]
+    ['diagonal?  (equal? (ObjInf-diagonal? obj-info) val)]
+    ['univalued? (equal? (ObjInf-univalued? obj-info) val)]
     [_ #f]))
 
 ;; 解释 DSLCond
@@ -155,7 +155,7 @@
   (match dsl
     ;; Base => single transform code
     [(DSLCond 'Base code #f #f #f)
-     (apply-op code (ObjectInfo-obj obj-info))]
+     (apply-op code (ObjInf-obj obj-info))]
 
     ;; If => if cond => subT else => subF
     [(DSLCond 'If #f cond subT subF)
@@ -167,7 +167,7 @@
 ;; ---------------------------------------------------------------------
 ;; 4) 统计分析: 在 ParamMatchRecord 层面统计 (diagonal? => transform-code)
 ;; ---------------------------------------------------------------------
-(struct ObjectMatchRecord (in-obj out-obj transform-code details) #:transparent)
+(struct ObjMR (in-obj out-obj transform-code details) #:transparent)
 (struct ParamMatchRecord (param object-matches) #:transparent)
 (struct PairMatchRecord (input-grid output-grid param-match-records) #:transparent)
 
@@ -178,9 +178,9 @@
   (define diag-count (make-hash))
 
   (for ([omr (in-list omrs)])
-    (define in-obj-info (ObjectMatchRecord-in-obj omr)) ;; 这里 in-obj-info = (ObjectInfo ...)
-    (define diag?       (ObjectInfo-diagonal? in-obj-info))
-    (define tcode       (ObjectMatchRecord-transform-code omr))
+    (define in-obj-info (ObjMR-in-obj omr)) ;; 这里 in-obj-info = (ObjInf ...)
+    (define diag?       (ObjInf-diagonal? in-obj-info))
+    (define tcode       (ObjMR-transform-code omr))
     (hash-update! diag-count
                   (list diag? tcode)
                   (λ (old) (add1 old))
@@ -295,8 +295,8 @@
             (for/and ([param-rec (in-list (PairMatchRecord-param-match-records pmr))])
               (define omrs (ParamMatchRecord-object-matches param-rec))
               (for/and ([omr (in-list omrs)])
-                (define in-obj-info (ObjectMatchRecord-in-obj omr))
-                (define out-obj     (ObjectMatchRecord-out-obj omr))
+                (define in-obj-info (ObjMR-in-obj omr))
+                (define out-obj     (ObjMR-out-obj omr))
                 (equal? (interp-DSLCond candidate-rule in-obj-info) out-obj)))])
 
         (displayln (format "Check if-rule success? ~a" success?)))
@@ -350,11 +350,11 @@
                             ;; 只要有一个 in-obj 能成功 => for/or
                             (for/or ([in-obj (in-set input-obj-set)])
                               (let ([ok? (synthesize-transformation
-                                          (ObjectInfo-obj in-obj)
-                                          (ObjectInfo-obj out-obj))])
+                                          (ObjInf-obj in-obj)
+                                          (ObjInf-obj out-obj))])
                                 (when ok?
                                   (set! object-match-list
-                                        (cons (ObjectMatchRecord in-obj out-obj ok? '())
+                                        (cons (ObjMR in-obj out-obj ok? '())
                                               object-match-list)))
                                 ok?))))
                         ;; 如果 param-success? => 新增一个 ParamMatchRecord

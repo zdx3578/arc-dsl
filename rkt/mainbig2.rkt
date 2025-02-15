@@ -150,15 +150,15 @@
 (define (interp-condition cond obj-info)
   (match-define (Cond prop val) cond)
   (match prop
-    ['diagonal? (equal? (ObjectInfo-ismove000 obj-info) val)]
-    ['univalued? (equal? (ObjectInfo-ismove000 obj-info) val)]
+    ['diagonal? (equal? (ObjInf-ismove000 obj-info) val)]
+    ['univalued? (equal? (ObjInf-ismove000 obj-info) val)]
     [_ #f]))
 
 ;; 解释 DSLCond
 (define (interp-DSLCond dsl obj-info)
   (match dsl
     ;; Base => single transform code
-    [(DSLCond 'Base code #f #f #f) (apply-op code (ObjectInfo-obj obj-info))]
+    [(DSLCond 'Base code #f #f #f) (apply-op code (ObjInf-obj obj-info))]
 
     ;; If => if cond => subT else => subF
     [(DSLCond 'If #f cond subT subF)
@@ -234,7 +234,7 @@
 ;; ---------------------------------------------------------------------
 ;; 4) 统计分析: 在 ParamMatchRecord 层面统计 (diagonal? => transform-code)
 ;; ---------------------------------------------------------------------
-(struct ObjectMatchRecord (in-obj out-obj transform-code details) #:transparent)
+(struct ObjMR (in-obj out-obj transform-code details) #:transparent)
 (struct ParamMatchRecord (param object-matches) #:transparent)
 (struct PairMatchRecord (input-grid output-grid param-match-records) #:transparent)
 
@@ -244,9 +244,9 @@
   (define omrs (ParamMatchRecord-object-matches pmr))
   (define transform-count (make-hash))
 
-  ;; 遍历所有 ObjectMatchRecord
+  ;; 遍历所有 ObjMR
   (for ([omr (in-list omrs)])
-    (define tcode-list (ObjectMatchRecord-transform-code omr)) ;; 现在是一个列表
+    (define tcode-list (ObjMR-transform-code omr)) ;; 现在是一个列表
     ;; 遍历 transform-code 列表里的每个单独变换
     (for ([single-code (in-list tcode-list)])
       (hash-update! transform-count single-code (λ (old) (add1 old)) 0))) ;; 若不存在旧值，初始为0，然后加1
@@ -310,8 +310,8 @@
       (for/and ([param-rec (in-list (PairMatchRecord-param-match-records pmr))])
         (define omrs (ParamMatchRecord-object-matches param-rec))
         (for/and ([omr (in-list omrs)])
-          (define in-obj-info (ObjectMatchRecord-in-obj omr))
-          (define out-obj (ObjectMatchRecord-out-obj omr))
+          (define in-obj-info (ObjMR-in-obj omr))
+          (define out-obj (ObjMR-out-obj omr))
           (equal? (interp-DSLCond candidate-rule in-obj-info) out-obj)))))
 
   (displayln (format "Check candidate-rule success? ~a" success?))
@@ -364,7 +364,7 @@
                                       (when code-regular
                                         (set!
                                          object-match-list
-                                         (cons (ObjectMatchRecord in-obj out-obj code-regular '("-----0-----" #f))
+                                         (cons (ObjMR in-obj out-obj code-regular '("-----0-----" #f))
                                                object-match-list)))
                                       code-regular))])
                              ;; 第 2 步：如果上面那一步 found-regular? 为 #f，就再尝试 shift 匹配
@@ -375,7 +375,7 @@
                                                       ( shift-obj-to-0-0-0 out-obj))])
                                      (when code-shift
                                        (set! object-match-list
-                                             (cons (ObjectMatchRecord in-obj out-obj code-shift '("-----0-----" #t))
+                                             (cons (ObjMR in-obj out-obj code-shift '("-----0-----" #t))
                                                    object-match-list)))
                                      code-shift))))))
                        ;; 如果 param-success? => 新增一个 ParamMatchRecord

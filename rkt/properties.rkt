@@ -415,71 +415,71 @@
 
 
 
-(define (objectinfo->obj+grid objinfo)
-  (define oldobj (ObjectInfo-obj objinfo))
-  (define grid-size (ObjectInfo-grid-H-W objinfo))
+(define (ObjInf->obj+grid objinfo)
+  (define oldobj (ObjInf-obj objinfo))
+  (define grid-size (ObjInf-grid-H-W objinfo))
   (define gheight (first grid-size))
   (define gwidth  (second grid-size))
   (values oldobj gheight gwidth))
 
 (define manager (new id-manager%))
 
-(define (makeshift-ObjectInfo objinfo obj00 obj000 )
-  (ObjectInfo
-    (ObjectInfo-pair-id objinfo)
-    (ObjectInfo-in-or-out objinfo)
-    (ObjectInfo-configparam objinfo)
-    (ObjectInfo-obj objinfo)
+(define (makeshift-ObjInf objinfo obj00 obj000 )
+  (ObjInf
+    (ObjInf-pair-id objinfo)
+    (ObjInf-in-or-out objinfo)
+    (ObjInf-configparam objinfo)
+    (ObjInf-obj objinfo)
     obj00
     (send manager get-id "OBJshape"  obj00 )
     obj000
-    (ObjectInfo-grid-H-W objinfo)
-    (ObjectInfo-bounding-box objinfo)
-    (ObjectInfo-color-ranking objinfo)
-    (ObjectInfo-otherinfo objinfo)))
+    (ObjInf-grid-H-W objinfo)
+    (ObjInf-bounding-box objinfo)
+    (ObjInf-color-ranking objinfo)
+    (ObjInf-otherinfo objinfo)))
 
 (define (update-objinfo-obj objinfo newobj)
-  (ObjectInfo
-    (ObjectInfo-pair-id objinfo)
-    (ObjectInfo-in-or-out objinfo)
-    (ObjectInfo-configparam objinfo)
+  (ObjInf
+    (ObjInf-pair-id objinfo)
+    (ObjInf-in-or-out objinfo)
+    (ObjInf-configparam objinfo)
     newobj
-    (ObjectInfo-obj-00 objinfo)
-    (ObjectInfo-obj-ID objinfo)
-    (ObjectInfo-obj-000 objinfo)
-    (ObjectInfo-grid-H-W objinfo)
-    (ObjectInfo-bounding-box objinfo)
-    (ObjectInfo-color-ranking objinfo)
-    (ObjectInfo-otherinfo objinfo)))
+    (ObjInf-obj-00 objinfo)
+    (ObjInf-obj-ID objinfo)
+    (ObjInf-obj-000 objinfo)
+    (ObjInf-grid-H-W objinfo)
+    (ObjInf-bounding-box objinfo)
+    (ObjInf-color-ranking objinfo)
+    (ObjInf-otherinfo objinfo)))
 
 (define (smallnoobj-objinfo-obj objinfo )
-  (ObjectInfo
-    (ObjectInfo-pair-id objinfo)
-    (ObjectInfo-in-or-out objinfo)
-    (ObjectInfo-configparam objinfo)
+  (ObjInf
+    (ObjInf-pair-id objinfo)
+    (ObjInf-in-or-out objinfo)
+    (ObjInf-configparam objinfo)
     ""
     ""
-    (ObjectInfo-obj-ID objinfo)
+    (ObjInf-obj-ID objinfo)
     ""
-    (ObjectInfo-grid-H-W objinfo)
-    (ObjectInfo-bounding-box objinfo)
-    (ObjectInfo-color-ranking objinfo)
-    (ObjectInfo-otherinfo objinfo)))
+    (ObjInf-grid-H-W objinfo)
+    (ObjInf-bounding-box objinfo)
+    (ObjInf-color-ranking objinfo)
+    (ObjInf-otherinfo objinfo)))
 
 
 (define (hmirror-info objinfo)
-  (unless (ObjectInfo? objinfo)
-    (error "hmirror-info: expected ObjectInfo but got" objinfo))
-  (define-values (oldobj gh gw) (objectinfo->obj+grid objinfo))
+  (unless (ObjInf? objinfo)
+    (error "hmirror-info: expected ObjInf but got" objinfo))
+  (define-values (oldobj gh gw) (ObjInf->obj+grid objinfo))
   (define newobj (hmirror-set oldobj gh))
   (update-objinfo-obj objinfo newobj))
 
 ;;=====================================================
 ;; 1) vmirror-info
 (define (vmirror-info objinfo)
-  (unless (ObjectInfo? objinfo)
-    (error "vmirror-info: expected ObjectInfo but got" objinfo))
-  (define-values (oldobj gh gw) (objectinfo->obj+grid objinfo))
+  (unless (ObjInf? objinfo)
+    (error "vmirror-info: expected ObjInf but got" objinfo))
+  (define-values (oldobj gh gw) (ObjInf->obj+grid objinfo))
   (define newobj (vmirror-set oldobj gw))
   (update-objinfo-obj objinfo newobj))
 
@@ -487,9 +487,9 @@
 ;; 3) dmirror-info
 ;;=====================================================
 (define (dmirror-info objinfo)
-  (unless (ObjectInfo? objinfo)
-    (error "dmirror-info: expected ObjectInfo but got" objinfo))
-  (define-values (oldobj gh gw) (objectinfo->obj+grid objinfo))
+  (unless (ObjInf? objinfo)
+    (error "dmirror-info: expected ObjInf but got" objinfo))
+  (define-values (oldobj gh gw) (ObjInf->obj+grid objinfo))
   (define newobj (dmirror-set oldobj gh gw))
   (update-objinfo-obj objinfo newobj))
 
@@ -497,9 +497,9 @@
 ;; 4) cmirror-info
 ;;=====================================================
 (define (cmirror-info objinfo)
-  (unless (ObjectInfo? objinfo)
-    (error "cmirror-info: expected ObjectInfo but got" objinfo))
-  (define-values (oldobj gh gw) (objectinfo->obj+grid objinfo))
+  (unless (ObjInf? objinfo)
+    (error "cmirror-info: expected ObjInf but got" objinfo))
+  (define-values (oldobj gh gw) (ObjInf->obj+grid objinfo))
 
   (define newobj (cmirror-set oldobj gh gw))
   (update-objinfo-obj objinfo newobj))
@@ -508,9 +508,9 @@
 ;; 5) rotate90-info
 ;;=====================================================
 (define (rotate90-info objinfo)
-  (unless (ObjectInfo? objinfo)
-    (error "rotate90-info: expected ObjectInfo but got" objinfo))
-  (define-values (oldobj gh gw) (objectinfo->obj+grid objinfo))
+  (unless (ObjInf? objinfo)
+    (error "rotate90-info: expected ObjInf but got" objinfo))
+  (define-values (oldobj gh gw) (ObjInf->obj+grid objinfo))
 
   (define newobj (rotate90-set oldobj gh gw))
   (update-objinfo-obj objinfo newobj))
@@ -519,9 +519,9 @@
 ;; 6) rotate180-info
 ;;=====================================================
 (define (rotate180-info objinfo)
-  (unless (ObjectInfo? objinfo)
-    (error "rotate180-info: expected ObjectInfo but got" objinfo))
-  (define-values (oldobj gh gw) (objectinfo->obj+grid objinfo))
+  (unless (ObjInf? objinfo)
+    (error "rotate180-info: expected ObjInf but got" objinfo))
+  (define-values (oldobj gh gw) (ObjInf->obj+grid objinfo))
 
   (define newobj (rotate180-set oldobj gh gw))
   (update-objinfo-obj objinfo newobj))
@@ -655,22 +655,22 @@
 
 
 ;; 假设结构体定义类似:
-;; (struct ObjectInfo
+;; (struct ObjInf
 ;;   (obj univalued? diagonal? without-bg? origin-color origin-position otherinfo)
 ;;   #:transparent)
 
 
 
 (define (shift-obj-to-0-0-0 objbig)
-  ;; Step 1: 判断 objbig 是否 ObjectInfo
+  ;; Step 1: 判断 objbig 是否 ObjInf
   (cond
-    [(ObjectInfo? objbig)
+    [(ObjInf? objbig)
       ;; 从 objbig 中提取原 BFS 集合
-      (define orig-obj (ObjectInfo-obj objbig))
+      (define orig-obj (ObjInf-obj objbig))
       (define obj000 (shift-pure-obj-to-0-0-0 orig-obj))
       (define obj00 (shift-pure-obj-to-00 orig-obj))
 
-      (makeshift-ObjectInfo objbig obj00 obj000 )]
+      (makeshift-ObjInf objbig obj00 obj000 )]
 
     [(set? objbig)
      ;; 如果传入的是纯 set，直接平移
@@ -737,7 +737,7 @@
   (for-each
     (lambda (record)
       ;; 打印当前记录（调试用）
-      (displayln (format "\nDEBUG] UP-record; ~s" record))
+      (displayln (format "\n ~s" record))
 
       ;; 判断当前记录是否包含子元素
       (when (list? record) ; 假设子元素是列表

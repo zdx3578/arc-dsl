@@ -174,8 +174,8 @@
 (define (interp-condition cond obj-info)
   (match-define (Cond prop val) cond)
   (match prop
-    ['diagonal?  (equal? (ObjectInfo-obj obj-info) val)]
-    ['univalued? (equal? (ObjectInfo-obj obj-info) val)]
+    ['diagonal?  (equal? (ObjInf-obj obj-info) val)]
+    ['univalued? (equal? (ObjInf-obj obj-info) val)]
     [_ #f])) ;; 需要自行扩展
 
 (define (interp-DSLCond dsl obj-info)
@@ -241,7 +241,7 @@
 ;; --------------------------------------------
 ;; 1) 数据结构
 ;; --------------------------------------------
-(struct ObjectMatchRecord
+(struct ObjMR
   (in-obj
    out-obj
    transform-code      ;; 列表, e.g. '(HMirror Rotate90 ...)
@@ -250,7 +250,7 @@
 
 (struct ParamMatchRecord
   (param               ;; e.g. (#f #t #t)
-   object-matches)     ;; (listof ObjectMatchRecord)
+   object-matches)     ;; (listof ObjMR)
   #:transparent)
 
 (struct PairMatchRecord
@@ -323,15 +323,15 @@
                                           ; (for/or ([in-obj (in-set input-obj-set000)])
                                             (let ([code-regular
                                                    (synthesize-transformation
-                                                    (ObjectInfo-obj-00 in-obj)
-                                                    (ObjectInfo-obj-00 out-obj)
+                                                    (ObjInf-obj-00 in-obj)
+                                                    (ObjInf-obj-00 out-obj)
                                                     )])
                                                   ; (displayln (format "[-~s-------------------------------DEBUG] synthesize-transformation =>  ~s ~s"
                                                   ;           code-regular in-obj out-obj))
                                               (when code-regular
                                                 (set! object-match-list
                                                       (cons
-                                                       (ObjectMatchRecord
+                                                       (ObjMR
                                                         (smallnoobj-objinfo-obj in-obj)
                                                         (smallnoobj-objinfo-obj out-obj)
                                                         ; (send manager get-id "inOBJshape" (smallnoobj-objinfo-obj in-obj ) )
@@ -348,8 +348,8 @@
                                            (let ([code-shift
                                                   (synthesize-transformation
                                                   ;  (shift-obj-to-0-0-0 in-obj)
-                                                  (ObjectInfo-obj-000 in-obj000)
-                                                  (ObjectInfo-obj-000 (shift-obj-to-0-0-0 out-obj))
+                                                  (ObjInf-obj-000 in-obj000)
+                                                  (ObjInf-obj-000 (shift-obj-to-0-0-0 out-obj))
                                                   ; in-obj000
                                                   ; out-obj000                                                  ; out-obj
                                                   ;  (shift-obj-to-0-0-0 out-obj)
@@ -357,7 +357,7 @@
                                              (when code-shift
                                                (set! object-match-list
                                                      (cons
-                                                      (ObjectMatchRecord
+                                                      (ObjMR
                                                        (smallnoobj-objinfo-obj in-obj000)
                                                        (smallnoobj-objinfo-obj out-obj)
                                                       ; "in obj"  "out obj"

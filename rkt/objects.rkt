@@ -101,13 +101,13 @@
 
 ;; 存储与对象相关的各种信息
 
-(provide          (struct-out ObjectInfo) )
+(provide          (struct-out ObjInf) )
 
 (provide objects)
 
 
 ;; -----------------------
-;; 1) 新的 ObjectInfo 结构体
+;; 1) 新的 ObjInf 结构体
 ;; -----------------------
 
 
@@ -219,7 +219,7 @@
 
              (set! objs
                    (set-add objs
-                            (ObjectInfo
+                            (ObjInf
                             the-pair-id
                             in-or-out
                             (list  univalued?                              diagonal?                             without-bg?)
@@ -258,7 +258,7 @@
   objs)
 
 
-(struct ObjectInfo
+(struct ObjInf
   ( pair-id
     in-or-out
     configparam
