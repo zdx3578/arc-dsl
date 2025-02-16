@@ -305,7 +305,7 @@
 
                     ;; 提取 input-obj
                     ; (define input-obj-set (all-objects-from-grid-with-ids input-grid the-pair-id))
-                    (define input-obj-set (all-objects-from-grid the-pair-id 'in input-grid))
+                    (define input-obj-set (all-objects-from-grid the-pair-id 'input input-grid))
                     (define input-obj-set000  (all-objects-00-c0-from-objs input-obj-set))
 
                     ;; 这里仅示意: 你自己定义 param-combinations / objects-with-params
@@ -360,7 +360,7 @@
                                              code-shift))))))
                               ; (displayln                            (format "\n\n[--------------------------------DEBUG] Done object-match-list for this pair. param-records => ~s"
                               ;       object-match-list))
-                              (display-param-records object-match-list)
+                              ; (display-param-records object-match-list)
 
                                (if param-success?
                                    (cons (ParamMatchRecord out-param object-match-list)
@@ -368,7 +368,7 @@
                                    acc-params))])
                           ; (displayln                            (format "\n\n[---------------------------local-param-records-----DEBUG] Done param-combinations for this pair. param-records => ~s"
                           ;           local-param-records))
-                          (display-param-records local-param-records)
+                          ; (display-param-records local-param-records)
                         local-param-records))
 
                     (define this-pair-success? (not (null? param-match-records)))
@@ -388,7 +388,7 @@
   ; (displayln (format "\n\n Total pair-match-records lenght ~a  content: => ~a" (length pair-match-records)  pair-match-records ))
   (displayln (format "\n\n Total pair-match-records lenght ~a  content: => " (length pair-match-records)   ))
 
-  ; (send managerid print-all-ids)
+  (send managerid print-all-ids)
   (display-param-records object-match-listall)
 
   ;; 返回 (all-succeeded? globalParamAnalysis) 仅作演示

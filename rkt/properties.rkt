@@ -403,7 +403,7 @@
     ;; 打印所有对象及其 ID 的方法
     (define/public (print-all-ids)
       (for ([(category category-table) (in-hash tables)]) ; 遍历每个类别
-        (displayln (format "Category: ~a" category)) ; 打印类别名称
+        (displayln (format "\n\nCategory: ~a, length: ~a \n" category (hash-count category-table))) ; 打印类别名称
         (for ([(value id) (in-hash category-table)]) ; 遍历类别中的对象及其 ID
           (displayln (format "ID : ~a -> Object content -> : \n                  ~a" id value )))))
 
@@ -431,7 +431,7 @@
     (ObjInf-configparam objinfo)
     (ObjInf-obj objinfo)
     obj00
-    (send managerid get-id "OBJshape"  obj00 )
+    (send managerid get-id "OBJshape"  obj000 )
     obj000
     (ObjInf-grid-H-W objinfo)
     (ObjInf-bounding-box objinfo)
@@ -603,16 +603,16 @@
             ([params (in-list param-combinations)])
     (set-union acc (objects-with-params the-pair-id in-or-out grid params))))
 
-(define (all-objects-from-grid-withra-ids grid pair-id)
-  (define counter 0)
-  (define (annotate-object obj)
-    (let* ([unique-id (format "~a-obj-~a" pair-id counter)]
-           [new-obj (hash-set obj 'unique-id unique-id)])
-      (set! counter (add1 counter))
-      new-obj))
-  (for/fold ([acc (set)])
-            ([params (in-list param-combinations)])
-    (set-union acc (set-map annotate-object (objects-with-params grid params)))))
+; (define (all-objects-from-grid-withra-ids grid pair-id)
+;   (define counter 0)
+;   (define (annotate-object obj)
+;     (let* ([unique-id (format "~a-obj-~a" pair-id counter)]
+;            [new-obj (hash-set obj 'unique-id unique-id)])
+;       (set! counter (add1 counter))
+;       new-obj))
+;   (for/fold ([acc (set)])
+;             ([params (in-list param-combinations)])
+;     (set-union acc (set-map annotate-object (objects-with-params grid params)))))
 
 
 ;; 4. 将一组坐标平移到 (0, 0) 的辅助函数。
