@@ -737,14 +737,14 @@
   (for-each
     (lambda (record)
       ;; 打印当前记录（调试用）
-      (displayln (format "\ndprfunlog ~s" record))
+      (displayln (format "\n  ~s" record))
 
       ;; 判断当前记录是否包含子元素
       (when (list? record) ; 假设子元素是列表
         ;; 内层循环：遍历子元素
         (for-each
           (lambda (sub-record)
-            (displayln (format "\ndprfunlog sub-record: ~s" sub-record))
+            (displayln (format "\n  sub-record: ~s" sub-record))
             ;; 在这里可以对子元素进行进一步处理
             )
           record)))

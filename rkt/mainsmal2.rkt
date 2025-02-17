@@ -368,7 +368,7 @@
                                    acc-params))])
                           ; (displayln                            (format "\n\n[---------------------------local-param-records-----DEBUG] Done param-combinations for this pair. param-records => ~s"
                           ;           local-param-records))
-                          ; (display-param-records local-param-records)
+                          (display-param-records local-param-records)
                         local-param-records))
 
                     (define this-pair-success? (not (null? param-match-records)))
