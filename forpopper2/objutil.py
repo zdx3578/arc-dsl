@@ -62,6 +62,7 @@ class ObjInf:
     grid_H_W: Tuple[Integer, Integer]    # 假设是一个 (height, width) 的元组
     bounding_box: Tuple[Integer, Integer, Integer, Integer]    # 列表 [minr, minc, maxr, maxc]
     color_ranking: tuple(IntegerTuple)  # 从大到小的 多对( color count , color );
+    extend:list
 
 
 
@@ -73,6 +74,7 @@ def process_single_data(task: List[Any]) -> bool:
     train_data = task['train']
     test_data = task['test']
 
+    successful_obj_pairs = []
     for i, data_pair in enumerate(train_data):
         I = input_grid = data_pair['input']
         O = output_grid = data_pair.get('output')  # 使用 get 方法获取 output，默认为 None
@@ -80,10 +82,8 @@ def process_single_data(task: List[Any]) -> bool:
         height_i, width_i = height(I), width(I)    # 输入对象的高度和宽度
         height_o, width_o = height(O), width(O)
 
-        input_obj_set = all_objects_from_grid(
-                the_pair_id=i,
-                in_or_out="in",
-                grid=I, hw=(height_i, width_i) #,height_o, width_o)
+        input_obj_set = all_objects_from_grid(                the_pair_id=i,
+                in_or_out="in",                grid=I, hw=(height_i, width_i) #,height_o, width_o)
             )
 
         successful_params = []
@@ -92,26 +92,45 @@ def process_single_data(task: List[Any]) -> bool:
 
             out_obj_set = output_objects_with_params(the_pair_id=i,
                                                     in_or_out="out",
-                                                    grid=I, bools=out_param, hw=(height_o, width_o) )
+                                                    grid=O, bools=out_param, hw=(height_o, width_o) )
+
+            successful_obj = []
             for out_obj in out_obj_set:  # 遍历 out_obj_set
                 found_valid_in_obj = False
                 for in_obj in input_obj_set:  # 遍历 input_obj_set
-                    if synthesize_transformation(in_obj, out_obj):  # 如果找到满足条件的 in_obj
+                    if in_obj.obj_000 == out_obj.obj_000:  # 如果找到满足条件的 in_obj
                         found_valid_in_obj = True
+                        successful_obj.append((lessforprintobj(in_obj), lessforprintobj(out_obj),"same"))
+                        successful_obj_pairs.append((lessforprintobj(in_obj), lessforprintobj(out_obj), "same"))
                         break  # 存在一个满足条件即可退出内层循环
+                    elif any(x in out_obj.extend for x in in_obj.extend):    # 至少存在一个共同元素
+                        # in_obj.obj_00 == out_obj.obj_00:
+                        found_valid_in_obj = True
+                        successful_obj.append((lessforprintobj(in_obj), lessforprintobj(out_obj),"extend"))
+                        successful_obj_pairs.append((lessforprintobj(in_obj), lessforprintobj(out_obj), "extend"))
+                        break
                 if not found_valid_in_obj:  # 如果没有找到满足条件的 in_obj
                     all_out_obj_satisfied = False
                     break  # 跳出中间层循环
+            printlist(successful_obj)
             if all_out_obj_satisfied:  # 如果所有 out_obj 都满足
-                successful_params.append(out_param)  # 累计成功的参数组合
+                successful_params.append(successful_obj)  # 累计成功的参数组合
 
         # 检查是否至少有一个成功
         if not successful_params:  # 如果没有找到任何成功的参数组合
             return False  # 直接返回 False，表示失败
-
+    printlist(successful_params)
+    printlist(successful_obj_pairs)
     return True  # 所有 pair 都成功
 
+def lessforprintobj(obj):
+    return (obj.pair_id,obj.in_or_out,obj.objparam,obj.obj_ID,obj.bounding_box)
 
+# printlist = lambda x: print("\n".join(map(str, x)))
+def printlist(x):
+    # for l in list:
+    #     print(l)
+    lambda x: print("\n".join(map(str, x)))
 
 param_combinations: List[Tuple[bool, bool, bool]] = [
     (False, False, False),
@@ -151,11 +170,12 @@ def output_objects_with_params(the_pair_id: int, in_or_out: str, grid: Grid, boo
             obj_000=obj000,
             obj_ID=managerid.get_id("OBJshape", obj000),
 
-            grid_H_W=hwhw,            # 默认值，根据需要调整
-            bounding_box=(0, 0, 0, 0),    # 默认值，根据需要调整
-            color_ranking=tuple()         # 默认空 tuple
+            grid_H_W=hw,            # 默认值，根据需要调整
+            bounding_box=(uppermost(obj), leftmost(obj), lowermost(obj), rightmost(obj)),   # 默认值，根据需要调整
+            color_ranking=False    ,   # 默认空 tuple
+            extend=extend_obj(obj000)
         )
-        result.add(new_obj)
+        result.append(new_obj)
     return result
 
 # all_objects_from_grid 函数
@@ -173,20 +193,29 @@ def all_objects_from_grid(the_pair_id: int, in_or_out: str, grid: Grid, hw:list)
         new_obj = ObjInf(
             pair_id=the_pair_id,
             in_or_out=in_or_out,
-            objparam=False,  # 使用传入的布尔值
+            objparam="inallparam",  # 使用传入的布尔值
             obj=obj,         # 原始对象
             obj_00=obj00,
             obj_000=obj000,
             obj_ID=managerid.get_id("OBJshape", obj000),
-            grid_H_W=HWHW,            # 默认值，根据需要调整
+            grid_H_W=hw,            # 默认值，根据需要调整
             bounding_box=(uppermost(obj), leftmost(obj), lowermost(obj), rightmost(obj)),    # 默认值，根据需要调整
-            color_ranking=False         # 默认空 tuple
+            color_ranking=False    ,     # 默认空 tuple
+            extend=extend_obj(obj000)
         )
         result.append(new_obj)
     return result
 
 
+def objop(obj,op):
+    return grid_to_object(op(object_to_grid(obj)))
 
+def s_filtered(s) :
+    return frozenset(e for e in s if e[0] is not None)
+
+def extend_obj(obj):
+    # return (objop(obj,vmirror),objop(obj,cmirror),objop(obj,hmirror),objop(obj,dmirror),objop(obj,rot90),objop(obj,rot180),objop(obj,rot270))
+    return (vmirror(obj),cmirror(obj),hmirror(obj),dmirror(obj),s_filtered(objop(obj,rot90)),s_filtered(objop(obj,rot180)),s_filtered(objop(obj,rot270) ) )
 
 def all_objects_00_c0_from_objs(the_pair_id: int, in_or_out: str, all_objs):
     return {shift_obj_to_0_0_0(the_pair_id,in_or_out,obj) for obj in all_objs}

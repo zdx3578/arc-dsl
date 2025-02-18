@@ -1121,14 +1121,7 @@ def asobject(
     return frozenset((v, (i, j)) for i, r in enumerate(grid) for j, v in enumerate(r))
 
 def object_to_grid(obj: Object) -> Grid:
-    """将object转换回grid
 
-    Args:
-        obj: 由(value, (i, j))组成的frozenset
-
-    Returns:
-        Grid: 转换后的网格
-    """
     if not obj:
         return [[]]
 
@@ -1137,14 +1130,18 @@ def object_to_grid(obj: Object) -> Grid:
     max_i = max(i for i, _ in coords) + 1
     max_j = max(j for _, j in coords) + 1
 
-    # 创建空网格
-    grid = [[0 for _ in range(max_j)] for _ in range(max_i)]
+    # # 创建空网格
+    grid = [[None for _ in range(max_j)] for _ in range(max_i)]
 
     # 填充值
     for value, (i, j) in obj:
         grid[i][j] = value
 
     return grid
+
+def grid_to_object(grid: Grid) -> Object:
+
+    return frozenset((grid[i][j], (i, j)) for i in range(len(grid)) for j in range(len(grid[0])))
 
 # 使用示例:
 """
