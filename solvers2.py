@@ -1,12 +1,21 @@
 from collections import Counter, defaultdict
 from dsl import *
 from dsl2 import *
-from typing import Dict, Any, List, Tuple, Callable, Optional
+from typing import Dict, Any, List, Tuple, Callable, Optional, Union
 from config import *
 from dslIsDo import *
 from oldfun import *
 from dslupdateProperflagsIs import *
 from solvers import *
+from arc_types import *
+from dataclasses import dataclass
+
+import sys
+sys.path.append("/Users/zhangdexiang/github/VSAHDC/arc-dsl/forpopper2")
+# from objutil import *
+
+
+
 
 
 def solve_arc_task(task):
