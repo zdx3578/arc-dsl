@@ -7,6 +7,7 @@ sys.path.append("/Users/zhangdexiang/github/VSAHDC/arc-dsl/")
 import json
 import inspect
 import tqdm
+from datetime import datetime
 
 import logging
 import traceback
@@ -67,11 +68,13 @@ def test_solvers_correctness(data, solvers_module):
     print()
     print()
     print()
+    now = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+    print(now)
     print()
     print()
     for i, key in enumerate(solvers, start=1):
 
-        # key = '42a50994'
+        key = 'a8c38be5'
 
         # key = 'c3f564a4'
 
