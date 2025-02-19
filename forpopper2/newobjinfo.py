@@ -80,11 +80,11 @@ def test_solvers_correctness(data, solvers_module):
         task['train'] = data['train'][key]
         task['test'] = data['test'][key]
         try:
-            solver = getattr(solvers_module, f'solve_{key}')
+            # solver = getattr(solvers_module, f'solve_{key}')
             # preparetask(task)
             if n_correct % 46 == 0:
                 print()
-            process_single_data(task)
+            if process_single_data(task) :
 
             # solve_arc_task(task)
 
@@ -92,10 +92,10 @@ def test_solvers_correctness(data, solvers_module):
             #     # prepare_diff(ex['input'],ex['output'])
             #     # assert solver(ex['input']) == ex['output']
             #     assert solver(ex['output']) == ex['output']
-            n_correct += 1
-            print()
-            # print()
-            print(n_correct, "success", " . . . . . . .  .   ")
+                n_correct += 1
+                print()
+                # print()
+                print(n_correct, "  .  success", "  .  .  .  .  .  .  .  .   ", n_correct)
             print()
             print()
 
