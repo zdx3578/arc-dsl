@@ -63,6 +63,7 @@ class ObjInf:
     bounding_box: Tuple[Integer, Integer, Integer, Integer]    # 列表 [minr, minc, maxr, maxc]
     color_ranking: tuple(IntegerTuple)  # 从大到小的 多对( color count , color );
     extend:list
+    # extend2:list
 
 
 
@@ -98,16 +99,33 @@ def process_single_data(task: List[Any]) -> bool:
             for out_obj in out_obj_set:  # 遍历 out_obj_set
                 found_valid_in_obj = False
                 for in_obj in input_obj_set:  # 遍历 input_obj_set
-                    if in_obj.obj_000 == out_obj.obj_000:  # 如果找到满足条件的 in_obj
+                    if in_obj.obj == out_obj.obj:  # 如果找到满足条件的 in_obj
                         found_valid_in_obj = True
                         successful_obj.append((lessforprintobj(in_obj), lessforprintobj(out_obj),"same"))
                         successful_obj_pairs.append((lessforprintobj(in_obj), lessforprintobj(out_obj), "same"))
                         break  # 存在一个满足条件即可退出内层循环
+                    elif in_obj.obj_00 == out_obj.obj_00:  # 如果找到满足条件的 in_obj
+                        found_valid_in_obj = True
+                        successful_obj.append((lessforprintobj(in_obj), lessforprintobj(out_obj),"same00"))
+                        successful_obj_pairs.append((lessforprintobj(in_obj), lessforprintobj(out_obj), "same00"))
+                        break  # 存在一个满足条件即可退出内层循环
+                    elif in_obj.obj_000 == out_obj.obj_000:  # 如果找到满足条件的 in_obj
+                        found_valid_in_obj = True
+                        successful_obj.append((lessforprintobj(in_obj), lessforprintobj(out_obj),"same00_0"))
+                        successful_obj_pairs.append((lessforprintobj(in_obj), lessforprintobj(out_obj), "same00_0"))
+                        break  # 存在一个满足条件即可退出内循环
+                    # elif in_obj.obj_000 in out_obj.extend: ##any(x in out_obj.extend for x in in_obj.extend):    # 至少存在一个共同元素
+                    match_op = next((name for name, res in out_obj.extend if res == in_obj.obj_000), None)
+                    if match_op is not None:
+                        found_valid_in_obj = True
+                        successful_obj.append((lessforprintobj(in_obj), lessforprintobj(out_obj),"ext",match_op))
+                        successful_obj_pairs.append((lessforprintobj(in_obj), lessforprintobj(out_obj), "ext",match_op))
+                        break
                     elif any(x in out_obj.extend for x in in_obj.extend):    # 至少存在一个共同元素
                         # in_obj.obj_00 == out_obj.obj_00:
                         found_valid_in_obj = True
-                        successful_obj.append((lessforprintobj(in_obj), lessforprintobj(out_obj),"extend"))
-                        successful_obj_pairs.append((lessforprintobj(in_obj), lessforprintobj(out_obj), "extend"))
+                        successful_obj.append((lessforprintobj(in_obj), lessforprintobj(out_obj),"extend222"))
+                        successful_obj_pairs.append((lessforprintobj(in_obj), lessforprintobj(out_obj), "extend222"))
                         break
                 if not found_valid_in_obj:  # 如果没有找到满足条件的 in_obj
                     all_out_obj_satisfied = False
@@ -119,18 +137,22 @@ def process_single_data(task: List[Any]) -> bool:
         # 检查是否至少有一个成功
         if not successful_params:  # 如果没有找到任何成功的参数组合
             return False  # 直接返回 False，表示失败
+    print("\n\n")
     printlist(successful_params)
+    print("\n\n")
     printlist(successful_obj_pairs)
+    print("\n\n")
     return True  # 所有 pair 都成功
 
 def lessforprintobj(obj):
-    return (obj.pair_id,obj.in_or_out,obj.objparam,obj.obj_ID,obj.bounding_box)
+    return (obj.pair_id,obj.in_or_out,obj.objparam,'ID is '+str(obj.obj_ID),obj.bounding_box)
 
 # printlist = lambda x: print("\n".join(map(str, x)))
 def printlist(x):
     # for l in list:
     #     print(l)
-    lambda x: print("\n".join(map(str, x)))
+    print("\n\n".join(map(str, x)))
+    # lambda x: print("\n".join(map(str, x)))
 
 param_combinations: List[Tuple[bool, bool, bool]] = [
     (False, False, False),
@@ -213,34 +235,50 @@ def objop(obj,op):
 def s_filtered(s) :
     return frozenset(e for e in s if e[0] is not None)
 
+# def extend_obj(obj):
+#     # return (objop(obj,vmirror),objop(obj,cmirror),objop(obj,hmirror),objop(obj,dmirror),objop(obj,rot90),objop(obj,rot180),objop(obj,rot270))
+#     return (vmirror(obj),cmirror(obj),hmirror(obj),dmirror(obj),s_filtered(objop(obj,rot90)),s_filtered(objop(obj,rot180)),s_filtered(objop(obj,rot270) ) )
 def extend_obj(obj):
-    # return (objop(obj,vmirror),objop(obj,cmirror),objop(obj,hmirror),objop(obj,dmirror),objop(obj,rot90),objop(obj,rot180),objop(obj,rot270))
-    return (vmirror(obj),cmirror(obj),hmirror(obj),dmirror(obj),s_filtered(objop(obj,rot90)),s_filtered(objop(obj,rot180)),s_filtered(objop(obj,rot270) ) )
-
-def all_objects_00_c0_from_objs(the_pair_id: int, in_or_out: str, all_objs):
-    return {shift_obj_to_0_0_0(the_pair_id,in_or_out,obj) for obj in all_objs}
-
-
-def shift_obj_to_0_0_0(id: int, in_or_out: str, objbig):
     """
-    将 objbig 平移到 (0,0) ，如果是 ObjInf 类型则同时生成 obj00 和 obj000;
-    如果是纯 set，则直接调用 shift_pure_obj_to_0_0_0.
+    对传入的 obj 分别进行不同的变换，并返回一个包含
+    (操作名称, 变换结果) 的元组，每个操作结果经过 s_filtered 处理（如果需要）。
     """
-    # 假设 ObjInf 类型已定义
-    if isinstance(objbig, ObjInf):
-        orig_obj = objbig.obj  # 从 ObjInf 中提取原始对象集合
-        obj000 = shift_pure_obj_to_0_0_0(orig_obj)
-        obj00  = shift_pure_obj_to_00(orig_obj)
-        return makeshift_ObjInf(objbig, obj00, obj000)
-    elif True :
-        orig_obj = objbig
-        obj000 = shift_pure_obj_to_0_0_0(orig_obj)
-        obj00  = shift_pure_obj_to_00(orig_obj)
-        return makeshift_ObjInf(id,in_or_out, objbig, obj00, obj000)
+    transformations = [
+        ("vmirror", vmirror),
+        ("cmirror", cmirror),
+        ("hmirror", hmirror),
+        ("dmirror", dmirror),
+        ("rot90", lambda o: s_filtered(objop(o, rot90))),
+        ("rot180", lambda o: s_filtered(objop(o, rot180))),
+        ("rot270", lambda o: s_filtered(objop(o, rot270))),
+    ]
+    results = tuple((name, func(obj)) for name, func in transformations)
+    return results
 
-        # return shift_pure_obj_to_0_0_0(objbig)
-    else:
-        raise ValueError(f"shift_obj_to_0_0_0: unsupported argument type {objbig}")
+# def all_objects_00_c0_from_objs(the_pair_id: int, in_or_out: str, all_objs):
+#     return {shift_obj_to_0_0_0(the_pair_id,in_or_out,obj) for obj in all_objs}
+
+
+# def shift_obj_to_0_0_0(id: int, in_or_out: str, objbig):
+#     """
+#     将 objbig 平移到 (0,0) ，如果是 ObjInf 类型则同时生成 obj00 和 obj000;
+#     如果是纯 set，则直接调用 shift_pure_obj_to_0_0_0.
+#     """
+#     # 假设 ObjInf 类型已定义
+#     if isinstance(objbig, ObjInf):
+#         orig_obj = objbig.obj  # 从 ObjInf 中提取原始对象集合
+#         obj000 = shift_pure_obj_to_0_0_0(orig_obj)
+#         obj00  = shift_pure_obj_to_00(orig_obj)
+#         return makeshift_ObjInf(objbig, obj00, obj000)
+#     elif True :
+#         orig_obj = objbig
+#         obj000 = shift_pure_obj_to_0_0_0(orig_obj)
+#         obj00  = shift_pure_obj_to_00(orig_obj)
+#         return makeshift_ObjInf(id,in_or_out, objbig, obj00, obj000)
+
+#         # return shift_pure_obj_to_0_0_0(objbig)
+#     else:
+#         raise ValueError(f"shift_obj_to_0_0_0: unsupported argument type {objbig}")
 
 
 def shift_pure_obj_to_0_0_0(obj):
@@ -287,29 +325,29 @@ def shift_pure_obj_to_00(obj):
 # 创建全局的 managerid 实例，方便其他地方直接使用
 
 
-def makeshift_ObjInf(the_pair_id: int, in_or_out: str, objinf, obj00, obj000):
-    """
-    如果 objinf 已经是 ObjInf 实例，则更新其 obj00、obj000 和 obj_ID；
-    否则，根据传入的参数创建一个新的 ObjInf 对象。
-    """
-    if isinstance(objinf, ObjInf):
-        objinf.obj00 = obj00
-        objinf.obj000 = obj000
-        objinf.obj_ID = managerid.get_id("OBJshape", obj000)
-        return objinf
-    else:
-        # objinf 是 frozenset 或其他类型，这里使用默认值填充未提供的字段，
-        # 请根据实际情况调整默认值。
-        return ObjInf(
-            pair_id=the_pair_id,
-            in_or_out=in_or_out,
-            objparam=(False, False, False),    # 默认值，根据需要调整
-            obj=objinf,                        # 原始对象集合（frozenset）
-            obj_00=obj00,
-            obj_ID=managerid.get_id("OBJshape", obj000),
-            obj_000=obj000,
-            grid_H_W=(0, 0),                   # 默认值
-            bounding_box=(0, 0, 0, 0),           # 默认值
-            color_ranking=tuple()              # 默认空tuple
-        )
+# def makeshift_ObjInf(the_pair_id: int, in_or_out: str, objinf, obj00, obj000):
+#     """
+#     如果 objinf 已经是 ObjInf 实例，则更新其 obj00、obj000 和 obj_ID；
+#     否则，根据传入的参数创建一个新的 ObjInf 对象。
+#     """
+#     if isinstance(objinf, ObjInf):
+#         objinf.obj00 = obj00
+#         objinf.obj000 = obj000
+#         objinf.obj_ID = managerid.get_id("OBJshape", obj000)
+#         return objinf
+#     else:
+#         # objinf 是 frozenset 或其他类型，这里使用默认值填充未提供的字段，
+#         # 请根据实际情况调整默认值。
+#         return ObjInf(
+#             pair_id=the_pair_id,
+#             in_or_out=in_or_out,
+#             objparam=(False, False, False),    # 默认值，根据需要调整
+#             obj=objinf,                        # 原始对象集合（frozenset）
+#             obj_00=obj00,
+#             obj_ID=managerid.get_id("OBJshape", obj000),
+#             obj_000=obj000,
+#             grid_H_W=(0, 0),                   # 默认值
+#             bounding_box=(0, 0, 0, 0),           # 默认值
+#             color_ranking=tuple()              # 默认空tuple
+#         )
 
