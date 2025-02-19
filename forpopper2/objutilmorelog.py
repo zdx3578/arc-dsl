@@ -98,54 +98,70 @@ def process_single_data(task: List[Any]) -> bool:
             successful_obj = []
             for out_obj in out_obj_set:  # 遍历 out_obj_set
                 found_valid_in_outobj = False
+
                 if not found_valid_in_outobj:
-                    for in_obj in input_obj_set:  # 遍历 input_obj_set
+                    for in_obj in input_obj_set:
+                        success_obj_op = []# 遍历 input_obj_set
+                        found_valid_in_obj = False
                         if in_obj.obj == out_obj.obj:  # 如果找到满足条件的 in_obj
+                            found_valid_in_obj = True
                             found_valid_in_outobj = True
-                            successful_obj.append((lessforprintobj(in_obj), lessforprintobj(out_obj),"same"))
-                            successful_obj_pairs.append((lessforprintobj(in_obj), lessforprintobj(out_obj), "same"))
-                            break  # 存在一个满足条件即可退出内层循环
-                if not found_valid_in_outobj:
-                    for in_obj in input_obj_set:
+                            success_obj_op.append("same")
+                            # successful_obj.append((lessforprintobj(in_obj), lessforprintobj(out_obj),"same"))
+                            # successful_obj_pairs.append((lessforprintobj(in_obj), lessforprintobj(out_obj), "same"))
+                            # break  # 存在一个满足条件即可退出内层循环
+                # if not found_valid_in_obj:
+                #     for in_obj in input_obj_set:
                         if in_obj.obj_00 == out_obj.obj_00:  # 如果找到满足条件的 in_obj
+                            found_valid_in_obj = True
                             found_valid_in_outobj = True
-                            successful_obj.append((lessforprintobj(in_obj), lessforprintobj(out_obj),"same00by move"))
-                            successful_obj_pairs.append((lessforprintobj(in_obj), lessforprintobj(out_obj), "same00by move"))
-                            break  # 存在一个满足条件即可退出内层循环
-                if not found_valid_in_outobj:
-                    for in_obj in input_obj_set:
+                            success_obj_op.append("same00_move")
+                            # successful_obj.append((lessforprintobj(in_obj), lessforprintobj(out_obj),"same00by move"))
+                            # successful_obj_pairs.append((lessforprintobj(in_obj), lessforprintobj(out_obj), "same00by move"))
+                            # break  # 存在一个满足条件即可退出内层循环
+                # if not found_valid_in_obj:
+                #     for in_obj in input_obj_set:
 
                         match_op = next((name for name, res in out_obj.extend2 if res == in_obj.obj), None)
                         if match_op is not None:
+                            found_valid_in_obj = True
                             found_valid_in_outobj = True
-                            successful_obj.append((lessforprintobj(in_obj), lessforprintobj(out_obj),"same",match_op))
-                            successful_obj_pairs.append((lessforprintobj(in_obj), lessforprintobj(out_obj), "same",match_op))
-                            break
-                if not found_valid_in_outobj:
-                    for in_obj in input_obj_set:
+                            success_obj_op.append("same_"+str(match_op))
+                            # successful_obj.append((lessforprintobj(in_obj), lessforprintobj(out_obj),"same",match_op))
+                            # successful_obj_pairs.append((lessforprintobj(in_obj), lessforprintobj(out_obj), "same",match_op))
+                            # break
+                # if not found_valid_in_obj:
+                #     for in_obj in input_obj_set:
 
                         if in_obj.obj_000 == out_obj.obj_000:  # 如果找到满足条件的 in_obj
+                            found_valid_in_obj = True
                             found_valid_in_outobj = True
-                            successful_obj.append((lessforprintobj(in_obj), lessforprintobj(out_obj),"same00_0by move nocolor"))
-                            successful_obj_pairs.append((lessforprintobj(in_obj), lessforprintobj(out_obj), "same00_0by move nocolo"))
-                            break  # 存在一个满足条件即可退出内循环
+                            success_obj_op.append("same00_0_move_nocolor")
+                            # successful_obj.append((lessforprintobj(in_obj), lessforprintobj(out_obj),"same00_0by move nocolor"))
+                            # successful_obj_pairs.append((lessforprintobj(in_obj), lessforprintobj(out_obj), "same00_0by move nocolo"))
+                            # break  # 存在一个满足条件即可退出内循环
                         # elif in_obj.obj_000 in out_obj.extend: ##any(x in out_obj.extend for x in in_obj.extend):    # 至少存在一个共同元素
-                if not found_valid_in_outobj:
-                    for in_obj in input_obj_set:
+                # if not found_valid_in_obj:
+                #     for in_obj in input_obj_set:
                         match_op = next((name for name, res in out_obj.extend if res == in_obj.obj_000), None)
                         if match_op is not None:
+                            found_valid_in_obj = True
                             found_valid_in_outobj = True
-                            successful_obj.append((lessforprintobj(in_obj), lessforprintobj(out_obj),"extend00_0",match_op))
-                            successful_obj_pairs.append((lessforprintobj(in_obj), lessforprintobj(out_obj), "extend00_0",match_op))
-                            break
-                if not found_valid_in_outobj:
-                    for in_obj in input_obj_set:
-                        if any(x in out_obj.extend for x in in_obj.extend):    # 至少存在一个共同元素
-                            # in_obj.obj_00 == out_obj.obj_00:
-                            found_valid_in_outobj = True
-                            successful_obj.append((lessforprintobj(in_obj), lessforprintobj(out_obj),"extend222"))
-                            successful_obj_pairs.append((lessforprintobj(in_obj), lessforprintobj(out_obj), "extend222"))
-                            break
+                            success_obj_op.append("same00_0__"+str(match_op))
+
+                        if found_valid_in_obj:
+                            successful_obj.append((lessforprintobj(in_obj), lessforprintobj(out_obj),success_obj_op))
+                            successful_obj_pairs.append((lessforprintobj(in_obj), lessforprintobj(out_obj), success_obj_op))
+                            # break
+                # if not found_valid_in_obj:
+                #     for in_obj in input_obj_set:
+                        # if any(x in out_obj.extend for x in in_obj.extend):    # 至少存在一个共同元素
+                        #     # in_obj.obj_00 == out_obj.obj_00:
+                        #     found_valid_in_obj = True
+                        #     success_obj_op.append("same00_0_extend22")
+                        #     successful_obj.append((lessforprintobj(in_obj), lessforprintobj(out_obj),"extend222"))
+                        #     successful_obj_pairs.append((lessforprintobj(in_obj), lessforprintobj(out_obj), "extend222"))
+                        #     break
                 if not found_valid_in_outobj:  # 如果没有找到满足条件的 in_obj
                     all_out_obj_satisfied = False
                     break  # 跳出中间层循环
