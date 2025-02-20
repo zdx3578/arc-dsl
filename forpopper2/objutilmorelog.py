@@ -352,3 +352,36 @@ def shift_pure_obj_to_00(obj):
         new_set.add(new_obj)
     return new_set
 
+def pretty_print(data, indent=0):
+    """
+    格式化打印嵌套数据结构，每个字段一行，嵌套列表的每个子列表也分行打印。
+    :param data: 要打印的数据（可以是元组、列表、集合、字典等）
+    :param indent: 当前缩进级别（用于递归调用）
+    """
+    # 定义缩进字符串
+    indent_str = " " * (indent * 4)
+
+    if isinstance(data, (tuple, list)):
+        # 如果是元组或列表，逐项打印
+        for item in data:
+            if isinstance(item, (tuple, list)):
+                # 对嵌套的元组或列表递归调用
+                print(indent_str + "[")
+                pretty_print(item, indent + 1)
+                print(indent_str + "]")
+            else:
+                # 打印普通元素
+                print(indent_str + str(item))
+    elif isinstance(data, frozenset):
+        # 如果是 frozenset，转换为列表后递归打印
+        print(indent_str + "frozenset({")
+        pretty_print(sorted(data), indent + 1)  # 排序以便输出更整齐
+        print(indent_str + "})")
+    elif isinstance(data, dict):
+        # 如果是字典，逐键值对打印
+        for key, value in data.items():
+            print(indent_str + f"{key}:")
+            pretty_print(value, indent + 1)
+    else:
+        # 普通数据类型直接打印
+        print(indent_str + str(data))

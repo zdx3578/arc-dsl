@@ -3,9 +3,13 @@ from typing import FrozenSet, Tuple, Union
 from dsl import *
 from dataclasses import dataclass
 from arc_types import *
+import pandas as pd
 
-
-
+columns = [
+    "pair_id", "input_param", "input_id", "input_coords", "input_frozenset",
+    "pair_id", "output_bools", "output_id", "output_coords", "output_frozenset",
+    "label"
+]
 class IdManager:
     def __init__(self):
         # 初始化字段：tables 用于存储各 category 下的值与 ID 映射；next_id 用于记录下一个可用的 ID
@@ -66,9 +70,6 @@ class ObjInf:
     extend2:list
 
 
-
-
-
 managerid = IdManager()
 
 def process_single_data(task: List[Any]) -> bool:
@@ -102,15 +103,15 @@ def process_single_data(task: List[Any]) -> bool:
                     for in_obj in input_obj_set:  # 遍历 input_obj_set
                         if in_obj.obj == out_obj.obj:  # 如果找到满足条件的 in_obj
                             found_valid_in_outobj = True
-                            successful_obj.append((lessforprintobj(in_obj), lessforprintobj(out_obj),"same"))
-                            successful_obj_pairs.append((lessforprintobj(in_obj), lessforprintobj(out_obj), "same"))
+                            successful_obj.append((lessforprintobj(out_obj), lessforprintobj(in_obj),"same"))
+                            successful_obj_pairs.append((lessforprintobj(out_obj), lessforprintobj(in_obj), "same"))
                             break  # 存在一个满足条件即可退出内层循环
                 if not found_valid_in_outobj:
                     for in_obj in input_obj_set:
                         if in_obj.obj_00 == out_obj.obj_00:  # 如果找到满足条件的 in_obj
                             found_valid_in_outobj = True
-                            successful_obj.append((lessforprintobj(in_obj), lessforprintobj(out_obj),"same00by move"))
-                            successful_obj_pairs.append((lessforprintobj(in_obj), lessforprintobj(out_obj), "same00by move"))
+                            successful_obj.append((lessforprintobj(out_obj), lessforprintobj(in_obj),"same00by move"))
+                            successful_obj_pairs.append((lessforprintobj(out_obj), lessforprintobj(in_obj), "same00by move"))
                             break  # 存在一个满足条件即可退出内层循环
                 if not found_valid_in_outobj:
                     for in_obj in input_obj_set:
@@ -118,16 +119,16 @@ def process_single_data(task: List[Any]) -> bool:
                         match_op = next((name for name, res in out_obj.extend2 if res == in_obj.obj), None)
                         if match_op is not None:
                             found_valid_in_outobj = True
-                            successful_obj.append((lessforprintobj(in_obj), lessforprintobj(out_obj),"same",match_op))
-                            successful_obj_pairs.append((lessforprintobj(in_obj), lessforprintobj(out_obj), "same",match_op))
+                            successful_obj.append((lessforprintobj(out_obj), lessforprintobj(in_obj),"same",match_op))
+                            successful_obj_pairs.append((lessforprintobj(out_obj), lessforprintobj(in_obj), "same",match_op))
                             break
                 if not found_valid_in_outobj:
                     for in_obj in input_obj_set:
 
                         if in_obj.obj_000 == out_obj.obj_000:  # 如果找到满足条件的 in_obj
                             found_valid_in_outobj = True
-                            successful_obj.append((lessforprintobj(in_obj), lessforprintobj(out_obj),"same00_0by move nocolor"))
-                            successful_obj_pairs.append((lessforprintobj(in_obj), lessforprintobj(out_obj), "same00_0by move nocolo"))
+                            successful_obj.append((lessforprintobj(out_obj), lessforprintobj(in_obj),"same00_0by move nocolor"))
+                            successful_obj_pairs.append((lessforprintobj(out_obj), lessforprintobj(in_obj), "same00_0by move nocolo"))
                             break  # 存在一个满足条件即可退出内循环
                         # elif in_obj.obj_000 in out_obj.extend: ##any(x in out_obj.extend for x in in_obj.extend):    # 至少存在一个共同元素
                 if not found_valid_in_outobj:
@@ -135,24 +136,24 @@ def process_single_data(task: List[Any]) -> bool:
                         match_op = next((name for name, res in out_obj.extend if res == in_obj.obj_000), None)
                         if match_op is not None:
                             found_valid_in_outobj = True
-                            successful_obj.append((lessforprintobj(in_obj), lessforprintobj(out_obj),"extend00_0",match_op))
-                            successful_obj_pairs.append((lessforprintobj(in_obj), lessforprintobj(out_obj), "extend00_0",match_op))
+                            successful_obj.append((lessforprintobj(out_obj), lessforprintobj(in_obj),"extend00_0",match_op))
+                            successful_obj_pairs.append((lessforprintobj(out_obj), lessforprintobj(in_obj), "extend00_0",match_op))
                             break
                 if not found_valid_in_outobj:
                     for in_obj in input_obj_set:
                         if any(x in out_obj.extend for x in in_obj.extend):    # 至少存在一个共同元素
                             # in_obj.obj_00 == out_obj.obj_00:
                             found_valid_in_outobj = True
-                            successful_obj.append((lessforprintobj(in_obj), lessforprintobj(out_obj),"extend222"))
-                            successful_obj_pairs.append((lessforprintobj(in_obj), lessforprintobj(out_obj), "extend222"))
+                            successful_obj.append((lessforprintobj(out_obj), lessforprintobj(in_obj),"extend222"))
+                            successful_obj_pairs.append((lessforprintobj(out_obj), lessforprintobj(in_obj), "extend222"))
                             break
                 if not found_valid_in_outobj:  # 如果没有找到满足条件的 in_obj
                     all_out_obj_satisfied = False
                     break  # 跳出中间层循环
             # printlist(successful_obj)
             if all_out_obj_satisfied:  # 如果所有 out_obj 都满足
-                # successful_params.append(successful_obj)
-                successful_params.append((" ! ", out_param ,successful_obj))  # 累计成功的参数组合
+                successful_params.append(successful_obj)
+                # successful_params.append((" ! ", out_param ,successful_obj))  # 累计成功的参数组合
 
             # (' ! ', (False, False, False), [ ( (2, 'in', 'inallparam', 'ID is 41', (0, 0, 5, 5)), (2, 'out', (False, False, False), 'ID is 41', (0, 0, 5, 5)), 'same', 'vmirror')   ]    )
             # (' ! ', (False, False, True),
@@ -175,9 +176,11 @@ def process_single_data(task: List[Any]) -> bool:
         # 检查是否至少有一个成功
         if not successful_params:  # 如果没有找到任何成功的参数组合
             return False  # 直接返回 False，表示失败
-    print("\n\n")
-    printlist(successful_params)
-    print("\n\n")
+        print("\n\npretty_print")
+        pretty_print(successful_params)
+        # print("\n\nforprintlist")
+        # forprintlist(successful_params)
+    print("\n\nsuccessful_obj_pairs")
     printlist(successful_obj_pairs)
     print("lenght of successful_obj_pairs: ", len(successful_obj_pairs))
     print("\n\n")
@@ -192,6 +195,11 @@ def printlist(x):
     #     print(l)
     print("\n\n".join(map(str, x)))
     # lambda x: print("\n".join(map(str, x)))
+
+def forprintlist(xx):
+    for x in xx:
+        print("\n\n")
+        print("\n\n".join(map(str, x)))
 
 param_combinations: List[Tuple[bool, bool, bool]] = [
     (False, False, False),
@@ -336,3 +344,45 @@ def shift_pure_obj_to_00(obj):
         new_set.add(new_obj)
     return new_set
 
+
+def pretty_print(data, indent=0):
+    """
+    格式化打印嵌套数据结构，每个字段一行，嵌套列表的每个子列表也分行打印。
+    :param data: 要打印的数据（可以是元组、列表、集合、字典等）
+    :param indent: 当前缩进级别（用于递归调用）
+    """
+    # 定义缩进字符串
+    indent_str = " " * (indent * 4)
+
+    if isinstance(data, (tuple, list)):
+        # 如果是元组或列表
+        if all(isinstance(item, (int, str, (bool,bool,bool),str, tuple, frozenset)) for item in data):
+            # 如果元组或列表的所有元素都是简单类型（如 int, str, bool, tuple, frozenset），直接打印整行
+            for item in data:
+                print(indent_str + str(item))
+        elif all(isinstance(item, (int, str, str,str, tuple, frozenset)) for item in data):
+            # 如果元组或列表的所有元素都是简单类型（如 int, str, bool, tuple, frozenset），直接打印整行
+            for item in data:
+                print(indent_str + str(item))
+        else:
+            # 否则逐项递归打印
+            for item in data:
+                if isinstance(item, (tuple, list)):
+                    print(indent_str + "[")
+                    pretty_print(item, indent + 1)
+                    print(indent_str + "]")
+                else:
+                    pretty_print(item, indent)
+    elif isinstance(data, frozenset):
+        # 如果是 frozenset，转换为列表后递归打印
+        print(indent_str + "frozenset({")
+        pretty_print(sorted(data), indent + 1)  # 排序以便输出更整齐
+        print(indent_str + "})")
+    elif isinstance(data, dict):
+        # 如果是字典，逐键值对打印
+        for key, value in data.items():
+            print(indent_str + f"{key}:")
+            pretty_print(value, indent + 1)
+    else:
+        # 普通数据类型直接打印
+        print(indent_str + str(data))
