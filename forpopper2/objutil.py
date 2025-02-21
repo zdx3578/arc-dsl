@@ -11,9 +11,13 @@ pd.set_option('display.max_colwidth', None)  # 显示完整列内容
 
 
 columns = [
-    "pair_id", "out", "outparam", "output_id", "outbounding_box", "outcolor",
+    "pair_id", "out", "outparam", "output_id",
+    "input_id",
+    "outbounding_box", "outcolor",
     # "pair_id2",
-    "in", "inparam", "input_id", "inbounding_box", "incolor",
+    "in", "inparam",
+    # "input_id",
+    "inbounding_box", "incolor",
     "label"
 ]
 def parsed_pd_data(raw_data):
@@ -207,14 +211,15 @@ def process_single_data(task: List[Any]) -> bool:
         pretty_print(successful_params)
         # print("\n\nforprintlist")
         # forprintlist(successful_params)
-    print("\n\nsuccessful_obj_pairs")
-    printlist(successful_obj_pairs)
+    # print("\n\nsuccessful_obj_pairs")
+    # printlist(successful_obj_pairs)
     print("lenght of successful_obj_pairs: ", len(successful_obj_pairs))
     print("\n\n")
     df = pd.concat([df, pd.DataFrame(temp_pd_data)], ignore_index=True)
     sorted_df = df.sort_values(by=["outparam", "pair_id"], ascending=[True, False])
     print("\n按 outparam 和 pair_id 排序后的 DataFrame:")
     print(sorted_df)
+    # print(df)
 
     return True  # 所有 pair 都成功
 
