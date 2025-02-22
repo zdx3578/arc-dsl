@@ -219,8 +219,8 @@ def process_single_data(task: List[Any]) -> bool:
                     break  # 跳出中间层循环
             # printlist(successful_obj)
             if all_out_obj_satisfied:  # 如果所有 out_obj 都满足
-                successful_params.append((successful_obj,))
-                # successful_params.append((paramid, out_param, len_out_obj_set ,successful_obj))  # 累计成功的参数组合
+                # successful_params.append((successful_obj,))
+                successful_params.append((paramid, out_param, len_out_obj_set ,successful_obj))  # 累计成功的参数组合
 
         # 检查是否至少有一个成功
         if not successful_params:  # 如果没有找到任何成功的参数组合
@@ -236,7 +236,7 @@ def process_single_data(task: List[Any]) -> bool:
     df = pd.concat([df, pd.DataFrame(temp_pd_data)], ignore_index=True)
     sorted_df = df.sort_values(by=["outparam", "pair_id"], ascending=[True, False])
     print("\n按 outparam 和 pair_id 排序后的 DataFrame:")
-    print(sorted_df)
+    # print(sorted_df)
     # print(df)
 
     return True  # 所有 pair 都成功
@@ -399,44 +399,69 @@ def shift_pure_obj_to_00(obj):
     return new_set
 
 
-def pretty_print(data, indent=0):
+
+# def pretty_print(successful_params):
+#     """
+#     打印 successful_params 数据（只展开两层）：
+#       - 第一层：打印 paramid, out_param, len_out_obj_set
+#       - 第二层：逐个打印 successful_obj 中的元素
+#     """
+#     for param in successful_params:
+#         paramid, out_param, len_out_obj_set, successful_obj = param
+#         print(f"paramid: {paramid}")
+#         print(f"out_param: {out_param}")
+#         print(f"len_out_obj_set: {len_out_obj_set}")
+#         print("successful_obj:")
+#         for obj in successful_obj:
+#             print("  ", obj)
+#         print("-" * 40)
+
+
+def pretty_print(dataall, indent=0):
     """
     格式化打印嵌套数据结构，每个字段一行，嵌套列表的每个子列表也分行打印。
-    :param data: 要打印的数据（可以是元组、列表、集合、字典等）
+    :param dataall: 要打印的数据（可以是元组、列表、集合、字典等）
     :param indent: 当前缩进级别（用于递归调用）
     """
     # 定义缩进字符串
     indent_str = " " * (indent * 4)
 
-    if isinstance(data, (tuple, list)):
+    if isinstance(dataall, (tuple, list)):
         # 如果是元组或列表
-        if all(isinstance(item, (int, str, (bool,bool,bool),str, tuple, frozenset)) for item in data):
-            # 如果元组或列表的所有元素都是简单类型（如 int, str, bool, tuple, frozenset），直接打印整行
-            for item in data:
-                print(indent_str + str(item))
-        elif all(isinstance(item, (int, str, str,str, tuple, frozenset)) for item in data):
-            # 如果元组或列表的所有元素都是简单类型（如 int, str, bool, tuple, frozenset），直接打印整行
-            for item in data:
-                print(indent_str + str(item))
-        else:
-            # 否则逐项递归打印
-            for item in data:
-                if isinstance(item, (tuple, list)):
-                    print(indent_str + "[")
-                    pretty_print(item, indent + 1)
-                    print(indent_str + "]")
+        print(indent_str + "[")
+        for data in dataall:
+            if isinstance(data, (tuple, list)) and len(data) == 4:
+                # 如果是包含四个字段的元组 (paramid, out_param, len_out_obj_set, successful_obj)
+                paramid, out_param, len_out_obj_set, successful_obj = data
+                print(indent_str + " " * 4 + f"paramid: {paramid}")
+                print(indent_str + " " * 4 + f"out_param: {out_param}")
+                print(indent_str + " " * 4 + f"len_out_obj_set: {len_out_obj_set}")
+                print(indent_str + " " * 4 + "successful_obj:")
+                # 打印 successful_obj 中的每个元素
+                if isinstance(successful_obj, (tuple, list)):
+                    print(indent_str + " " * 8 + "[")
+                    for item in successful_obj:
+                        # print(indent_str + str(item))
+                        print(indent_str + " " * 12 + str(item))
+                        # pretty_print(item, indent + 3)  # 递归打印 successful_obj 中的每个元素
+                    print(indent_str + " " * 8 + "]")
                 else:
-                    pretty_print(item, indent)
-    elif isinstance(data, frozenset):
+                    print(indent_str + " " * 8 + str(successful_obj))
+            else:
+                # 对其他类型的元组或列表递归打印
+                pretty_print(data, indent + 1)
+        print(indent_str + "]")
+    elif isinstance(dataall, frozenset):
         # 如果是 frozenset，转换为列表后递归打印
         print(indent_str + "frozenset({")
-        pretty_print(sorted(data), indent + 1)  # 排序以便输出更整齐
+        pretty_print(sorted(dataall), indent + 1)  # 排序以便输出更整齐
         print(indent_str + "})")
-    elif isinstance(data, dict):
+    elif isinstance(dataall, dict):
         # 如果是字典，逐键值对打印
-        for key, value in data.items():
+        for key, value in dataall.items():
             print(indent_str + f"{key}:")
             pretty_print(value, indent + 1)
     else:
         # 普通数据类型直接打印
-        print(indent_str + str(data))
+        print(indent_str + str(dataall))
+
