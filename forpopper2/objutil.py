@@ -22,6 +22,24 @@ columns = [
     "inbounding_box", "incolor",
     "label"
 ]
+
+column_widths = {
+    "pair_id": 8,
+    "out": 8,
+    "outparam": 30,
+    "output_id": 10,
+    "input_id": 10,
+    "outbounding_box": 20,
+    "outcolor": 8,
+    "in": 8,
+    "inparam": 12,
+    "inbounding_box": 20,
+    "incolor": 8,
+    "label": 12,
+    "operation": 21,
+    "out_param_count": 15  # 新增列
+}
+
 def parsed_pd_data(raw_data):
     data = {
         "pair_id": raw_data[0][0],
@@ -234,9 +252,43 @@ def process_single_data(task: List[Any]) -> bool:
     print("lenght of successful_obj_pairs: ", len(successful_obj_pairs))
     print("\n\n")
     df = pd.concat([df, pd.DataFrame(temp_pd_data)], ignore_index=True)
-    sorted_df = df.sort_values(by=["outparam", "pair_id"], ascending=[True, False])
+    value_counts = df['outparam'].value_counts()
+
+    sorted_value_counts = value_counts.sort_values(ascending=True)
+    print("\n按 outparam count  排序后的 DataFrame:")
+    print(sorted_value_counts)
+
+    df['out_param_count'] = df['outparam'].map(value_counts)
+    sorted_df = df.sort_values(by=["out_param_count","outparam", "pair_id", "output_id"], ascending=[True, True, True, True])
+
+    # 输出时检测 outparam 的变化并插入空行
+
+    previous_outparam = None
+    output_lines = []
+    header = "".join(f"{col:<{column_widths[col]}}" for col in sorted_df.columns)
+    output_lines.append(header)
+    for _, row in sorted_df.iterrows():
+        current_outparam = row['outparam']
+        # 如果 outparam 发生变化，插入一个空行
+        if previous_outparam is not None and current_outparam != previous_outparam:
+            output_lines.append("")  # 插入空行
+        # 添加当前行到输出
+        # output_line = "\t".join(str(row[col]) for col in sorted_df.columns)
+        formatted_row = []
+        for col in sorted_df.columns:
+            value = str(row[col])
+            width222 = column_widths[col]
+            formatted_row.append(f"{value:<{width222}}")
+        output_lines.append("".join(formatted_row))
+        # 更新 previous_outparam
+        previous_outparam = current_outparam
+    # 打印最终输出
+    print("\n".join(output_lines))
+
+
+
     print("\n按 outparam 和 pair_id 排序后的 DataFrame:")
-    # print(sorted_df)
+    print(sorted_df)
     # print(df)
 
     return True  # 所有 pair 都成功
