@@ -247,7 +247,7 @@ def process_single_data(task: List[Any]) -> bool:
     df['out_param_count'] = df['outparam'].map(value_counts)
     sorted_df = df.sort_values(by=["out_param_count","outparam", "pair_id", "output_id"], ascending=[True, True, True, True])
 
-    column_widths = {col: max(sorted_df[col].astype(str).apply(len).max(), len(col)) + 2 for col in sorted_df.columns}
+    column_widths = {col: max(sorted_df[col].astype(str).apply(len).max(), len(col)) + 3 for col in sorted_df.columns}
 
     # 输出时检测 outparam 的变化并插入空行
     previous_outparam = None
@@ -439,14 +439,14 @@ def shift_pure_obj_to_00(obj):
 
 
 
-def pretty_print(dataall, indent=0):
+def pretty_print(dataall, indent=2):
     """
     格式化打印嵌套数据结构，每个字段一行，嵌套列表的每个子列表也分行打印。
     :param dataall: 要打印的数据（可以是元组、列表、集合、字典等）
     :param indent: 当前缩进级别（用于递归调用）
     """
     # 定义缩进字符串
-    indent_str = " " * (indent * 4)
+    indent_str = " " * (indent * 5)
 
     if isinstance(dataall, (tuple, list)):
         # 如果是元组或列表
