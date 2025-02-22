@@ -23,22 +23,7 @@ columns = [
     "label"
 ]
 
-column_widths = {
-    "pair_id": 8,
-    "out": 8,
-    "outparam": 30,
-    "output_id": 15,
-    "input_id": 15,
-    "outbounding_box": 20,
-    "outcolor": 13,
-    "in": 8,
-    "inparam": 12,
-    "inbounding_box": 20,
-    "incolor": 13,
-    "label": 22,
-    "operation": 21,
-    "out_param_count": 15  # 新增列
-}
+
 
 def parsed_pd_data(raw_data):
     data = {
@@ -262,11 +247,13 @@ def process_single_data(task: List[Any]) -> bool:
     df['out_param_count'] = df['outparam'].map(value_counts)
     sorted_df = df.sort_values(by=["out_param_count","outparam", "pair_id", "output_id"], ascending=[True, True, True, True])
 
-    # 输出时检测 outparam 的变化并插入空行
+    column_widths = {col: max(sorted_df[col].astype(str).apply(len).max(), len(col)) + 2 for col in sorted_df.columns}
 
+    # 输出时检测 outparam 的变化并插入空行
     previous_outparam = None
     output_lines = []
-    header = "".join(f"{col:<{column_widths[col]}}" for col in sorted_df.columns)
+    header = "".join(f"{col:^{column_widths[col]}}" for col in sorted_df.columns)
+
     output_lines.append(header)
     for _, row in sorted_df.iterrows():
         current_outparam = row['outparam']
@@ -279,7 +266,7 @@ def process_single_data(task: List[Any]) -> bool:
         for col in sorted_df.columns:
             value = str(row[col])
             width222 = column_widths[col]
-            formatted_row.append(f"{value:<{width222}}")
+            formatted_row.append(f"{value:^{width222}}")
         output_lines.append("".join(formatted_row))
         # 更新 previous_outparam
         previous_outparam = current_outparam
