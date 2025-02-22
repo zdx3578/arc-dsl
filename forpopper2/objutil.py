@@ -2,6 +2,8 @@ from itertools import product
 from typing import FrozenSet, Tuple, Union
 from dsl import *
 from dataclasses import dataclass
+
+from dsl2 import *
 from arc_types import *
 import pandas as pd
 pd.set_option('display.max_rows', None)      # 显示所有行
@@ -120,15 +122,19 @@ def process_single_data(task: List[Any]) -> bool:
             )
 
         successful_params = []
-        for out_param in param_combinations:  # 遍历 param_combinations
+        for paramid, out_param in enumerate(param_combinations):  # 遍历 param_combinations
             all_out_obj_satisfied = True
 
             out_obj_set = output_objects_with_params(the_pair_id=i,
                                                     in_or_out="out",
                                                     grid=O, bools=out_param, hw=(height_o, width_o) )
-
+            len_out_obj_set = len(out_obj_set)
+            # if_duplicate_out_obj_set =
+            print("\n\nOutput parameters:", out_param, "| Number of output objects:", len_out_obj_set)
             successful_obj = []
             for out_obj in out_obj_set:  # 遍历 out_obj_set
+                # display_diff_matrices(out_obj.obj)
+                # display_matrices(out_obj.obj)
                 found_valid_in_outobj = False
                 if not found_valid_in_outobj:
                     for in_obj in input_obj_set:  # 遍历 input_obj_set
@@ -144,7 +150,7 @@ def process_single_data(task: List[Any]) -> bool:
                     for in_obj in input_obj_set:
                         if in_obj.obj_00 == out_obj.obj_00:  # 如果找到满足条件的 in_obj
                             found_valid_in_outobj = True
-                            tempdata = (lessforprintobj(out_obj), lessforprintobj(in_obj), "same00by move")
+                            tempdata = (lessforprintobj(out_obj), lessforprintobj(in_obj), "same00")
                             successful_obj.append(tempdata)
                             successful_obj_pairs.append(tempdata)
                             parsed_data = parsed_pd_data(tempdata)
@@ -165,9 +171,21 @@ def process_single_data(task: List[Any]) -> bool:
                 if not found_valid_in_outobj:
                     for in_obj in input_obj_set:
 
+                        match_op = next((name for name, res in out_obj.extend2 if res == in_obj.obj_00), None)
+                        if match_op is not None:
+                            found_valid_in_outobj = True
+                            tempdata = (lessforprintobj(out_obj), lessforprintobj(in_obj), "same00",match_op)
+                            successful_obj.append(tempdata)
+                            successful_obj_pairs.append(tempdata)
+                            parsed_data = parsed_pd_data(tempdata)
+                            temp_pd_data.append(parsed_data)
+                            break
+                if not found_valid_in_outobj:
+                    for in_obj in input_obj_set:
+
                         if in_obj.obj_000 == out_obj.obj_000:  # 如果找到满足条件的 in_obj
                             found_valid_in_outobj = True
-                            tempdata = (lessforprintobj(out_obj), lessforprintobj(in_obj), "same00_0by move nocolor")
+                            tempdata = (lessforprintobj(out_obj), lessforprintobj(in_obj), "same00_0")
                             successful_obj.append(tempdata)
                             successful_obj_pairs.append(tempdata)
                             parsed_data = parsed_pd_data(tempdata)
@@ -179,7 +197,7 @@ def process_single_data(task: List[Any]) -> bool:
                         match_op = next((name for name, res in out_obj.extend if res == in_obj.obj_000), None)
                         if match_op is not None:
                             found_valid_in_outobj = True
-                            tempdata = (lessforprintobj(out_obj), lessforprintobj(in_obj), "extend00_0",match_op)
+                            tempdata = (lessforprintobj(out_obj), lessforprintobj(in_obj), "same00_0",match_op)
                             successful_obj.append(tempdata)
                             successful_obj_pairs.append(tempdata)
                             parsed_data = parsed_pd_data(tempdata)
@@ -201,8 +219,8 @@ def process_single_data(task: List[Any]) -> bool:
                     break  # 跳出中间层循环
             # printlist(successful_obj)
             if all_out_obj_satisfied:  # 如果所有 out_obj 都满足
-                successful_params.append(successful_obj)
-                # successful_params.append((" ! ", out_param ,successful_obj))  # 累计成功的参数组合
+                successful_params.append((successful_obj,))
+                # successful_params.append((paramid, out_param, len_out_obj_set ,successful_obj))  # 累计成功的参数组合
 
         # 检查是否至少有一个成功
         if not successful_params:  # 如果没有找到任何成功的参数组合
@@ -245,10 +263,10 @@ param_combinations: List[Tuple[bool, bool, bool]] = [
     (False, False, True),
     (False, True, False),
     (False, True, True),
-    (True, False, False),
-    (True, False, True),
     (True, True, False),
-    (True, True, True)
+    (True, True, True),
+    (True, False, False),
+    (True, False, True)
 ]
 
 

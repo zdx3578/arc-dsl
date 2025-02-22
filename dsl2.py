@@ -1131,7 +1131,7 @@ def display_diff_matrices(diff1: List[Tuple[int, Tuple[int, int]]],
     combined_diff = {}
 
     # 合并所有不同元素的位置
-    for value, pos in diff1 + (diff2 if diff2 else []) + (diff3 if diff3 else []):
+    for value, pos in list(diff1) + (diff2 if diff2 else []) + (diff3 if diff3 else []):
         if value not in combined_diff:
             combined_diff[value] = []
         combined_diff[value].append(pos)
@@ -1154,10 +1154,48 @@ def display_diff_matrices(diff1: List[Tuple[int, Tuple[int, int]]],
         for row in matrix:
             print("|" + " ".join(row) + "|")
         print("+" + "-" * (max_col * 2 - 1) + "+")
-        print("\n" + "-"*20 + "\n")
+        # print("\n" + "-"*20 + "\n")
 
 
+def display_matrices(diff1: List[Tuple[int, Tuple[int, int]]],
+                          diff2: Optional[List[Tuple[int, Tuple[int, int]]]] = None,
+                          diff3: Optional[List[Tuple[int, Tuple[int, int]]]] = None):
+    """
+    展示所有不同元素位置的二维矩阵，不按数值分组，所有内容一次性打印到一起。
 
+    参数:
+    - diff1: 必填，包含不同元素及其位置的集合。
+    - diff2, diff3: 可选，额外的不同元素及其位置集合。
+    """
+    # 合并所有不同元素的位置
+    combined = list(diff1) + (diff2 if diff2 else []) + (diff3 if diff3 else [])
+
+    if not combined:
+        print("无差异")
+        return
+
+    # 确定矩阵的大小（所有位置的最大行和最大列）
+    max_row = max(pos[0] for _, pos in combined) + 1
+    max_col = max(pos[1] for _, pos in combined) + 1
+
+    # 初始化空矩阵，初始内容为空格
+    matrix = [[' ' for _ in range(max_col)] for _ in range(max_row)]
+
+    # 填充矩阵：如果同一位置有多个值，则用逗号连接显示
+    for value, (row, col) in combined:
+        current = matrix[row][col]
+        text = str(value)
+        if current == ' ':
+            matrix[row][col] = text
+        else:
+            matrix[row][col] = current + ',' + text
+
+    # 打印带有边框的矩阵
+    border = "+" + "-" * (max_col * 2 - 1) + "+"
+    print(border)
+    for row in matrix:
+        print("|" + " ".join(row) + "|")
+    print(border)
 
 
 def is_subgrid(task, flags):
