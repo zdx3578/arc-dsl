@@ -27,15 +27,15 @@ column_widths = {
     "pair_id": 8,
     "out": 8,
     "outparam": 30,
-    "output_id": 10,
-    "input_id": 10,
+    "output_id": 15,
+    "input_id": 15,
     "outbounding_box": 20,
-    "outcolor": 8,
+    "outcolor": 13,
     "in": 8,
     "inparam": 12,
     "inbounding_box": 20,
-    "incolor": 8,
-    "label": 12,
+    "incolor": 13,
+    "label": 22,
     "operation": 21,
     "out_param_count": 15  # 新增列
 }
@@ -148,7 +148,7 @@ def process_single_data(task: List[Any]) -> bool:
                                                     grid=O, bools=out_param, hw=(height_o, width_o) )
             len_out_obj_set = len(out_obj_set)
             # if_duplicate_out_obj_set =
-            print("\n\nOutput parameters:", out_param, "| Number of output objects:", len_out_obj_set)
+            # print("\n\nOutput parameters:", out_param, "| Number of output objects:", len_out_obj_set)
             successful_obj = []
             for out_obj in out_obj_set:  # 遍历 out_obj_set
                 # display_diff_matrices(out_obj.obj)
@@ -160,7 +160,7 @@ def process_single_data(task: List[Any]) -> bool:
                             found_valid_in_outobj = True
                             tempdata = (lessforprintobj(out_obj), lessforprintobj(in_obj), "same")
                             successful_obj.append(tempdata)
-                            successful_obj_pairs.append(tempdata)
+                            #successful_obj_pairs.append(tempdata)
                             parsed_data = parsed_pd_data(tempdata)
                             temp_pd_data.append(parsed_data)
                             break  # 存在一个满足条件即可退出内层循环
@@ -170,7 +170,7 @@ def process_single_data(task: List[Any]) -> bool:
                             found_valid_in_outobj = True
                             tempdata = (lessforprintobj(out_obj), lessforprintobj(in_obj), "same00")
                             successful_obj.append(tempdata)
-                            successful_obj_pairs.append(tempdata)
+                            #successful_obj_pairs.append(tempdata)
                             parsed_data = parsed_pd_data(tempdata)
                             temp_pd_data.append(parsed_data)
                             break  # 存在一个满足条件即可退出内层循环
@@ -182,7 +182,7 @@ def process_single_data(task: List[Any]) -> bool:
                             found_valid_in_outobj = True
                             tempdata = (lessforprintobj(out_obj), lessforprintobj(in_obj), "same",match_op)
                             successful_obj.append(tempdata)
-                            successful_obj_pairs.append(tempdata)
+                            #successful_obj_pairs.append(tempdata)
                             parsed_data = parsed_pd_data(tempdata)
                             temp_pd_data.append(parsed_data)
                             break
@@ -194,7 +194,7 @@ def process_single_data(task: List[Any]) -> bool:
                             found_valid_in_outobj = True
                             tempdata = (lessforprintobj(out_obj), lessforprintobj(in_obj), "same00",match_op)
                             successful_obj.append(tempdata)
-                            successful_obj_pairs.append(tempdata)
+                            #successful_obj_pairs.append(tempdata)
                             parsed_data = parsed_pd_data(tempdata)
                             temp_pd_data.append(parsed_data)
                             break
@@ -205,7 +205,7 @@ def process_single_data(task: List[Any]) -> bool:
                             found_valid_in_outobj = True
                             tempdata = (lessforprintobj(out_obj), lessforprintobj(in_obj), "same00_0")
                             successful_obj.append(tempdata)
-                            successful_obj_pairs.append(tempdata)
+                            #successful_obj_pairs.append(tempdata)
                             parsed_data = parsed_pd_data(tempdata)
                             temp_pd_data.append(parsed_data)
                             break  # 存在一个满足条件即可退出内循环
@@ -217,7 +217,7 @@ def process_single_data(task: List[Any]) -> bool:
                             found_valid_in_outobj = True
                             tempdata = (lessforprintobj(out_obj), lessforprintobj(in_obj), "same00_0",match_op)
                             successful_obj.append(tempdata)
-                            successful_obj_pairs.append(tempdata)
+                            #successful_obj_pairs.append(tempdata)
                             parsed_data = parsed_pd_data(tempdata)
                             temp_pd_data.append(parsed_data)
                             break
@@ -228,7 +228,7 @@ def process_single_data(task: List[Any]) -> bool:
                             found_valid_in_outobj = True
                             tempdata = (lessforprintobj(out_obj), lessforprintobj(in_obj), "extend222")
                             successful_obj.append(tempdata)
-                            successful_obj_pairs.append(tempdata)
+                            #successful_obj_pairs.append(tempdata)
                             parsed_data = parsed_pd_data(tempdata)
                             temp_pd_data.append(parsed_data)
                             break
@@ -249,14 +249,15 @@ def process_single_data(task: List[Any]) -> bool:
         # forprintlist(successful_params)
     # print("\n\nsuccessful_obj_pairs")
     # printlist(successful_obj_pairs)
-    print("lenght of successful_obj_pairs: ", len(successful_obj_pairs))
+    # print("lenght of successful_obj_pairs: ", len(successful_obj_pairs))
     print("\n\n")
     df = pd.concat([df, pd.DataFrame(temp_pd_data)], ignore_index=True)
     value_counts = df['outparam'].value_counts()
 
-    sorted_value_counts = value_counts.sort_values(ascending=True)
-    print("\n按 outparam count  排序后的 DataFrame:")
-    print(sorted_value_counts)
+    # sorted_value_counts = value_counts.sort_values(ascending=True)
+    # print("\n按 outparam count  排序后的 DataFrame:")
+    # print(sorted_value_counts)
+    # print("\n")
 
     df['out_param_count'] = df['outparam'].map(value_counts)
     sorted_df = df.sort_values(by=["out_param_count","outparam", "pair_id", "output_id"], ascending=[True, True, True, True])
@@ -287,8 +288,8 @@ def process_single_data(task: List[Any]) -> bool:
 
 
 
-    print("\n按 outparam 和 pair_id 排序后的 DataFrame:")
-    print(sorted_df)
+    # print("\n按 outparam 和 pair_id 排序后的 DataFrame:")
+    # print(sorted_df)
     # print(df)
 
     return True  # 所有 pair 都成功
@@ -369,7 +370,7 @@ def all_objects_from_grid(the_pair_id: int, in_or_out: str, grid: Grid, hw:list)
         new_obj = ObjInf(
             pair_id=the_pair_id,
             in_or_out=in_or_out,
-            objparam="inallparam",  # 使用传入的布尔值
+            objparam="all",  # 使用传入的布尔值
             obj=obj,         # 原始对象
             obj_00=obj00,
             obj_000=obj000,
@@ -390,9 +391,7 @@ def objop(obj,op):
 def s_filtered(s) :
     return frozenset(e for e in s if e[0] is not None)
 
-# def extend_obj(obj):
-#     # return (objop(obj,vmirror),objop(obj,cmirror),objop(obj,hmirror),objop(obj,dmirror),objop(obj,rot90),objop(obj,rot180),objop(obj,rot270))
-#     return (vmirror(obj),cmirror(obj),hmirror(obj),dmirror(obj),s_filtered(objop(obj,rot90)),s_filtered(objop(obj,rot180)),s_filtered(objop(obj,rot270) ) )
+
 def extend_obj(obj):
     """
     对传入的 obj 分别进行不同的变换，并返回一个包含
@@ -451,22 +450,6 @@ def shift_pure_obj_to_00(obj):
     return new_set
 
 
-
-# def pretty_print(successful_params):
-#     """
-#     打印 successful_params 数据（只展开两层）：
-#       - 第一层：打印 paramid, out_param, len_out_obj_set
-#       - 第二层：逐个打印 successful_obj 中的元素
-#     """
-#     for param in successful_params:
-#         paramid, out_param, len_out_obj_set, successful_obj = param
-#         print(f"paramid: {paramid}")
-#         print(f"out_param: {out_param}")
-#         print(f"len_out_obj_set: {len_out_obj_set}")
-#         print("successful_obj:")
-#         for obj in successful_obj:
-#             print("  ", obj)
-#         print("-" * 40)
 
 
 def pretty_print(dataall, indent=0):
