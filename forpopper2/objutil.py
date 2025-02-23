@@ -10,6 +10,7 @@ pd.set_option('display.max_rows', None)      # 显示所有行
 pd.set_option('display.max_columns', None)   # 显示所有列
 pd.set_option('display.width', 1000)         # 调整输出宽度
 pd.set_option('display.max_colwidth', None)  # 显示完整列内容
+from copy import deepcopy
 
 
 columns = [
@@ -22,7 +23,16 @@ columns = [
     "inbounding_box", "incolor",
     "label"
 ]
-
+columnsoutout = [
+    "pair_id", "out", "outparam", "output_id",
+    # "input_id",
+    "outbounding_box", "outcolor",
+    # "pair_id2",
+    # "in", "inparam",
+    # "input_id",
+    # "inbounding_box", "incolor",
+    # "label"
+]
 
 
 def parsed_pd_data(raw_data):
@@ -41,6 +51,27 @@ def parsed_pd_data(raw_data):
         "inbounding_box": raw_data[1][4],
         "incolor": next(iter(raw_data[1][5])),
         "label": raw_data[2]
+    }
+    if len(raw_data) > 3 and raw_data[3]:
+        data["operation"] = raw_data[3]
+    return data
+
+def parsed_pd_outout_data(raw_data):
+    data = {
+        "pair_id": raw_data[0][0],
+        "out": raw_data[0][1],
+        "outparam": raw_data[0][2],
+        "output_id": int(raw_data[0][3].split()[-1]),
+        "outbounding_box": raw_data[0][4],
+        "outcolor": next(iter(raw_data[0][5])),
+        # "pair_id_2": raw_data[1][0],
+        # "pair_id_2": raw_data[0][0],
+        # "in": raw_data[1][1],
+        # "inparam": str(raw_data[1][2]),
+        # "input_id": int(raw_data[1][3].split()[-1]),
+        # "inbounding_box": raw_data[1][4],
+        # "incolor": next(iter(raw_data[1][5])),
+        # "label": raw_data[2]
     }
     if len(raw_data) > 3 and raw_data[3]:
         data["operation"] = raw_data[3]
@@ -104,9 +135,54 @@ class ObjInf:
     extend:list
     extend2:list
 
+
 managerid = IdManager()
 
+
 def process_single_data(task: List[Any]) -> bool:
+    # task1 = deepcopy(task)
+    # task2 = deepcopy(task)
+    # print(task1)
+    analysys_in_out_pattern(task)
+    # print("\n -----------------------------------------------------9999999999 ")
+    # print(task2)
+    analysys_out_out_pattern(task)
+
+
+
+def analysys_out_out_pattern(task) -> bool:
+    train_data = task['train']
+    test_data = task['test']
+    successful_obj_pairs = []
+    df = pd.DataFrame(columns=columnsoutout)
+    temp_pd_data = []
+
+    for i, data_pair in enumerate(train_data):
+        I = input_grid = data_pair['input']
+        O = output_grid = data_pair.get('output')  # 使用 get 方法获取 output，默认为 None
+        height_i, width_i = height(I), width(I)    # 输入对象的高度和宽度
+        height_o, width_o = height(O), width(O)
+
+        for paramid, out_param in enumerate(param_combinations):  # 遍历 param_combinations
+            out_obj_set = output_objects_with_params(the_pair_id=i,in_or_out="out",grid=O, bools=out_param, hw=(height_o, width_o) )
+            in_obj_set = output_objects_with_params(the_pair_id=i,in_or_out="in",grid=I, bools=out_param, hw=(height_i, width_i) )
+            len_out_obj_set = len(out_obj_set),
+            len_in_obj_set = len(in_obj_set)
+            print("\n\nOutput parameters:", out_param, "| Number of output objects:", len_out_obj_set)
+            for out_obj in out_obj_set:  # 遍历 out_obj_set
+                parsed_data = parsed_pd_outout_data(out_obj)
+                temp_pd_data.append(parsed_data)
+            for in_obj in in_obj_set:  # 遍历 out_obj_set
+                parsed_data = parsed_pd_outout_data(in_obj)
+                temp_pd_data.append(parsed_data)
+            df = pd.concat([df, pd.DataFrame(temp_pd_data)], ignore_index=True)
+    print(df)
+    # foranalysisshow(df)
+
+
+
+def analysys_in_out_pattern(task: List[Any]) -> bool:
+    ##首先是input  output模式分析
     train_data = task['train']
     test_data = task['test']
     successful_obj_pairs = []
@@ -133,7 +209,13 @@ def process_single_data(task: List[Any]) -> bool:
                                                     grid=O, bools=out_param, hw=(height_o, width_o) )
             len_out_obj_set = len(out_obj_set)
             # if_duplicate_out_obj_set =
-            # print("\n\nOutput parameters:", out_param, "| Number of output objects:", len_out_obj_set)
+            print("\n\nOutput parameters:", out_param, "| Number of output objects:", len_out_obj_set)
+            #调试  print 查看
+            # for out_obj in out_obj_set:  # 遍历 out_obj_set
+            #     # display_diff_matrices(out_obj.obj)
+            #     display_matrices(out_obj.obj)
+
+
             successful_obj = []
             for out_obj in out_obj_set:  # 遍历 out_obj_set
                 # display_diff_matrices(out_obj.obj)
@@ -229,7 +311,8 @@ def process_single_data(task: List[Any]) -> bool:
         if not successful_params:  # 如果没有找到任何成功的参数组合
             return False  # 直接返回 False，表示失败
         print("\n\npretty_print")
-        pretty_print(successful_params)
+        # pretty_print(successful_params)
+
         # print("\n\nforprintlist")
         # forprintlist(successful_params)
     # print("\n\nsuccessful_obj_pairs")
@@ -237,12 +320,20 @@ def process_single_data(task: List[Any]) -> bool:
     # print("lenght of successful_obj_pairs: ", len(successful_obj_pairs))
     print("\n\n")
     df = pd.concat([df, pd.DataFrame(temp_pd_data)], ignore_index=True)
+    foranalysisshow(df)
+
+    # print("\n按 outparam 和 pair_id 排序后的 DataFrame:")
+    # print(sorted_df)
+    # print(df)
+    return True  # 所有 pair 都成功
+
+def foranalysisshow(df):
     value_counts = df['outparam'].value_counts()
 
-    # sorted_value_counts = value_counts.sort_values(ascending=True)
-    # print("\n按 outparam count  排序后的 DataFrame:")
-    # print(sorted_value_counts)
-    # print("\n")
+    sorted_value_counts = value_counts.sort_values(ascending=True)
+    print("\n按 outparam count  排序后的 DataFrame:")
+    print(sorted_value_counts)
+    print("\n")
 
     df['out_param_count'] = df['outparam'].map(value_counts)
     sorted_df = df.sort_values(by=["out_param_count","outparam", "pair_id", "output_id"], ascending=[True, True, True, True])
@@ -260,6 +351,7 @@ def process_single_data(task: List[Any]) -> bool:
         # 如果 outparam 发生变化，插入一个空行
         if previous_outparam is not None and current_outparam != previous_outparam:
             output_lines.append("")  # 插入空行
+            print("\n".join(output_lines))
         # 添加当前行到输出
         # output_line = "\t".join(str(row[col]) for col in sorted_df.columns)
         formatted_row = []
@@ -273,13 +365,6 @@ def process_single_data(task: List[Any]) -> bool:
     # 打印最终输出
     print("\n".join(output_lines))
 
-
-
-    # print("\n按 outparam 和 pair_id 排序后的 DataFrame:")
-    # print(sorted_df)
-    # print(df)
-
-    return True  # 所有 pair 都成功
 
 def lessforprintobj(obj):
     return (obj.pair_id,obj.in_or_out,obj.objparam,'ID is '+str(obj.obj_ID),obj.bounding_box, obj.color_ranking)
@@ -296,8 +381,6 @@ def forprintlist(xx):
         print("\n\n")
         print("\n\n".join(map(str, x)))
 
-
-
 param_combinations: List[Tuple[bool, bool, bool]] = [
     (False, False, False),
     (False, False, True),
@@ -308,8 +391,6 @@ param_combinations: List[Tuple[bool, bool, bool]] = [
     (True, False, False),
     (True, False, True)
 ]
-
-
 
 def objects_with_params(the_pair_id: int, in_or_out: str, grid: Grid, bools: Tuple[bool, bool, bool],hw:list) -> Objects:
     b1, b2, b3 = bools  # 解包布尔值
