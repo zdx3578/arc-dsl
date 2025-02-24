@@ -23,7 +23,7 @@ columns = [
     "inbounding_box", "incolor",
     "label"
 ]
-columnsoutout = [
+columns_outout = [
     "pair_id", "out", "outparam", "output_id",
     # "input_id",
     "outbounding_box", "outcolor",
@@ -61,7 +61,8 @@ def parsed_pd_outout_data(raw_data):
         "pair_id": raw_data[0][0],
         "out": raw_data[0][1],
         "outparam": raw_data[0][2],
-        "output_id": int(raw_data[0][3].split()[-1]),
+        # "output_id": int(raw_data[0][3].split()[-1]),
+        "output_id": (raw_data[0][3].split()[-1]),
         "outbounding_box": raw_data[0][4],
         "outcolor": next(iter(raw_data[0][5])),
         # "pair_id_2": raw_data[1][0],
@@ -140,12 +141,7 @@ managerid = IdManager()
 
 
 def process_single_data(task: List[Any]) -> bool:
-    # task1 = deepcopy(task)
-    # task2 = deepcopy(task)
-    # print(task1)
-    analysys_in_out_pattern(task)
-    # print("\n -----------------------------------------------------9999999999 ")
-    # print(task2)
+    # analysys_in_out_pattern(task)
     analysys_out_out_pattern(task)
 
 
@@ -154,29 +150,59 @@ def analysys_out_out_pattern(task) -> bool:
     train_data = task['train']
     test_data = task['test']
     successful_obj_pairs = []
-    df = pd.DataFrame(columns=columnsoutout)
+    df = pd.DataFrame(columns=columns_outout)
     temp_pd_data = []
 
-    for i, data_pair in enumerate(train_data):
-        I = input_grid = data_pair['input']
-        O = output_grid = data_pair.get('output')  # 使用 get 方法获取 output，默认为 None
-        height_i, width_i = height(I), width(I)    # 输入对象的高度和宽度
-        height_o, width_o = height(O), width(O)
+    for paramid, out_param in enumerate(param_combinations):  # 遍历 param_combinations
+        obj_id_sets=[]
+        for i, data_pair in enumerate(train_data):
+            I = input_grid = data_pair['input']
+            O = output_grid = data_pair.get('output')  # 使用 get 方法获取 output，默认为 None
+            height_i, width_i = height(I), width(I)    # 输入对象的高度和宽度
+            height_o, width_o = height(O), width(O)
 
-        for paramid, out_param in enumerate(param_combinations):  # 遍历 param_combinations
             out_obj_set = output_objects_with_params(the_pair_id=i,in_or_out="out",grid=O, bools=out_param, hw=(height_o, width_o) )
             in_obj_set = output_objects_with_params(the_pair_id=i,in_or_out="in",grid=I, bools=out_param, hw=(height_i, width_i) )
             len_out_obj_set = len(out_obj_set),
             len_in_obj_set = len(in_obj_set)
-            print("\n\nOutput parameters:", out_param, "| Number of output objects:", len_out_obj_set)
+            print(paramid, "\nOutput parameters:", out_param,"pair id:", i , "| Number of output objects:", len_out_obj_set)
+            #out_obj_set是 objinfo 集合，现在要」统计 out_obj_set里面 的每个 obj的obj_ID out_obj_set[0].obj_ID，统计不同id的个数并打印，然后还要循环处理其他的 out_obj_set2并统计 out_obj_set2里面 的每个 obj的obj_ID out_obj_set[0].obj_ID，并比较 统计后的结果id 是否一样，也就是可以忽略 个数差异，但是 id 种类需要一样，请给个实现程序
+            # obj_id_set = [count_obj_ids(obj_set) for obj_set in out_obj_set]
+            # for i, obj_id in enumerate(obj_id_set):
+            #     print(f"out_obj_set[{i}] 的 obj_ID 种类:", obj_id)
             for out_obj in out_obj_set:  # 遍历 out_obj_set
-                parsed_data = parsed_pd_outout_data(out_obj)
-                temp_pd_data.append(parsed_data)
-            for in_obj in in_obj_set:  # 遍历 out_obj_set
-                parsed_data = parsed_pd_outout_data(in_obj)
-                temp_pd_data.append(parsed_data)
-            df = pd.concat([df, pd.DataFrame(temp_pd_data)], ignore_index=True)
-    print(df)
+                display_matrices(out_obj.obj)
+
+            # obj_id_sets += obj_id_set
+            obj_ids = count_obj_ids(out_obj_set)
+            print(f"\nout_obj_set 的 obj_ID 种类:\n {obj_ids}")
+            obj_id_sets.append(obj_ids)
+        all_same = all(obj_id_sets[0] == obj_id_set for obj_id_set in obj_id_sets)
+        if all_same:
+            print("\n\n相同 所有 out_obj_set 的 obj_ID 种类相同！")
+        else:
+            print("\n\n不同 存在不同的 obj_ID 种类！")
+            print("\n\n\n")
+
+
+
+
+
+            # for out_obj in out_obj_set:  # 遍历 out_obj_set
+            #     display_matrices(out_obj.obj)
+
+            #     parsed_data = parsed_pd_outout_data((lessforprintobj(out_obj),))
+                # temp_pd_data.append(parsed_data)
+            # for in_obj in in_obj_set:  # 遍历 out_obj_set
+            #     parsed_data = parsed_pd_outout_data((lessforprintobj(in_obj),))
+            #     temp_pd_data.append(parsed_data)
+            # print("len temp pd data",len(temp_pd_data ))
+
+            # df = pd.concat([df, pd.DataFrame(temp_pd_data)], ignore_index=True)
+    #     print(df)
+    #     show_count_col(df,"output_id" )
+
+    # print(df)
     # foranalysisshow(df)
 
 
@@ -320,6 +346,7 @@ def analysys_in_out_pattern(task: List[Any]) -> bool:
     # print("lenght of successful_obj_pairs: ", len(successful_obj_pairs))
     print("\n\n")
     df = pd.concat([df, pd.DataFrame(temp_pd_data)], ignore_index=True)
+    print(df)
     foranalysisshow(df)
 
     # print("\n按 outparam 和 pair_id 排序后的 DataFrame:")
@@ -327,11 +354,21 @@ def analysys_in_out_pattern(task: List[Any]) -> bool:
     # print(df)
     return True  # 所有 pair 都成功
 
+def count_obj_ids(obj_set):
+    return set(obj.obj_ID for obj in obj_set)
+
+def show_count_col(df,col_id):
+            value_counts = df[col_id].value_counts()
+            sorted_value_counts = value_counts.sort_values(ascending=True)
+            print("\n","count_number  排序:  ",col_id)
+            print(sorted_value_counts)
+            print("\n")
+
 def foranalysisshow(df):
     value_counts = df['outparam'].value_counts()
 
     sorted_value_counts = value_counts.sort_values(ascending=True)
-    print("\n按 outparam count  排序后的 DataFrame:")
+    print("\n按 outparam count  排序:")
     print(sorted_value_counts)
     print("\n")
 
@@ -412,8 +449,8 @@ def output_objects_with_params(the_pair_id: int, in_or_out: str, grid: Grid, boo
             obj=obj,         # 原始对象
             obj_00=obj00,
             obj_000=obj000,
-            obj_ID=managerid.get_id("OBJshape", obj000),
-
+            # obj_ID=managerid.get_id("OBJshape", obj000),
+            obj_ID="objID : "+str(managerid.get_id("OBJshape", obj000)),
             grid_H_W=hw,            # 默认值，根据需要调整
             bounding_box=(uppermost(obj), leftmost(obj), lowermost(obj), rightmost(obj)),   # 默认值，根据需要调整
             color_ranking=palette(obj)    ,   # 默认空 tuple
@@ -442,7 +479,8 @@ def all_objects_from_grid(the_pair_id: int, in_or_out: str, grid: Grid, hw:list)
             obj=obj,         # 原始对象
             obj_00=obj00,
             obj_000=obj000,
-            obj_ID=managerid.get_id("OBJshape", obj000),
+            # obj_ID=managerid.get_id("OBJshape", obj000),
+            obj_ID="obj-ID:"+str(managerid.get_id("OBJshape", obj000)),
             grid_H_W=hw,            # 默认值，根据需要调整
             bounding_box=(uppermost(obj), leftmost(obj), lowermost(obj), rightmost(obj)),    # 默认值，根据需要调整
             color_ranking=palette(obj)    ,     # 默认空 tuple

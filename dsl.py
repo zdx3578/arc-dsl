@@ -876,8 +876,8 @@ def objects(
 ) -> Objects:
     """ Extract objects occurring on the grid """
     # 计算背景颜色
-    bg = mostcolor(grid) if without_bg else None
-
+    # bg = mostcolor(grid) if without_bg else None
+    bg = 0
     objs = set()  # 存放所有对象
     occupied = set()  # 记录已经属于某个对象的单元格
     h, w = len(grid), len(grid[0])  # 网格的高度和宽度
