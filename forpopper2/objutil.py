@@ -27,11 +27,6 @@ columns_outout = [
     "pair_id", "out", "outparam", "output_id",
     # "input_id",
     "outbounding_box", "outcolor",
-    # "pair_id2",
-    # "in", "inparam",
-    # "input_id",
-    # "inbounding_box", "incolor",
-    # "label"
 ]
 
 
@@ -65,14 +60,6 @@ def parsed_pd_outout_data(raw_data):
         "output_id": (raw_data[0][3].split()[-1]),
         "outbounding_box": raw_data[0][4],
         "outcolor": next(iter(raw_data[0][5])),
-        # "pair_id_2": raw_data[1][0],
-        # "pair_id_2": raw_data[0][0],
-        # "in": raw_data[1][1],
-        # "inparam": str(raw_data[1][2]),
-        # "input_id": int(raw_data[1][3].split()[-1]),
-        # "inbounding_box": raw_data[1][4],
-        # "incolor": next(iter(raw_data[1][5])),
-        # "label": raw_data[2]
     }
     if len(raw_data) > 3 and raw_data[3]:
         data["operation"] = raw_data[3]
@@ -166,14 +153,8 @@ def analysys_out_out_pattern(task) -> bool:
             len_out_obj_set = len(out_obj_set),
             len_in_obj_set = len(in_obj_set)
             print(paramid, "\nOutput parameters:", out_param,"pair id:", i , "| Number of output objects:", len_out_obj_set)
-            #out_obj_set是 objinfo 集合，现在要」统计 out_obj_set里面 的每个 obj的obj_ID out_obj_set[0].obj_ID，统计不同id的个数并打印，然后还要循环处理其他的 out_obj_set2并统计 out_obj_set2里面 的每个 obj的obj_ID out_obj_set[0].obj_ID，并比较 统计后的结果id 是否一样，也就是可以忽略 个数差异，但是 id 种类需要一样，请给个实现程序
-            # obj_id_set = [count_obj_ids(obj_set) for obj_set in out_obj_set]
-            # for i, obj_id in enumerate(obj_id_set):
-            #     print(f"out_obj_set[{i}] 的 obj_ID 种类:", obj_id)
-            for out_obj in out_obj_set:  # 遍历 out_obj_set
-                display_matrices(out_obj.obj)
-
-            # obj_id_sets += obj_id_set
+            # for out_obj in out_obj_set:  # 遍历 out_obj_set
+            #     display_matrices(out_obj.obj)
             obj_ids = count_obj_ids(out_obj_set)
             print(f"\nout_obj_set 的 obj_ID 种类:\n {obj_ids}")
             obj_id_sets.append(obj_ids)
@@ -185,25 +166,6 @@ def analysys_out_out_pattern(task) -> bool:
             print("\n\n\n")
 
 
-
-
-
-            # for out_obj in out_obj_set:  # 遍历 out_obj_set
-            #     display_matrices(out_obj.obj)
-
-            #     parsed_data = parsed_pd_outout_data((lessforprintobj(out_obj),))
-                # temp_pd_data.append(parsed_data)
-            # for in_obj in in_obj_set:  # 遍历 out_obj_set
-            #     parsed_data = parsed_pd_outout_data((lessforprintobj(in_obj),))
-            #     temp_pd_data.append(parsed_data)
-            # print("len temp pd data",len(temp_pd_data ))
-
-            # df = pd.concat([df, pd.DataFrame(temp_pd_data)], ignore_index=True)
-    #     print(df)
-    #     show_count_col(df,"output_id" )
-
-    # print(df)
-    # foranalysisshow(df)
 
 
 
