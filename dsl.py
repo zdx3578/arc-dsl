@@ -613,7 +613,11 @@ def mostcolor(
 ) -> Integer:
     """ most common color """
     values = [v for r in element for v in r] if isinstance(element, tuple) else [v for v, _ in element]
-    return max(set(values), key=values.count)
+    if 0 in values:
+        return 0
+    else:
+        return max(set(values), key=values.count)
+
 mostcolorcount = mostcolor
 
 def leastcolor(
@@ -876,8 +880,16 @@ def objects(
 ) -> Objects:
     """ Extract objects occurring on the grid """
     # 计算背景颜色
-    # bg = mostcolor(grid) if without_bg else None
-    bg = 0
+    bg = mostcolor(grid) if without_bg else None
+    # bg = 0 if without_bg else None
+    # if without_bg:
+    #     if color has  0:
+    #         bg = 0
+    #     else:
+    #         bg = mostcolor(grid)
+    # else:
+    #     bg=None
+
     objs = set()  # 存放所有对象
     occupied = set()  # 记录已经属于某个对象的单元格
     h, w = len(grid), len(grid[0])  # 网格的高度和宽度

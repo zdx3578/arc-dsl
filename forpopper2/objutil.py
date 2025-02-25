@@ -35,14 +35,14 @@ def parsed_pd_data(raw_data):
         "pair_id": raw_data[0][0],
         "out": raw_data[0][1],
         "outparam": raw_data[0][2],
-        "output_id": int(raw_data[0][3].split()[-1]),
+        "output_id": (raw_data[0][3].split()[-1]),
         "outbounding_box": raw_data[0][4],
         "outcolor": next(iter(raw_data[0][5])),
         # "pair_id_2": raw_data[1][0],
         # "pair_id_2": raw_data[0][0],
         "in": raw_data[1][1],
         "inparam": str(raw_data[1][2]),
-        "input_id": int(raw_data[1][3].split()[-1]),
+        "input_id": (raw_data[1][3].split()[-1]),
         "inbounding_box": raw_data[1][4],
         "incolor": next(iter(raw_data[1][5])),
         "label": raw_data[2]
@@ -128,7 +128,7 @@ managerid = IdManager()
 
 
 def process_single_data(task: List[Any]) -> bool:
-    # analysys_in_out_pattern(task)
+    analysys_in_out_pattern(task)
     analysys_out_out_pattern(task)
 
 
@@ -152,15 +152,16 @@ def analysys_out_out_pattern(task) -> bool:
             in_obj_set = output_objects_with_params(the_pair_id=i,in_or_out="in",grid=I, bools=out_param, hw=(height_i, width_i) )
             len_out_obj_set = len(out_obj_set),
             len_in_obj_set = len(in_obj_set)
-            print(paramid, "\nOutput parameters:", out_param,"pair id:", i , "| Number of output objects:", len_out_obj_set)
+            print(paramid, "\nOutput parameters:", out_param,"pair id : ",  i  , "  | Number of output objects:", len_out_obj_set)
             # for out_obj in out_obj_set:  # 遍历 out_obj_set
             #     display_matrices(out_obj.obj)
-            obj_ids = count_obj_ids(out_obj_set)
+            obj_ids = count_obj_ids(out_obj_set,"obj_ID")
             print(f"\nout_obj_set 的 obj_ID 种类:\n {obj_ids}")
             obj_id_sets.append(obj_ids)
         all_same = all(obj_id_sets[0] == obj_id_set for obj_id_set in obj_id_sets)
         if all_same:
-            print("\n\n相同 所有 out_obj_set 的 obj_ID 种类相同！")
+            print("\n\n相同 所有 out_obj_set 的 obj_ID 种类相同！paramid : ", paramid, "Output parameters:", out_param)
+            print("\n\n\n")
         else:
             print("\n\n不同 存在不同的 obj_ID 种类！")
             print("\n\n\n")
@@ -309,15 +310,20 @@ def analysys_in_out_pattern(task: List[Any]) -> bool:
     print("\n\n")
     df = pd.concat([df, pd.DataFrame(temp_pd_data)], ignore_index=True)
     print(df)
-    foranalysisshow(df)
+    # foranalysisshow(df)
+    for_do_rule(df, test_data)
 
     # print("\n按 outparam 和 pair_id 排序后的 DataFrame:")
     # print(sorted_df)
     # print(df)
     return True  # 所有 pair 都成功
 
-def count_obj_ids(obj_set):
-    return set(obj.obj_ID for obj in obj_set)
+
+
+# def count_obj_ids(obj_set,colum):
+#     return set(obj.colum for obj in obj_set)
+def count_obj_ids(obj_set, attr_name):
+    return {getattr(obj, attr_name) for obj in obj_set}
 
 def show_count_col(df,col_id):
             value_counts = df[col_id].value_counts()
@@ -325,6 +331,44 @@ def show_count_col(df,col_id):
             print("\n","count_number  排序:  ",col_id)
             print(sorted_value_counts)
             print("\n")
+
+def for_do_rule(df, test_data):
+    value_counts = df['outparam'].value_counts()
+
+    sorted_value_counts = value_counts.sort_values(ascending=True)
+    print("\n按 outparam count  排序:")
+    print(sorted_value_counts)
+    print("\n")
+
+    df['out_param_count'] = df['outparam'].map(value_counts)
+    sorted_df = df.sort_values(by=["out_param_count","outparam", "pair_id", "output_id"], ascending=[True, True, True, True])
+
+    column_widths = {col: max(sorted_df[col].astype(str).apply(len).max(), len(col)) + 3 for col in sorted_df.columns}
+
+    # 输出时检测 outparam 的变化并插入空行
+    previous_outparam = None
+    output_lines = []
+    header = "".join(f"{col:^{column_widths[col]}}" for col in sorted_df.columns)
+
+    output_lines.append(header)
+    for _, row in sorted_df.iterrows():
+        current_outparam = row['outparam']
+        # 如果 outparam 发生变化，插入一个空行
+        if previous_outparam is not None and current_outparam != previous_outparam:
+            output_lines.append("")  # 插入空行
+            print("\n".join(output_lines))
+        # 添加当前行到输出
+        # output_line = "\t".join(str(row[col]) for col in sorted_df.columns)
+        formatted_row = []
+        for col in sorted_df.columns:
+            value = str(row[col])
+            width222 = column_widths[col]
+            formatted_row.append(f"{value:^{width222}}")
+        output_lines.append("".join(formatted_row))
+        # 更新 previous_outparam
+        previous_outparam = current_outparam
+    # 打印最终输出
+    print("\n".join(output_lines))
 
 def foranalysisshow(df):
     value_counts = df['outparam'].value_counts()
