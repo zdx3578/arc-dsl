@@ -128,7 +128,9 @@ managerid = IdManager()
 
 
 def process_single_data(task: List[Any]) -> bool:
+    analysys_in_out_pattern_000(task)
     analysys_in_out_pattern(task)
+
     analysys_out_out_pattern(task)
 
 
@@ -142,35 +144,150 @@ def analysys_out_out_pattern(task) -> bool:
 
     for paramid, out_param in enumerate(param_combinations):  # 遍历 param_combinations
         obj_id_sets=[]
-        for i, data_pair in enumerate(train_data):
+        for pair_id, data_pair in enumerate(train_data):
             I = input_grid = data_pair['input']
             O = output_grid = data_pair.get('output')  # 使用 get 方法获取 output，默认为 None
             height_i, width_i = height(I), width(I)    # 输入对象的高度和宽度
             height_o, width_o = height(O), width(O)
 
-            out_obj_set = output_objects_with_params(the_pair_id=i,in_or_out="out",grid=O, bools=out_param, hw=(height_o, width_o) )
-            in_obj_set = output_objects_with_params(the_pair_id=i,in_or_out="in",grid=I, bools=out_param, hw=(height_i, width_i) )
+            out_obj_set = output_objects_with_params(the_pair_id=pair_id,in_or_out="out",grid=O, bools=out_param, hw=(height_o, width_o) )
+            in_obj_set = output_objects_with_params(the_pair_id=pair_id,in_or_out="in",grid=I, bools=out_param, hw=(height_i, width_i) )
             len_out_obj_set = len(out_obj_set),
             len_in_obj_set = len(in_obj_set)
-            print(paramid, "\nOutput parameters:", out_param,"pair id : ",  i  , "  | Number of output objects:", len_out_obj_set)
+            print(paramid, "\nOutput parameters:", out_param,"pair id : ",  pair_id  , "  | Number of output objects:", len_out_obj_set)
             # for out_obj in out_obj_set:  # 遍历 out_obj_set
             #     display_matrices(out_obj.obj)
             obj_ids = count_obj_ids(out_obj_set,"obj_ID")
             print(f"\nout_obj_set 的 obj_ID 种类:\n {obj_ids}")
             obj_id_sets.append(obj_ids)
-        all_same = all(obj_id_sets[0] == obj_id_set for obj_id_set in obj_id_sets)
+        ###!!! todo same id or same position?? same 00 or same 000
+        all_same = all(obj_id_sets[0] == obj_id_set for obj_id_set in obj_id_sets) and (len(obj_id_sets[0]) > 1)
         if all_same:
-            print("\n\n相同 所有 out_obj_set 的 obj_ID 种类相同！paramid : ", paramid, "Output parameters:", out_param)
+            print("\n\n相同 > 1  所有 out_obj_set 的 obj_ID 种类相同！paramid : ", paramid, "Output parameters:", out_param)
             print("\n\n\n")
         else:
-            print("\n\n不同 存在不同的 obj_ID 种类！")
+            print("\n\n不同 or = 1 存在不同的 obj_ID 种类！")
             print("\n\n\n")
 
 
+def analysys_in_out_pattern(task) -> bool:
+    # Initialize accumulators
+    train_data = task['train']
+
+    successful_params = []
+    all_transformations = {}
+
+    # Iterate through parameter combinations and accumulate successes
+    for paramid, out_param in enumerate(param_combinations):
+
+        # Check all training pairs with current parameter
+        param_works_for_all_pairs = True
+        success_pairs = []
+        for pair_id, data_pair in enumerate(train_data):
+            I = input_grid = data_pair['input']
+            O = output_grid = data_pair.get('output')
+            height_i, width_i = height(I), width(I)    # 输入对象的高度和宽度
+            height_o, width_o = height(O), width(O)
+
+            out_obj_set = output_objects_with_params(the_pair_id=pair_id,in_or_out="out",grid=O, bools=out_param, hw=(height_o, width_o) )
+            input_obj_set = output_objects_with_params(the_pair_id=pair_id,in_or_out="in",grid=I, bools=out_param, hw=(height_i, width_i) )
+
+            successful_obj = []
+            # Check that all output objects are solvable with current parameter
+            all_out_obj_satisfied = True
+            for out_obj in out_obj_set:  # 遍历 out_obj_set
+                # display_diff_matrices(out_obj.obj)
+                # display_matrices(out_obj.obj)
+                found_valid_in_outobj = False
+                if not found_valid_in_outobj:
+                    for in_obj in input_obj_set:  # 遍历 input_obj_set
+                        if in_obj.obj == out_obj.obj:  # 如果找到满足条件的 in_obj
+                            found_valid_in_outobj = True
+                            tempdata = (lessforprintobj(out_obj), lessforprintobj(in_obj), "same")
+                            successful_obj.append(tempdata)
+
+                            break  # 存在一个满足条件即可退出内层循环
+                if not found_valid_in_outobj:
+                    for in_obj in input_obj_set:
+                        if in_obj.obj_00 == out_obj.obj_00:  # 如果找到满足条件的 in_obj
+                            found_valid_in_outobj = True
+                            tempdata = (lessforprintobj(out_obj), lessforprintobj(in_obj), "same00")
+                            successful_obj.append(tempdata)
+
+                            break  # 存在一个满足条件即可退出内层循环
+                if not found_valid_in_outobj:
+                    for in_obj in input_obj_set:
+
+                        match_op = next((name for name, res in out_obj.extend2 if res == in_obj.obj), None)
+                        if match_op is not None:
+                            found_valid_in_outobj = True
+                            tempdata = (lessforprintobj(out_obj), lessforprintobj(in_obj), "same",match_op)
+                            successful_obj.append(tempdata)
+
+                            break
+                if not found_valid_in_outobj:
+                    for in_obj in input_obj_set:
+
+                        match_op = next((name for name, res in out_obj.extend2 if res == in_obj.obj_00), None)
+                        if match_op is not None:
+                            found_valid_in_outobj = True
+                            tempdata = (lessforprintobj(out_obj), lessforprintobj(in_obj), "same00",match_op)
+                            successful_obj.append(tempdata)
+
+                            break
+                if not found_valid_in_outobj:
+                    for in_obj in input_obj_set:
+
+                        if in_obj.obj_000 == out_obj.obj_000:  # 如果找到满足条件的 in_obj
+                            found_valid_in_outobj = True
+                            tempdata = (lessforprintobj(out_obj), lessforprintobj(in_obj), "same00_0")
+                            successful_obj.append(tempdata)
+
+                            break  # 存在一个满足条件即可退出内循环
+                        # elif in_obj.obj_000 in out_obj.extend: ##any(x in out_obj.extend for x in in_obj.extend):    # 至少存在一个共同元素
+                if not found_valid_in_outobj:
+                    for in_obj in input_obj_set:
+                        match_op = next((name for name, res in out_obj.extend if res == in_obj.obj_000), None)
+                        if match_op is not None:
+                            found_valid_in_outobj = True
+                            tempdata = (lessforprintobj(out_obj), lessforprintobj(in_obj), "same00_0",match_op)
+                            successful_obj.append(tempdata)
+
+                            break
+                if not found_valid_in_outobj:
+                    for in_obj in input_obj_set:
+                        if any(x in out_obj.extend for x in in_obj.extend):    # 至少存在一个共同元素
+                            # in_obj.obj_00 == out_obj.obj_00:
+                            found_valid_in_outobj = True
+                            tempdata = (lessforprintobj(out_obj), lessforprintobj(in_obj), "extend222")
+                            successful_obj.append(tempdata)
+
+                            break
+                if not found_valid_in_outobj:  # 如果没有找到满足条件的 in_obj
+                    all_out_obj_satisfied = False
+                    break  # 跳出中间层循环
+            success_pairs.append((paramid, out_param, pair_id ,successful_obj))
+
+            if not all_out_obj_satisfied:
+                # Some output object was unsolvable - current parameter doesn't work for all pairs
+                param_works_for_all_pairs = False
+                break  # Move to the next parameter combination
+
+        if param_works_for_all_pairs:
+            # Current parameter worked for all training pairs - accumulate it
+            successful_params.append((paramid, out_param,success_pairs))
+    print("\n\npretty_print")
+    pretty_print(successful_params)
+
+
+    # Construct the final result
+    success = len(successful_params) > 0
+    return
 
 
 
-def analysys_in_out_pattern(task: List[Any]) -> bool:
+
+def analysys_in_out_pattern_000(task: List[Any]) -> bool:
     ##首先是input  output模式分析
     train_data = task['train']
     test_data = task['test']
@@ -178,14 +295,14 @@ def analysys_in_out_pattern(task: List[Any]) -> bool:
     df = pd.DataFrame(columns=columns)
     temp_pd_data = []
 
-    for i, data_pair in enumerate(train_data):
+    for pair_id, data_pair in enumerate(train_data):
         I = input_grid = data_pair['input']
         O = output_grid = data_pair.get('output')  # 使用 get 方法获取 output，默认为 None
 
         height_i, width_i = height(I), width(I)    # 输入对象的高度和宽度
         height_o, width_o = height(O), width(O)
 
-        input_obj_set = all_objects_from_grid(                the_pair_id=i,
+        input_obj_set = all_objects_from_grid(                the_pair_id=pair_id,
                 in_or_out="in",                grid=I, hw=(height_i, width_i) #,height_o, width_o)
             )
 
@@ -193,7 +310,7 @@ def analysys_in_out_pattern(task: List[Any]) -> bool:
         for paramid, out_param in enumerate(param_combinations):  # 遍历 param_combinations
             all_out_obj_satisfied = True
 
-            out_obj_set = output_objects_with_params(the_pair_id=i,
+            out_obj_set = output_objects_with_params(the_pair_id=pair_id,
                                                     in_or_out="out",
                                                     grid=O, bools=out_param, hw=(height_o, width_o) )
             len_out_obj_set = len(out_obj_set)
@@ -203,8 +320,6 @@ def analysys_in_out_pattern(task: List[Any]) -> bool:
             # for out_obj in out_obj_set:  # 遍历 out_obj_set
             #     # display_diff_matrices(out_obj.obj)
             #     display_matrices(out_obj.obj)
-
-
             successful_obj = []
             for out_obj in out_obj_set:  # 遍历 out_obj_set
                 # display_diff_matrices(out_obj.obj)
@@ -300,7 +415,7 @@ def analysys_in_out_pattern(task: List[Any]) -> bool:
         if not successful_params:  # 如果没有找到任何成功的参数组合
             return False  # 直接返回 False，表示失败
         print("\n\npretty_print")
-        # pretty_print(successful_params)
+        pretty_print(successful_params)
 
         # print("\n\nforprintlist")
         # forprintlist(successful_params)
@@ -311,7 +426,7 @@ def analysys_in_out_pattern(task: List[Any]) -> bool:
     df = pd.concat([df, pd.DataFrame(temp_pd_data)], ignore_index=True)
     print(df)
     # foranalysisshow(df)
-    for_do_rule(df, test_data)
+    # do_rule(df, task)
 
     # print("\n按 outparam 和 pair_id 排序后的 DataFrame:")
     # print(sorted_df)
@@ -332,7 +447,10 @@ def show_count_col(df,col_id):
             print(sorted_value_counts)
             print("\n")
 
-def for_do_rule(df, test_data):
+def do_rule(df, task):
+    train_data = task['train']
+    test_data = task['test']
+
     value_counts = df['outparam'].value_counts()
 
     sorted_value_counts = value_counts.sort_values(ascending=True)
@@ -356,7 +474,9 @@ def for_do_rule(df, test_data):
         # 如果 outparam 发生变化，插入一个空行
         if previous_outparam is not None and current_outparam != previous_outparam:
             output_lines.append("")  # 插入空行
-            print("\n".join(output_lines))
+            # print("\n".join(output_lines))
+            # if output_lines.count piarid > len(train_data):
+
         # 添加当前行到输出
         # output_line = "\t".join(str(row[col]) for col in sorted_df.columns)
         formatted_row = []
@@ -394,9 +514,9 @@ def foranalysisshow(df):
         # 如果 outparam 发生变化，插入一个空行
         if previous_outparam is not None and current_outparam != previous_outparam:
             output_lines.append("")  # 插入空行
-            print("\n".join(output_lines))
+            # print("\n".join(output_lines))
         # 添加当前行到输出
-        # output_line = "\t".join(str(row[col]) for col in sorted_df.columns)
+
         formatted_row = []
         for col in sorted_df.columns:
             value = str(row[col])
@@ -410,7 +530,7 @@ def foranalysisshow(df):
 
 
 def lessforprintobj(obj):
-    return (obj.pair_id,obj.in_or_out,obj.objparam,'ID is '+str(obj.obj_ID),obj.bounding_box, obj.color_ranking)
+    return (obj.pair_id,obj.in_or_out,obj.objparam,obj.obj_ID,obj.bounding_box, obj.color_ranking)
 
 # printlist = lambda x: print("\n".join(map(str, x)))
 def printlist(x):
@@ -449,7 +569,7 @@ def output_objects_with_params(the_pair_id: int, in_or_out: str, grid: Grid, boo
         obj00 = shift_pure_obj_to_00(obj)
         obj000 = shift_pure_obj_to_0_0_0(obj)
         new_obj = ObjInf(
-            pair_id=the_pair_id,
+            pair_id='pair_id: '+str(the_pair_id),
             in_or_out=in_or_out,
             objparam=bools,  # 使用传入的布尔值
             obj=obj,         # 原始对象
@@ -479,7 +599,7 @@ def all_objects_from_grid(the_pair_id: int, in_or_out: str, grid: Grid, hw:list)
         obj00 = shift_pure_obj_to_00(obj)
         obj000 = shift_pure_obj_to_0_0_0(obj)
         new_obj = ObjInf(
-            pair_id=the_pair_id,
+            pair_id='pair_id: '+str(the_pair_id),
             in_or_out=in_or_out,
             objparam="all",  # 使用传入的布尔值
             obj=obj,         # 原始对象
@@ -564,14 +684,14 @@ def shift_pure_obj_to_00(obj):
 
 
 
-def pretty_print(dataall, indent=2):
+def pretty_print(dataall, indent=1):
     """
     格式化打印嵌套数据结构，每个字段一行，嵌套列表的每个子列表也分行打印。
     :param dataall: 要打印的数据（可以是元组、列表、集合、字典等）
     :param indent: 当前缩进级别（用于递归调用）
     """
     # 定义缩进字符串
-    indent_str = " " * (indent * 5)
+    indent_str = " " * (indent * 3)
 
     if isinstance(dataall, (tuple, list)):
         # 如果是元组或列表
