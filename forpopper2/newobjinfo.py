@@ -72,14 +72,15 @@ def test_solvers_correctness(data, solvers_module):
     print(now)
     print()
     print()
-    # for i, key in enumerate(solvers, start=1):
-    for i, key in enumerate(['a8c38be5',"8403a5d5"]):
+    for i, key in enumerate(solvers, start=1):
+    # for i, key in enumerate(['a8c38be5',"8403a5d5"]):
 
         # key = 'a8c38be5'      # in out
         # key =    "b775ac94"
         # key = 'c3f564a4'
         # key = '8403a5d5'  # out out
         # key = "68b16354"  hmirror
+        key = '7468f01a'
 
         print(i, key)
         task = {}
@@ -88,7 +89,7 @@ def test_solvers_correctness(data, solvers_module):
         try:
             # solver = getattr(solvers_module, f'solve_{key}')
             # preparetask(task)
-            if n_correct % 46 == 0:
+            if n_correct % 2 == 0:
                 print()
             if process_single_data(task) :
 

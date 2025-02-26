@@ -127,7 +127,9 @@ managerid = IdManager()
 
 def process_single_data(task: List[Any]) -> bool:
     # analysys_in_out_pattern_000(task)
-    analysys_in_out_pattern(task)
+    result = analysys_in_out_pattern(task)
+    if result:
+        return True
 
     analysys_out_out_pattern(task)
 
@@ -175,6 +177,8 @@ def analysys_in_out_pattern(task) -> bool:
     successful_params = []
     all_transformations = {}
 
+
+
     # Iterate through parameter combinations and accumulate successes
     for paramid, out_param in enumerate(param_combinations):
 
@@ -188,7 +192,9 @@ def analysys_in_out_pattern(task) -> bool:
             height_o, width_o = height(O), width(O)
 
             out_obj_set = output_objects_with_params(the_pair_id=pair_id,in_or_out="out",grid=O, bools=out_param, hw=(height_o, width_o) )
-            input_obj_set = output_objects_with_params(the_pair_id=pair_id,in_or_out="in",grid=I, bools=out_param, hw=(height_i, width_i) )
+            # input_obj_set = output_objects_with_params(the_pair_id=pair_id,in_or_out="in",grid=I, bools=out_param, hw=(height_i, width_i) )
+
+            input_obj_set = input_obj_setsparam = all_objects_from_grid2parma(the_pair_id=pair_id,in_or_out="in",grid=I, hw=(height_i, width_i))
 
             successful_obj = []
             # Check that all output objects are solvable with current parameter
@@ -277,17 +283,19 @@ def analysys_in_out_pattern(task) -> bool:
             # Current parameter worked for all training pairs - accumulate it
             # successful_params.append((paramid, out_param,success_pairs))
             successful_params.append((success_pairs))
-            print("\n\n pretty_print")
+            print(" - -  pretty_print")
             pretty_print(success_pairs)
-            find_rule(success_pairs,task)
+            result = find_rule(success_pairs,task)
+            if result:
+                return True
 
 
-    print("\n\n all  all  pretty_print")
-    pretty_print(successful_params)
+    # print("\n\n all  all  pretty_print")
+    # pretty_print(successful_params)
 
 
     # Construct the final result
-    success = len(successful_params) > 0
+    # success = len(successful_params) > 0
     return
 
 
@@ -460,21 +468,17 @@ def find_rule(df,task):
     for d in df:
         obj_pairs = d[3]
         if all(obj_pairs[0][2] == obj_pair[2] for obj_pair in obj_pairs) :
-            print("all obj one pair have the same -- obj:",obj_pairs[0][2])
+            # print("all obj one pair have the same -- obj:",obj_pairs[0][2])
             op1 = obj_pairs[0][2] if op1 is None else op1
             if op1 != obj_pairs[0][2]:
                 found_mismatch = True
                 op1, op2 = None, None
                 break # 说明不是同一个 obj op
-            # if op1 == "same00" or op1 =="same00_0":
-            #     if not  ( len(obj_pairs[0]) > 3 and obj_pairs[0][3] ) :        #same00_0       NaN     没有操作肯定不对
-            #         op1, op2 = None, None
-            #         found_mismatch = True
-            #         break # 说明不是同一个 obj op
+
 
             if  ( len(obj_pairs[0]) > 3 and obj_pairs[0][3] ) :
                 if all(obj_pairs[0][3] == obj_pair[3] for obj_pair in obj_pairs) :
-                    print("all obj one pair have the same -- operator:",obj_pairs[0][3])
+                    # print("all obj one pair have the same -- operator:",obj_pairs[0][3])
                     op2 = obj_pairs[0][3] if op2 is None else op2
                     if op2 != obj_pairs[0][3]:
                         op1, op2 = None, None
@@ -485,9 +489,9 @@ def find_rule(df,task):
     if op1 and op2 :
         print("op1: ",op1)
         print("op2: ",op2)
-        print("found rule")
-        apply_rule(op1,op2,task, df)
-        return op1, op2
+        # print("found rule")
+        return apply_rule(op1,op2,task, df)
+        # return op1, op2
 
 
 def apply_rule(op1,op2,task,df):
@@ -498,30 +502,46 @@ def apply_rule(op1,op2,task,df):
     background  = None
     height_widht = None
     if all(df[0][3][0][0][6] == obj_pairs[3][0][0][6] for obj_pairs in df) :
-        print(f"all obj one pair have the background: {df[0][3][0][0][6]}, test var {df[0][3][0][0][2]}, {df[0][3][0][0][3]}")
+        # print(f"all obj one pair have the background: {df[0][3][0][0][6]}, test var {df[0][3][0][0][2]}, {df[0][3][0][0][3]}")
         background = df[0][3][0][0][6]
     if all(df[0][3][0][0][7] == obj_pairs[3][0][0][7] for obj_pairs in df) :
-        print(f"all obj one pair have the height_widht: {df[0][3][0][0][7]}, test var {df[0][3][-1][0][4]}, {df[0][3][-1][0][3]}")
+        # print(f"all obj one pair have the height_widht: {df[0][3][0][0][7]}, test var {df[0][3][-1][0][4]}, {df[0][3][-1][0][3]}")
         height_widht = df[0][3][0][0][7]
 
     if op1 == "same00" and op2 == "move":
-        print("apply_rule: same00 and move")
+        # print("apply_rule: same00 and move")
         # 确认移动位置在多pair之间是相同的，相同id 相同的位置 ，假设 df[0][3] 是一个列表或可迭代对象，且每个元素需要匹配其内部的某个位置，例如 [0][0][3]
         if all(
             all(d[3][i][0][3] == df[0][3][i][0][3] for d in df) and all(d[3][i][0][3] == df[0][3][i][0][3] for d in df)
             for i in range(len(df[0][3]))
             ):
-            print(f"\n\n！相同对象在相同的位置 ,test var: {df[0][3][0][0][2]}")
-        input_obj_set = output_objects_with_params(the_pair_id="test",in_or_out="in",grid=I, bools=df[0][3][0][0][2], hw=("test") )
-        moved_objs = move_in_obj_based_on_out(df,input_obj_set)
-        output = paint_objects(moved_objs, background,height_widht)
-        # display_matrices(output)
-        assert output == O
-        print("                   !   !                     apply_rule: same00 and move ok ")
+            # print(f"\n\n！相同对象在相同的位置 ,test var: {df[0][3][0][0][2]}")
+            input_obj_set = output_objects_with_params(the_pair_id="test",in_or_out="in",grid=I, bools=df[0][3][0][0][2], hw=("test") )
+            moved_objs = move_in_obj_based_on_out(df,input_obj_set)
+            output = paint_objects(moved_objs, background,height_widht)
+            # display_matrices(output)
+            assert output == O
+            print("                   !  ok  !                     apply_rule: same00 and move ok ")
+            if output == O:
+                return True
+        # return  ( assert output == O)
+    if op1 == "same00" and op2 == "move":
 
 
     elif op1 == "samecolorpos" :
-        print
+        # print(" - -  pretty_print")
+        pretty_print(df)
+        print(op2)
+        # function = findfunction(op2    getattr(solvers_module, f'solve_{key}')
+        op2fun = globals()[op2]
+        out = op2fun(I)
+        assert out == O
+        if out == O:
+                return True
+
+
+
+
     elif op1 == "same00_0" and op2 == "move+color":
         print("apply_rule: same00_0 and move+color")
 
@@ -545,14 +565,14 @@ def move_in_obj_based_on_out(successful_obj,new_in_obj_list):
         out_obj_info, in_obj_info, op_type, op = pair
         # if in_obj_info[3] == out_obj_info[3]:
         bbox = out_obj_info[4]  # bounding_box
-        print(f"匹配到 obj_ID {in_obj_info[3]}，使用 bounding_box {bbox} 来移动 in_obj.obj")
+        # print(f"匹配到 obj_ID {in_obj_info[3]}，使用 bounding_box {bbox} 来移动 in_obj.obj")
 
         in_obj = get_in_obj_by_id(in_obj_info[3],new_in_obj_list)
         if in_obj is not None:
             in_obj.obj = shift_object_by_bbox(in_obj.obj,in_obj.bounding_box, bbox)
-            print(f"in_obj.obj 已经移动到新位置: {in_obj.obj}")
+            # print(f"in_obj.obj 已经移动到新位置: {in_obj.obj}")
             moved_objs.append(in_obj.obj)
-    pretty_print(moved_objs)
+    # pretty_print(moved_objs)
     return moved_objs
 
 def shift_object_by_bbox(obj_set,bbox0, bbox):
@@ -658,6 +678,8 @@ def objects_with_params(the_pair_id: int, in_or_out: str, grid: Grid, bools: Tup
     b1, b2, b3 = bools  # 解包布尔值
     return objects( grid, b1, b2, b3)
 
+
+
 def output_objects_with_params(the_pair_id: int, in_or_out: str, grid: Grid, bools: Tuple[bool, bool, bool],hw:list) -> Objects:
     b1, b2, b3 = bools  # 解包布尔值
     # return objects( grid, b1, b2, b3)
@@ -685,6 +707,13 @@ def output_objects_with_params(the_pair_id: int, in_or_out: str, grid: Grid, boo
             extend2 = extend_obj(obj)
         )
         result.append(new_obj)
+    return result
+
+def all_objects_from_grid2parma(the_pair_id: int, in_or_out: str, grid: Grid, hw: list):
+    result = []  # 初始化空列表存放所有结果
+    for params in param_combinations:
+        objs = output_objects_with_params(the_pair_id, in_or_out, grid, params, hw)
+        result.extend(objs)  # 将当前参数组合的结果加入 result
     return result
 
 # all_objects_from_grid 函数
@@ -795,6 +824,7 @@ def pretty_print(dataall, indent=1):
     """
     # 定义缩进字符串
     indent_str = " " * (indent * 3)
+    print("\n\npretty_print function")
 
     if isinstance(dataall, (tuple, list)):
         # 如果是元组或列表
