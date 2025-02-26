@@ -264,7 +264,8 @@ def analysys_in_out_pattern(task) -> bool:
                 if not found_valid_in_outobj:  # 如果没有找到满足条件的 in_obj
                     all_out_obj_satisfied = False
                     break  # 跳出中间层循环
-            success_pairs.append((paramid, out_param, pair_id ,successful_obj))
+            sorted_successful_obj = sorted(    successful_obj,    key=lambda x: int(x[0][3].split(' : ')[1])  )
+            success_pairs.append((paramid, out_param, pair_id ,sorted_successful_obj))
             # success_pairs.append((successful_obj,))
 
             if not all_out_obj_satisfied:
@@ -459,7 +460,7 @@ def find_rule(df,task):
     for d in df:
         obj_pairs = d[3]
         if all(obj_pairs[0][2] == obj_pair[2] for obj_pair in obj_pairs) :
-            print("all obj one pair have the same obj:",obj_pairs[0][2])
+            print("all obj one pair have the same -- obj:",obj_pairs[0][2])
             op1 = obj_pairs[0][2] if op1 is None else op1
             if op1 != obj_pairs[0][2]:
                 found_mismatch = True
@@ -473,7 +474,7 @@ def find_rule(df,task):
 
             if  ( len(obj_pairs[0]) > 3 and obj_pairs[0][3] ) :
                 if all(obj_pairs[0][3] == obj_pair[3] for obj_pair in obj_pairs) :
-                    print("all obj one pair have the same operator:",obj_pairs[0][3])
+                    print("all obj one pair have the same -- operator:",obj_pairs[0][3])
                     op2 = obj_pairs[0][3] if op2 is None else op2
                     if op2 != obj_pairs[0][3]:
                         op1, op2 = None, None
@@ -496,33 +497,27 @@ def apply_rule(op1,op2,task,df):
     O = output_grid = data_pair.get('output')  # 使用 get 方法获取 output，默认为 None
     background  = None
     height_widht = None
-
-
     if all(df[0][3][0][0][6] == obj_pairs[3][0][0][6] for obj_pairs in df) :
         print(f"all obj one pair have the background: {df[0][3][0][0][6]}, test var {df[0][3][0][0][2]}, {df[0][3][0][0][3]}")
         background = df[0][3][0][0][6]
-
     if all(df[0][3][0][0][7] == obj_pairs[3][0][0][7] for obj_pairs in df) :
         print(f"all obj one pair have the height_widht: {df[0][3][0][0][7]}, test var {df[0][3][-1][0][4]}, {df[0][3][-1][0][3]}")
         height_widht = df[0][3][0][0][7]
 
     if op1 == "same00" and op2 == "move":
         print("apply_rule: same00 and move")
-
-
-        # 确认移动位置在多pair之间是相同的，假设 df[0][3] 是一个列表或可迭代对象，且每个元素需要匹配其内部的某个位置，例如 [0][0][3]
+        # 确认移动位置在多pair之间是相同的，相同id 相同的位置 ，假设 df[0][3] 是一个列表或可迭代对象，且每个元素需要匹配其内部的某个位置，例如 [0][0][3]
         if all(
-            all(d[3][i][0][3] == df[0][3][i][0][3] for d in df)
+            all(d[3][i][0][3] == df[0][3][i][0][3] for d in df) and all(d[3][i][0][3] == df[0][3][i][0][3] for d in df)
             for i in range(len(df[0][3]))
             ):
-            print(f"所有 df 中对应索引 i 的值都匹配,test var: {df[0][3][0][0][3]}")
-            input_obj_set = output_objects_with_params(the_pair_id="test",in_or_out="in",grid=I, bools="test", hw=(test) )
-            for in_obj in input_obj_set:
-                apply_move(in_obj,df[0][3][0][0][3])      ######按照ID移动
-
-
-
-
+            print(f"\n\n！相同对象在相同的位置 ,test var: {df[0][3][0][0][2]}")
+        input_obj_set = output_objects_with_params(the_pair_id="test",in_or_out="in",grid=I, bools=df[0][3][0][0][2], hw=("test") )
+        moved_objs = move_in_obj_based_on_out(df,input_obj_set)
+        output = paint_objects(moved_objs, background,height_widht)
+        # display_matrices(output)
+        assert output == O
+        print("                   !   !                     apply_rule: same00 and move ok ")
 
 
     elif op1 == "samecolorpos" :
@@ -531,8 +526,49 @@ def apply_rule(op1,op2,task,df):
         print("apply_rule: same00_0 and move+color")
 
 
+def paint_objects(obj_set, background,hw):
+    grid = canvas(background, hw)
+    grid = [list(row) for row in grid]
+
+    for obj in obj_set:
+        for node in obj:
+            color, (r, c) = node
+            grid[r][c] = color
+    tpl = tuple(tuple(inner) for inner in grid)
+    return tpl
 
 
+def move_in_obj_based_on_out(successful_obj,new_in_obj_list):
+    pairs = successful_obj[0][3]
+    moved_objs = []
+    for pair in pairs:
+        out_obj_info, in_obj_info, op_type, op = pair
+        # if in_obj_info[3] == out_obj_info[3]:
+        bbox = out_obj_info[4]  # bounding_box
+        print(f"匹配到 obj_ID {in_obj_info[3]}，使用 bounding_box {bbox} 来移动 in_obj.obj")
+
+        in_obj = get_in_obj_by_id(in_obj_info[3],new_in_obj_list)
+        if in_obj is not None:
+            in_obj.obj = shift_object_by_bbox(in_obj.obj,in_obj.bounding_box, bbox)
+            print(f"in_obj.obj 已经移动到新位置: {in_obj.obj}")
+            moved_objs.append(in_obj.obj)
+    pretty_print(moved_objs)
+    return moved_objs
+
+def shift_object_by_bbox(obj_set,bbox0, bbox):
+    dr0, dc0 = bbox0[0], bbox0[1]
+    dr, dc = bbox[0], bbox[1]
+    new_obj_set = set()
+    for color, (r, c) in obj_set:
+        new_obj_set.add((color, (r -dr0 + dr, c -dc0 + dc)))
+    return new_obj_set
+
+
+def get_in_obj_by_id(obj_id, global_in_obj_list):
+    for obj in global_in_obj_list:
+        if obj.obj_ID == obj_id:
+            return obj
+    return None
 
 
 
