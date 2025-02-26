@@ -28,8 +28,6 @@ columns_outout = [
     # "input_id",
     "outbounding_box", "outcolor",
 ]
-
-
 def parsed_pd_data(raw_data):
     data = {
         "pair_id": raw_data[0][0],
@@ -50,7 +48,6 @@ def parsed_pd_data(raw_data):
     if len(raw_data) > 3 and raw_data[3]:
         data["operation"] = raw_data[3]
     return data
-
 def parsed_pd_outout_data(raw_data):
     data = {
         "pair_id": raw_data[0][0],
@@ -120,6 +117,7 @@ class ObjInf:
     grid_H_W: Tuple[Integer, Integer]    # 假设是一个 (height, width) 的元组
     bounding_box: Tuple[Integer, Integer, Integer, Integer]    # 列表 [minr, minc, maxr, maxc]
     color_ranking: tuple(IntegerTuple)  # 从大到小的 多对( color count , color );
+    background: int
     extend:list
     extend2:list
 
@@ -128,7 +126,7 @@ managerid = IdManager()
 
 
 def process_single_data(task: List[Any]) -> bool:
-    analysys_in_out_pattern_000(task)
+    # analysys_in_out_pattern_000(task)
     analysys_in_out_pattern(task)
 
     analysys_out_out_pattern(task)
@@ -203,7 +201,7 @@ def analysys_in_out_pattern(task) -> bool:
                     for in_obj in input_obj_set:  # 遍历 input_obj_set
                         if in_obj.obj == out_obj.obj:  # 如果找到满足条件的 in_obj
                             found_valid_in_outobj = True
-                            tempdata = (lessforprintobj(out_obj), lessforprintobj(in_obj), "same")
+                            tempdata = (lessforprintobj(out_obj), lessforprintobj(in_obj), "samecolorpos")
                             successful_obj.append(tempdata)
 
                             break  # 存在一个满足条件即可退出内层循环
@@ -211,7 +209,7 @@ def analysys_in_out_pattern(task) -> bool:
                     for in_obj in input_obj_set:
                         if in_obj.obj_00 == out_obj.obj_00:  # 如果找到满足条件的 in_obj
                             found_valid_in_outobj = True
-                            tempdata = (lessforprintobj(out_obj), lessforprintobj(in_obj), "same00")
+                            tempdata = (lessforprintobj(out_obj), lessforprintobj(in_obj), "same00",'move')
                             successful_obj.append(tempdata)
 
                             break  # 存在一个满足条件即可退出内层循环
@@ -221,7 +219,7 @@ def analysys_in_out_pattern(task) -> bool:
                         match_op = next((name for name, res in out_obj.extend2 if res == in_obj.obj), None)
                         if match_op is not None:
                             found_valid_in_outobj = True
-                            tempdata = (lessforprintobj(out_obj), lessforprintobj(in_obj), "same",match_op)
+                            tempdata = (lessforprintobj(out_obj), lessforprintobj(in_obj), "samecolorpos",match_op)
                             successful_obj.append(tempdata)
 
                             break
@@ -240,7 +238,7 @@ def analysys_in_out_pattern(task) -> bool:
 
                         if in_obj.obj_000 == out_obj.obj_000:  # 如果找到满足条件的 in_obj
                             found_valid_in_outobj = True
-                            tempdata = (lessforprintobj(out_obj), lessforprintobj(in_obj), "same00_0")
+                            tempdata = (lessforprintobj(out_obj), lessforprintobj(in_obj), "same00_0",'move+color')
                             successful_obj.append(tempdata)
 
                             break  # 存在一个满足条件即可退出内循环
@@ -267,6 +265,7 @@ def analysys_in_out_pattern(task) -> bool:
                     all_out_obj_satisfied = False
                     break  # 跳出中间层循环
             success_pairs.append((paramid, out_param, pair_id ,successful_obj))
+            # success_pairs.append((successful_obj,))
 
             if not all_out_obj_satisfied:
                 # Some output object was unsolvable - current parameter doesn't work for all pairs
@@ -275,8 +274,14 @@ def analysys_in_out_pattern(task) -> bool:
 
         if param_works_for_all_pairs:
             # Current parameter worked for all training pairs - accumulate it
-            successful_params.append((paramid, out_param,success_pairs))
-    print("\n\npretty_print")
+            # successful_params.append((paramid, out_param,success_pairs))
+            successful_params.append((success_pairs))
+            print("\n\n pretty_print")
+            pretty_print(success_pairs)
+            find_rule(success_pairs,task)
+
+
+    print("\n\n all  all  pretty_print")
     pretty_print(successful_params)
 
 
@@ -447,48 +452,90 @@ def show_count_col(df,col_id):
             print(sorted_value_counts)
             print("\n")
 
-def do_rule(df, task):
-    train_data = task['train']
+def find_rule(df,task):
     test_data = task['test']
+    op1, op2 = None, None
+    found_mismatch = False
+    for d in df:
+        obj_pairs = d[3]
+        if all(obj_pairs[0][2] == obj_pair[2] for obj_pair in obj_pairs) :
+            print("all obj one pair have the same obj:",obj_pairs[0][2])
+            op1 = obj_pairs[0][2] if op1 is None else op1
+            if op1 != obj_pairs[0][2]:
+                found_mismatch = True
+                op1, op2 = None, None
+                break # 说明不是同一个 obj op
+            # if op1 == "same00" or op1 =="same00_0":
+            #     if not  ( len(obj_pairs[0]) > 3 and obj_pairs[0][3] ) :        #same00_0       NaN     没有操作肯定不对
+            #         op1, op2 = None, None
+            #         found_mismatch = True
+            #         break # 说明不是同一个 obj op
 
-    value_counts = df['outparam'].value_counts()
+            if  ( len(obj_pairs[0]) > 3 and obj_pairs[0][3] ) :
+                if all(obj_pairs[0][3] == obj_pair[3] for obj_pair in obj_pairs) :
+                    print("all obj one pair have the same operator:",obj_pairs[0][3])
+                    op2 = obj_pairs[0][3] if op2 is None else op2
+                    if op2 != obj_pairs[0][3]:
+                        op1, op2 = None, None
+                        found_mismatch = True
+                        break # 说明不是同一个 obj op
+        if found_mismatch:
+            break  # 跳出最外层的 for 循环
+    if op1 and op2 :
+        print("op1: ",op1)
+        print("op2: ",op2)
+        print("found rule")
+        apply_rule(op1,op2,task, df)
+        return op1, op2
 
-    sorted_value_counts = value_counts.sort_values(ascending=True)
-    print("\n按 outparam count  排序:")
-    print(sorted_value_counts)
-    print("\n")
 
-    df['out_param_count'] = df['outparam'].map(value_counts)
-    sorted_df = df.sort_values(by=["out_param_count","outparam", "pair_id", "output_id"], ascending=[True, True, True, True])
+def apply_rule(op1,op2,task,df):
+    test_data = task['test']
+    data_pair = test_data[0]
+    I = input_grid = data_pair['input']
+    O = output_grid = data_pair.get('output')  # 使用 get 方法获取 output，默认为 None
+    background  = None
+    height_widht = None
 
-    column_widths = {col: max(sorted_df[col].astype(str).apply(len).max(), len(col)) + 3 for col in sorted_df.columns}
 
-    # 输出时检测 outparam 的变化并插入空行
-    previous_outparam = None
-    output_lines = []
-    header = "".join(f"{col:^{column_widths[col]}}" for col in sorted_df.columns)
+    if all(df[0][3][0][0][6] == obj_pairs[3][0][0][6] for obj_pairs in df) :
+        print(f"all obj one pair have the background: {df[0][3][0][0][6]}, test var {df[0][3][0][0][2]}, {df[0][3][0][0][3]}")
+        background = df[0][3][0][0][6]
 
-    output_lines.append(header)
-    for _, row in sorted_df.iterrows():
-        current_outparam = row['outparam']
-        # 如果 outparam 发生变化，插入一个空行
-        if previous_outparam is not None and current_outparam != previous_outparam:
-            output_lines.append("")  # 插入空行
-            # print("\n".join(output_lines))
-            # if output_lines.count piarid > len(train_data):
+    if all(df[0][3][0][0][7] == obj_pairs[3][0][0][7] for obj_pairs in df) :
+        print(f"all obj one pair have the height_widht: {df[0][3][0][0][7]}, test var {df[0][3][-1][0][4]}, {df[0][3][-1][0][3]}")
+        height_widht = df[0][3][0][0][7]
 
-        # 添加当前行到输出
-        # output_line = "\t".join(str(row[col]) for col in sorted_df.columns)
-        formatted_row = []
-        for col in sorted_df.columns:
-            value = str(row[col])
-            width222 = column_widths[col]
-            formatted_row.append(f"{value:^{width222}}")
-        output_lines.append("".join(formatted_row))
-        # 更新 previous_outparam
-        previous_outparam = current_outparam
-    # 打印最终输出
-    print("\n".join(output_lines))
+    if op1 == "same00" and op2 == "move":
+        print("apply_rule: same00 and move")
+
+
+        # 确认移动位置在多pair之间是相同的，假设 df[0][3] 是一个列表或可迭代对象，且每个元素需要匹配其内部的某个位置，例如 [0][0][3]
+        if all(
+            all(d[3][i][0][3] == df[0][3][i][0][3] for d in df)
+            for i in range(len(df[0][3]))
+            ):
+            print(f"所有 df 中对应索引 i 的值都匹配,test var: {df[0][3][0][0][3]}")
+            input_obj_set = output_objects_with_params(the_pair_id="test",in_or_out="in",grid=I, bools="test", hw=(test) )
+            for in_obj in input_obj_set:
+                apply_move(in_obj,df[0][3][0][0][3])      ######按照ID移动
+
+
+
+
+
+
+    elif op1 == "samecolorpos" :
+        print
+    elif op1 == "same00_0" and op2 == "move+color":
+        print("apply_rule: same00_0 and move+color")
+
+
+
+
+
+
+
 
 def foranalysisshow(df):
     value_counts = df['outparam'].value_counts()
@@ -529,9 +576,6 @@ def foranalysisshow(df):
     print("\n".join(output_lines))
 
 
-def lessforprintobj(obj):
-    return (obj.pair_id,obj.in_or_out,obj.objparam,obj.obj_ID,obj.bounding_box, obj.color_ranking)
-
 # printlist = lambda x: print("\n".join(map(str, x)))
 def printlist(x):
     # for l in list:
@@ -555,6 +599,25 @@ param_combinations: List[Tuple[bool, bool, bool]] = [
     (True, False, True)
 ]
 
+@dataclass
+class ObjInf:
+    pair_id: Integer
+    in_or_out: str
+    objparam: Tuple[bool, bool, bool]  # 3个bool
+    obj: Objects       # 假设这是一个通用对象
+    obj_00: Objects    # 假设这是一个通用对象
+    obj_ID: int
+    obj_000: Objects   # 假设这是一个通用对象
+    grid_H_W: Tuple[Integer, Integer]    # 假设是一个 (height, width) 的元组
+    bounding_box: Tuple[Integer, Integer, Integer, Integer]    # 列表 [minr, minc, maxr, maxc]
+    color_ranking: tuple(IntegerTuple)  # 从大到小的 多对( color count , color );
+    background: int
+    extend:list
+    extend2:list
+
+def lessforprintobj(obj):
+    return (obj.pair_id,obj.in_or_out,obj.objparam,obj.obj_ID,obj.bounding_box, obj.color_ranking, obj.background, obj.grid_H_W)
+
 def objects_with_params(the_pair_id: int, in_or_out: str, grid: Grid, bools: Tuple[bool, bool, bool],hw:list) -> Objects:
     b1, b2, b3 = bools  # 解包布尔值
     return objects( grid, b1, b2, b3)
@@ -563,6 +626,7 @@ def output_objects_with_params(the_pair_id: int, in_or_out: str, grid: Grid, boo
     b1, b2, b3 = bools  # 解包布尔值
     # return objects( grid, b1, b2, b3)
     result = []
+    bg = mostcolor(grid)
     for obj in objects(grid, b1, b2, b3):
         # 对每个 obj，计算对应平移后的版本
         # 假设 obj 本身是一个表示对象的集合；如果不是，则请调整调用方式
@@ -580,6 +644,7 @@ def output_objects_with_params(the_pair_id: int, in_or_out: str, grid: Grid, boo
             grid_H_W=hw,            # 默认值，根据需要调整
             bounding_box=(uppermost(obj), leftmost(obj), lowermost(obj), rightmost(obj)),   # 默认值，根据需要调整
             color_ranking=palette(obj)    ,   # 默认空 tuple
+            background = bg,
             extend=extend_obj(obj000),
             extend2 = extend_obj(obj)
         )
@@ -593,6 +658,7 @@ def all_objects_from_grid(the_pair_id: int, in_or_out: str, grid: Grid, hw:list)
         acc = acc.union(objects_with_params(the_pair_id, in_or_out, grid, params,hw))
         # print()
     result = []
+    bg = mostcolor(grid)
     for obj in acc:
         # 对每个 obj，计算对应平移后的版本
         # 假设 obj 本身是一个表示对象的集合；如果不是，则请调整调用方式
@@ -610,6 +676,7 @@ def all_objects_from_grid(the_pair_id: int, in_or_out: str, grid: Grid, hw:list)
             grid_H_W=hw,            # 默认值，根据需要调整
             bounding_box=(uppermost(obj), leftmost(obj), lowermost(obj), rightmost(obj)),    # 默认值，根据需要调整
             color_ranking=palette(obj)    ,     # 默认空 tuple
+            background = bg,
             extend=extend_obj(obj000),
             extend2 = extend_obj(obj)
         )
@@ -699,17 +766,17 @@ def pretty_print(dataall, indent=1):
         for data in dataall:
             if isinstance(data, (tuple, list)) and len(data) == 4:
                 # 如果是包含四个字段的元组 (paramid, out_param, len_out_obj_set, successful_obj)
-                paramid, out_param, len_out_obj_set, successful_obj = data
+                paramid, out_param, pair_id, successful_obj = data
                 print(indent_str + " " * 4 + f"paramid: {paramid}")
                 print(indent_str + " " * 4 + f"out_param: {out_param}")
-                print(indent_str + " " * 4 + f"len_out_obj_set: {len_out_obj_set}")
+                print(indent_str + " " * 4 + f"pair_id:: {pair_id}")
                 print(indent_str + " " * 4 + "successful_obj:")
                 # 打印 successful_obj 中的每个元素
                 if isinstance(successful_obj, (tuple, list)):
                     print(indent_str + " " * 8 + "[")
                     for item in successful_obj:
                         # print(indent_str + str(item))
-                        print(indent_str + " " * 12 + str(item))
+                        print(indent_str + " " * 8 + str(item))
                         # pretty_print(item, indent + 3)  # 递归打印 successful_obj 中的每个元素
                     print(indent_str + " " * 8 + "]")
                 else:
