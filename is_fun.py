@@ -722,39 +722,6 @@ def is_in_is_out_subgrid(grid1: Grid, grid2: Grid) -> bool:
     return is_out_is_in_subgrid(grid2, grid1)
 
 
-def is_out_is_in_subgrid(grid1: Grid, grid2: Grid) -> Union[Tuple[bool, str, Tuple[int, int], Tuple[int, int]], bool]:
-    """
-    检查 grid1 是否是 grid2 的子网格。
-
-    参数:
-    - grid1: Grid - 第一个矩形网格。
-    - grid2: Grid - 第二个矩形网格。
-
-    返回:
-    - bool: 如果 grid1 是 grid2 的子网格，返回 True；否则返回 False。
-    """
-    h1, w1 = len(grid1), len(grid1[0])
-    h2, w2 = len(grid2), len(grid2[0])
-
-    # 检查 grid1 的尺寸是否小于或等于 grid2
-    if h1 > h2 or w1 > w2:
-        return False
-
-    # 遍历 grid2，检查是否存在与 grid1 匹配的子网格
-    for i in range(h2 - h1 + 1):
-        for j in range(w2 - w1 + 1):
-            match = True
-            for x in range(h1):
-                for y in range(w1):
-                    if grid1[x][y] != grid2[i + x][j + y]:
-                        match = False
-                        break
-                if not match:
-                    break
-            if match:
-                return (True, 'crop', (i, j),(h1, w1))
-
-    return False
 
 def solv00_is_subgrid_grid(grid1: Grid, grid2: Grid) -> bool:
     """
