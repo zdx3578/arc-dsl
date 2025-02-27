@@ -105,21 +105,6 @@ class IdManager:
         self.next_id = {}
         print("All data has been reset.")
 
-@dataclass
-class ObjInf:
-    pair_id: Integer
-    in_or_out: str
-    objparam: Tuple[bool, bool, bool]  # 3个bool
-    obj: Objects       # 假设这是一个通用对象
-    obj_00: Objects    # 假设这是一个通用对象
-    obj_ID: int
-    obj_000: Objects   # 假设这是一个通用对象
-    grid_H_W: Tuple[Integer, Integer]    # 假设是一个 (height, width) 的元组
-    bounding_box: Tuple[Integer, Integer, Integer, Integer]    # 列表 [minr, minc, maxr, maxc]
-    color_ranking: tuple(IntegerTuple)  # 从大到小的 多对( color count , color );
-    background: int
-    extend:list
-    extend2:list
 
 
 managerid = IdManager()
@@ -209,63 +194,54 @@ def analysys_in_out_pattern(task) -> bool:
                             found_valid_in_outobj = True
                             tempdata = (lessforprintobj(out_obj), lessforprintobj(in_obj), "samecolorpos")
                             successful_obj.append(tempdata)
-
                             break  # 存在一个满足条件即可退出内层循环
+                #! 先平移  00  再其他旋转等  samecolorpos",match_op
                 if not found_valid_in_outobj:
                     for in_obj in input_obj_set:
                         if in_obj.obj_00 == out_obj.obj_00:  # 如果找到满足条件的 in_obj
                             found_valid_in_outobj = True
                             tempdata = (lessforprintobj(out_obj), lessforprintobj(in_obj), "same00",'move')
                             successful_obj.append(tempdata)
-
                             break  # 存在一个满足条件即可退出内层循环
                 if not found_valid_in_outobj:
                     for in_obj in input_obj_set:
-
-                        match_op = next((name for name, res in out_obj.extend2 if res == in_obj.obj), None)
+                        match_op = next((name for name, res in out_obj.obj_ops if res == in_obj.obj), None)
                         if match_op is not None:
                             found_valid_in_outobj = True
                             tempdata = (lessforprintobj(out_obj), lessforprintobj(in_obj), "samecolorpos",match_op)
                             successful_obj.append(tempdata)
-
                             break
                 if not found_valid_in_outobj:
                     for in_obj in input_obj_set:
-
-                        match_op = next((name for name, res in out_obj.extend2 if res == in_obj.obj_00), None)
+                        match_op = next((name for name, res in out_obj.obj_ops if res == in_obj.obj_00), None)
                         if match_op is not None:
                             found_valid_in_outobj = True
                             tempdata = (lessforprintobj(out_obj), lessforprintobj(in_obj), "same00",match_op)
                             successful_obj.append(tempdata)
-
                             break
                 if not found_valid_in_outobj:
                     for in_obj in input_obj_set:
-
                         if in_obj.obj_000 == out_obj.obj_000:  # 如果找到满足条件的 in_obj
                             found_valid_in_outobj = True
                             tempdata = (lessforprintobj(out_obj), lessforprintobj(in_obj), "same00_0",'move+color')
                             successful_obj.append(tempdata)
-
                             break  # 存在一个满足条件即可退出内循环
-                        # elif in_obj.obj_000 in out_obj.extend: ##any(x in out_obj.extend for x in in_obj.extend):    # 至少存在一个共同元素
+                        # elif in_obj.obj_000 in out_obj.obj000_ops: ##any(x in out_obj.obj000_ops for x in in_obj.obj000_ops):    # 至少存在一个共同元素
                 if not found_valid_in_outobj:
                     for in_obj in input_obj_set:
-                        match_op = next((name for name, res in out_obj.extend if res == in_obj.obj_000), None)
+                        match_op = next((name for name, res in out_obj.obj000_ops if res == in_obj.obj_000), None)
                         if match_op is not None:
                             found_valid_in_outobj = True
                             tempdata = (lessforprintobj(out_obj), lessforprintobj(in_obj), "same00_0",match_op)
                             successful_obj.append(tempdata)
-
                             break
                 if not found_valid_in_outobj:
                     for in_obj in input_obj_set:
-                        if any(x in out_obj.extend for x in in_obj.extend):    # 至少存在一个共同元素
+                        if any(x in out_obj.obj000_ops for x in in_obj.obj000_ops):    # 至少存在一个共同元素
                             # in_obj.obj_00 == out_obj.obj_00:
                             found_valid_in_outobj = True
                             tempdata = (lessforprintobj(out_obj), lessforprintobj(in_obj), "extend222")
                             successful_obj.append(tempdata)
-
                             break
                 if not found_valid_in_outobj:  # 如果没有找到满足条件的 in_obj
                     all_out_obj_satisfied = False
@@ -362,7 +338,7 @@ def analysys_in_out_pattern_000(task: List[Any]) -> bool:
                 if not found_valid_in_outobj:
                     for in_obj in input_obj_set:
 
-                        match_op = next((name for name, res in out_obj.extend2 if res == in_obj.obj), None)
+                        match_op = next((name for name, res in out_obj.obj_ops if res == in_obj.obj), None)
                         if match_op is not None:
                             found_valid_in_outobj = True
                             tempdata = (lessforprintobj(out_obj), lessforprintobj(in_obj), "same",match_op)
@@ -374,7 +350,7 @@ def analysys_in_out_pattern_000(task: List[Any]) -> bool:
                 if not found_valid_in_outobj:
                     for in_obj in input_obj_set:
 
-                        match_op = next((name for name, res in out_obj.extend2 if res == in_obj.obj_00), None)
+                        match_op = next((name for name, res in out_obj.obj_ops if res == in_obj.obj_00), None)
                         if match_op is not None:
                             found_valid_in_outobj = True
                             tempdata = (lessforprintobj(out_obj), lessforprintobj(in_obj), "same00",match_op)
@@ -394,10 +370,10 @@ def analysys_in_out_pattern_000(task: List[Any]) -> bool:
                             parsed_data = parsed_pd_data(tempdata)
                             temp_pd_data.append(parsed_data)
                             break  # 存在一个满足条件即可退出内循环
-                        # elif in_obj.obj_000 in out_obj.extend: ##any(x in out_obj.extend for x in in_obj.extend):    # 至少存在一个共同元素
+                        # elif in_obj.obj_000 in out_obj.obj000_ops: ##any(x in out_obj.obj000_ops for x in in_obj.obj000_ops):    # 至少存在一个共同元素
                 if not found_valid_in_outobj:
                     for in_obj in input_obj_set:
-                        match_op = next((name for name, res in out_obj.extend if res == in_obj.obj_000), None)
+                        match_op = next((name for name, res in out_obj.obj000_ops if res == in_obj.obj_000), None)
                         if match_op is not None:
                             found_valid_in_outobj = True
                             tempdata = (lessforprintobj(out_obj), lessforprintobj(in_obj), "same00_0",match_op)
@@ -408,7 +384,7 @@ def analysys_in_out_pattern_000(task: List[Any]) -> bool:
                             break
                 if not found_valid_in_outobj:
                     for in_obj in input_obj_set:
-                        if any(x in out_obj.extend for x in in_obj.extend):    # 至少存在一个共同元素
+                        if any(x in out_obj.obj000_ops for x in in_obj.obj000_ops):    # 至少存在一个共同元素
                             # in_obj.obj_00 == out_obj.obj_00:
                             found_valid_in_outobj = True
                             tempdata = (lessforprintobj(out_obj), lessforprintobj(in_obj), "extend222")
@@ -525,7 +501,8 @@ def apply_rule(op1,op2,task,df):
             if output == O:
                 return True
         # return  ( assert output == O)
-    if op1 == "same00" and op2 == "move":
+    if op1 == "same00" and op2 == "vmirror":
+        print
 
 
     elif op1 == "samecolorpos" :
@@ -668,8 +645,12 @@ class ObjInf:
     bounding_box: Tuple[Integer, Integer, Integer, Integer]    # 列表 [minr, minc, maxr, maxc]
     color_ranking: tuple(IntegerTuple)  # 从大到小的 多对( color count , color );
     background: int
-    extend:list
-    extend2:list
+    obj000_ops:list
+    obj_ops:list
+
+
+
+
 
 def lessforprintobj(obj):
     return (obj.pair_id,obj.in_or_out,obj.objparam,obj.obj_ID,obj.bounding_box, obj.color_ranking, obj.background, obj.grid_H_W)
@@ -703,8 +684,8 @@ def output_objects_with_params(the_pair_id: int, in_or_out: str, grid: Grid, boo
             bounding_box=(uppermost(obj), leftmost(obj), lowermost(obj), rightmost(obj)),   # 默认值，根据需要调整
             color_ranking=palette(obj)    ,   # 默认空 tuple
             background = bg,
-            extend=extend_obj(obj000),
-            extend2 = extend_obj(obj)
+            obj000_ops=extend_obj(obj000),
+            obj_ops = extend_obj(obj)
         )
         result.append(new_obj)
     return result
@@ -742,8 +723,8 @@ def all_objects_from_grid(the_pair_id: int, in_or_out: str, grid: Grid, hw:list)
             bounding_box=(uppermost(obj), leftmost(obj), lowermost(obj), rightmost(obj)),    # 默认值，根据需要调整
             color_ranking=palette(obj)    ,     # 默认空 tuple
             background = bg,
-            extend=extend_obj(obj000),
-            extend2 = extend_obj(obj)
+            obj000_ops=extend_obj(obj000),
+            obj_ops = extend_obj(obj)
         )
         result.append(new_obj)
     return result
