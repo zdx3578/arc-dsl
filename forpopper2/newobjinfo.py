@@ -103,7 +103,7 @@ def test_solvers_correctness(data, solvers_module):
                 print()
                 # print()
                 print(n_correct, "  .  success", "  .  .  .  .  .  .  .  .   ", n_correct)
-            print()
+                print()
             print()
 
             print()

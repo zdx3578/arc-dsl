@@ -1148,8 +1148,9 @@ def object_to_grid(obj: Object) -> Grid:
     # 填充值
     for value, (i, j) in obj:
         grid[i][j] = value
+    tpl = tuple(tuple(inner) for inner in grid)
 
-    return grid
+    return tpl
 
 def grid_to_object(grid: Grid) -> Object:
 

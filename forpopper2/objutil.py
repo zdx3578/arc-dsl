@@ -192,15 +192,15 @@ def analysys_in_out_pattern(task) -> bool:
                     for in_obj in input_obj_set:  # 遍历 input_obj_set
                         if in_obj.obj == out_obj.obj:  # 如果找到满足条件的 in_obj
                             found_valid_in_outobj = True
-                            tempdata = (lessforprintobj(out_obj), lessforprintobj(in_obj), "samecolorpos")
+                            tempdata = (lessforprintobj(out_obj), lessforprintobj(in_obj), "same_same")
                             successful_obj.append(tempdata)
                             break  # 存在一个满足条件即可退出内层循环
-                #! 先平移  00  再其他旋转等  samecolorpos",match_op
+                #! 先平移  00  再其他旋转等  same_same",match_op
                 if not found_valid_in_outobj:
                     for in_obj in input_obj_set:
                         if in_obj.obj_00 == out_obj.obj_00:  # 如果找到满足条件的 in_obj
                             found_valid_in_outobj = True
-                            tempdata = (lessforprintobj(out_obj), lessforprintobj(in_obj), "same00",'move')
+                            tempdata = (lessforprintobj(out_obj), lessforprintobj(in_obj), "same00_same00",'move')
                             successful_obj.append(tempdata)
                             break  # 存在一个满足条件即可退出内层循环
                 if not found_valid_in_outobj:
@@ -208,7 +208,7 @@ def analysys_in_out_pattern(task) -> bool:
                         match_op = next((name for name, res in out_obj.obj_ops if res == in_obj.obj), None)
                         if match_op is not None:
                             found_valid_in_outobj = True
-                            tempdata = (lessforprintobj(out_obj), lessforprintobj(in_obj), "samecolorpos",match_op)
+                            tempdata = (lessforprintobj(out_obj), lessforprintobj(in_obj), "same_same",match_op)
                             successful_obj.append(tempdata)
                             break
                 if not found_valid_in_outobj:
@@ -216,7 +216,7 @@ def analysys_in_out_pattern(task) -> bool:
                         match_op = next((name for name, res in out_obj.obj_ops if res == in_obj.obj_00), None)
                         if match_op is not None:
                             found_valid_in_outobj = True
-                            tempdata = (lessforprintobj(out_obj), lessforprintobj(in_obj), "same00",match_op)
+                            tempdata = (lessforprintobj(out_obj), lessforprintobj(in_obj), "same00_same",match_op)
                             successful_obj.append(tempdata)
                             break
                 if not found_valid_in_outobj:
@@ -277,153 +277,6 @@ def analysys_in_out_pattern(task) -> bool:
 
 
 
-def analysys_in_out_pattern_000(task: List[Any]) -> bool:
-    ##首先是input  output模式分析
-    train_data = task['train']
-    test_data = task['test']
-    successful_obj_pairs = []
-    df = pd.DataFrame(columns=columns)
-    temp_pd_data = []
-
-    for pair_id, data_pair in enumerate(train_data):
-        I = input_grid = data_pair['input']
-        O = output_grid = data_pair.get('output')  # 使用 get 方法获取 output，默认为 None
-
-        height_i, width_i = height(I), width(I)    # 输入对象的高度和宽度
-        height_o, width_o = height(O), width(O)
-
-        input_obj_set = all_objects_from_grid(                the_pair_id=pair_id,
-                in_or_out="in",                grid=I, hw=(height_i, width_i) #,height_o, width_o)
-            )
-
-        successful_params = []
-        for paramid, out_param in enumerate(param_combinations):  # 遍历 param_combinations
-            all_out_obj_satisfied = True
-
-            out_obj_set = output_objects_with_params(the_pair_id=pair_id,
-                                                    in_or_out="out",
-                                                    grid=O, bools=out_param, hw=(height_o, width_o) )
-            len_out_obj_set = len(out_obj_set)
-            # if_duplicate_out_obj_set =
-            print("\n\nOutput parameters:", out_param, "| Number of output objects:", len_out_obj_set)
-            #调试  print 查看
-            # for out_obj in out_obj_set:  # 遍历 out_obj_set
-            #     # display_diff_matrices(out_obj.obj)
-            #     display_matrices(out_obj.obj)
-            successful_obj = []
-            for out_obj in out_obj_set:  # 遍历 out_obj_set
-                # display_diff_matrices(out_obj.obj)
-                # display_matrices(out_obj.obj)
-                found_valid_in_outobj = False
-                if not found_valid_in_outobj:
-                    for in_obj in input_obj_set:  # 遍历 input_obj_set
-                        if in_obj.obj == out_obj.obj:  # 如果找到满足条件的 in_obj
-                            found_valid_in_outobj = True
-                            tempdata = (lessforprintobj(out_obj), lessforprintobj(in_obj), "same")
-                            successful_obj.append(tempdata)
-                            #successful_obj_pairs.append(tempdata)
-                            parsed_data = parsed_pd_data(tempdata)
-                            temp_pd_data.append(parsed_data)
-                            break  # 存在一个满足条件即可退出内层循环
-                if not found_valid_in_outobj:
-                    for in_obj in input_obj_set:
-                        if in_obj.obj_00 == out_obj.obj_00:  # 如果找到满足条件的 in_obj
-                            found_valid_in_outobj = True
-                            tempdata = (lessforprintobj(out_obj), lessforprintobj(in_obj), "same00")
-                            successful_obj.append(tempdata)
-                            #successful_obj_pairs.append(tempdata)
-                            parsed_data = parsed_pd_data(tempdata)
-                            temp_pd_data.append(parsed_data)
-                            break  # 存在一个满足条件即可退出内层循环
-                if not found_valid_in_outobj:
-                    for in_obj in input_obj_set:
-
-                        match_op = next((name for name, res in out_obj.obj_ops if res == in_obj.obj), None)
-                        if match_op is not None:
-                            found_valid_in_outobj = True
-                            tempdata = (lessforprintobj(out_obj), lessforprintobj(in_obj), "same",match_op)
-                            successful_obj.append(tempdata)
-                            #successful_obj_pairs.append(tempdata)
-                            parsed_data = parsed_pd_data(tempdata)
-                            temp_pd_data.append(parsed_data)
-                            break
-                if not found_valid_in_outobj:
-                    for in_obj in input_obj_set:
-
-                        match_op = next((name for name, res in out_obj.obj_ops if res == in_obj.obj_00), None)
-                        if match_op is not None:
-                            found_valid_in_outobj = True
-                            tempdata = (lessforprintobj(out_obj), lessforprintobj(in_obj), "same00",match_op)
-                            successful_obj.append(tempdata)
-                            #successful_obj_pairs.append(tempdata)
-                            parsed_data = parsed_pd_data(tempdata)
-                            temp_pd_data.append(parsed_data)
-                            break
-                if not found_valid_in_outobj:
-                    for in_obj in input_obj_set:
-
-                        if in_obj.obj_000 == out_obj.obj_000:  # 如果找到满足条件的 in_obj
-                            found_valid_in_outobj = True
-                            tempdata = (lessforprintobj(out_obj), lessforprintobj(in_obj), "same00_0")
-                            successful_obj.append(tempdata)
-                            #successful_obj_pairs.append(tempdata)
-                            parsed_data = parsed_pd_data(tempdata)
-                            temp_pd_data.append(parsed_data)
-                            break  # 存在一个满足条件即可退出内循环
-                        # elif in_obj.obj_000 in out_obj.obj000_ops: ##any(x in out_obj.obj000_ops for x in in_obj.obj000_ops):    # 至少存在一个共同元素
-                if not found_valid_in_outobj:
-                    for in_obj in input_obj_set:
-                        match_op = next((name for name, res in out_obj.obj000_ops if res == in_obj.obj_000), None)
-                        if match_op is not None:
-                            found_valid_in_outobj = True
-                            tempdata = (lessforprintobj(out_obj), lessforprintobj(in_obj), "same00_0",match_op)
-                            successful_obj.append(tempdata)
-                            #successful_obj_pairs.append(tempdata)
-                            parsed_data = parsed_pd_data(tempdata)
-                            temp_pd_data.append(parsed_data)
-                            break
-                if not found_valid_in_outobj:
-                    for in_obj in input_obj_set:
-                        if any(x in out_obj.obj000_ops for x in in_obj.obj000_ops):    # 至少存在一个共同元素
-                            # in_obj.obj_00 == out_obj.obj_00:
-                            found_valid_in_outobj = True
-                            tempdata = (lessforprintobj(out_obj), lessforprintobj(in_obj), "extend222")
-                            successful_obj.append(tempdata)
-                            #successful_obj_pairs.append(tempdata)
-                            parsed_data = parsed_pd_data(tempdata)
-                            temp_pd_data.append(parsed_data)
-                            break
-                if not found_valid_in_outobj:  # 如果没有找到满足条件的 in_obj
-                    all_out_obj_satisfied = False
-                    break  # 跳出中间层循环
-            # printlist(successful_obj)
-            if all_out_obj_satisfied:  # 如果所有 out_obj 都满足
-                # successful_params.append((successful_obj,))
-                successful_params.append((paramid, out_param, len_out_obj_set ,successful_obj))  # 累计成功的参数组合
-
-        # 检查是否至少有一个成功
-        if not successful_params:  # 如果没有找到任何成功的参数组合
-            return False  # 直接返回 False，表示失败
-        print("\n\npretty_print")
-        pretty_print(successful_params)
-
-        # print("\n\nforprintlist")
-        # forprintlist(successful_params)
-    # print("\n\nsuccessful_obj_pairs")
-    # printlist(successful_obj_pairs)
-    # print("lenght of successful_obj_pairs: ", len(successful_obj_pairs))
-    print("\n\n")
-    df = pd.concat([df, pd.DataFrame(temp_pd_data)], ignore_index=True)
-    print(df)
-    # foranalysisshow(df)
-    # do_rule(df, task)
-
-    # print("\n按 outparam 和 pair_id 排序后的 DataFrame:")
-    # print(sorted_df)
-    # print(df)
-    return True  # 所有 pair 都成功
-
-
 
 # def count_obj_ids(obj_set,colum):
 #     return set(obj.colum for obj in obj_set)
@@ -478,14 +331,16 @@ def apply_rule(op1,op2,task,df):
     background  = None
     height_widht = None
     if all(df[0][3][0][0][6] == obj_pairs[3][0][0][6] for obj_pairs in df) :
-        # print(f"all obj one pair have the background: {df[0][3][0][0][6]}, test var {df[0][3][0][0][2]}, {df[0][3][0][0][3]}")
+        print(f"all obj one pair have the background: {df[0][3][0][0][6]}, test var {df[0][3][0][0][2]}, {df[0][3][0][0][3]}")
         background = df[0][3][0][0][6]
+    else:
+        background = 0
     if all(df[0][3][0][0][7] == obj_pairs[3][0][0][7] for obj_pairs in df) :
-        # print(f"all obj one pair have the height_widht: {df[0][3][0][0][7]}, test var {df[0][3][-1][0][4]}, {df[0][3][-1][0][3]}")
+        print(f"all obj one pair have the height_widht: {df[0][3][0][0][7]}, test var {df[0][3][-1][0][4]}, {df[0][3][-1][0][3]}")
         height_widht = df[0][3][0][0][7]
 
-    if op1 == "same00" and op2 == "move":
-        # print("apply_rule: same00 and move")
+    if op1 == "same00_same00" and op2 == "move":
+        # print("apply_rule: same00_same00 and move")
         # 确认移动位置在多pair之间是相同的，相同id 相同的位置 ，假设 df[0][3] 是一个列表或可迭代对象，且每个元素需要匹配其内部的某个位置，例如 [0][0][3]
         if all(
             all(d[3][i][0][3] == df[0][3][i][0][3] for d in df) and all(d[3][i][0][3] == df[0][3][i][0][3] for d in df)
@@ -497,24 +352,38 @@ def apply_rule(op1,op2,task,df):
             output = paint_objects(moved_objs, background,height_widht)
             # display_matrices(output)
             assert output == O
-            print("                   !  ok  !                     apply_rule: same00 and move ok ")
+            print("                   !  ok  !                     apply_rule: same00_same00 and move ok ")
             if output == O:
                 return True
         # return  ( assert output == O)
-    if op1 == "same00" and op2 == "vmirror":
+    if op1 == "same00_same" and op2 == "vmirror":         #7468f01a
+        #! if one op just run one op
+        if all( len(d[3]) == 1 for d in df) :
+            print
+            input_obj_set = output_objects_with_params(the_pair_id="",in_or_out="in",grid=I, bools=df[0][3][0][1][2], hw=("") )
+            obj = input_obj_set[0].obj
+            obj00 = shift_pure_obj_to_00(obj)
+            op2fun = globals()[op2]
+            out = op2fun(obj00)
+            output = object_to_grid(out)
+            assert output == O
+            if output == O:
+                    return True
+
         print
 
 
-    elif op1 == "samecolorpos" :
+    elif op1 == "same_same" :
         # print(" - -  pretty_print")
         pretty_print(df)
         print(op2)
         # function = findfunction(op2    getattr(solvers_module, f'solve_{key}')
-        op2fun = globals()[op2]
-        out = op2fun(I)
-        assert out == O
-        if out == O:
-                return True
+        if all( len(d[3]) == 1 for d in df) :
+            op2fun = globals()[op2]
+            out = op2fun(I)
+            assert out == O
+            if out == O:
+                    return True
 
 
 
@@ -524,6 +393,8 @@ def apply_rule(op1,op2,task,df):
 
 
 def paint_objects(obj_set, background,hw):
+    if background is None:
+        background = -1
     grid = canvas(background, hw)
     grid = [list(row) for row in grid]
 
