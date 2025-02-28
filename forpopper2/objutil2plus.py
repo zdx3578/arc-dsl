@@ -38,7 +38,8 @@ def is_arg1_is_arg2_subgrid(grid1: Grid, grid2: Grid) -> Union[Tuple[bool, str, 
                 if not match:
                     break
             if match:
-                return (True, 'crop', (i, j),(h1, w1))
+                # return (True, 'crop', (i, j),(h1, w1))
+                return True
 
     return False
 
@@ -303,5 +304,85 @@ param_combinations: List[Tuple[bool, bool, bool]] = [
     (True, True, False),
     (True, True, True),
     (True, False, False),
-    (True, False, True)
-]
+    (True, False, True)  ]
+
+
+# all_objects_from_grid 函数
+def all_objects_from_grid(the_pair_id: int, in_or_out: str, grid: Grid, hw:list) -> FrozenSet[Object]:
+    acc: FrozenSet[Object] = frozenset()  # 初始化空集合
+    for params in param_combinations:
+        acc = acc.union(objects_with_params(the_pair_id, in_or_out, grid, params,hw))
+        # print()
+    result = []
+    bg = mostcolor(grid)
+    for obj in acc:
+        # 对每个 obj，计算对应平移后的版本
+        # 假设 obj 本身是一个表示对象的集合；如果不是，则请调整调用方式
+        obj00 = shift_pure_obj_to_00(obj)
+        obj000 = shift_pure_obj_to_0_0_0(obj)
+        new_obj = ObjInf(
+            pair_id='pair_id: '+str(the_pair_id),
+            in_or_out=in_or_out,
+            objparam="all",  # 使用传入的布尔值
+            obj=obj,         # 原始对象
+            obj_00=obj00,
+            obj_000=obj000,
+            # obj_ID=managerid.get_id("OBJshape", obj000),
+            obj_ID="obj-ID:"+str(managerid.get_id("OBJshape", obj000)),
+            grid_H_W=hw,            # 默认值，根据需要调整
+            bounding_box=(uppermost(obj), leftmost(obj), lowermost(obj), rightmost(obj)),    # 默认值，根据需要调整
+            color_ranking=palette(obj)    ,     # 默认空 tuple
+            background = bg,
+            obj000_ops=extend_obj(obj000),
+            obj_ops = extend_obj(obj)
+        )
+        result.append(new_obj)
+    return result
+
+def paint_objects(obj_set, background,hw):
+    if background is None:
+        background = -1
+    grid = canvas(background, hw)
+    grid = [list(row) for row in grid]
+
+    for obj in obj_set:
+        for node in obj:
+            color, (r, c) = node
+            grid[r][c] = color
+    tpl = tuple(tuple(inner) for inner in grid)
+    return tpl
+
+
+def move_in_obj_based_on_out(successful_obj,new_in_obj_list):
+    pairs = successful_obj[0][3]
+    moved_objs = []
+    for pair in pairs:
+        out_obj_info, in_obj_info, op_type, op = pair
+        # if in_obj_info[3] == out_obj_info[3]:
+        bbox = out_obj_info[4]  # bounding_box
+        # print(f"匹配到 obj_ID {in_obj_info[3]}，使用 bounding_box {bbox} 来移动 in_obj.obj")
+
+        in_obj = get_in_obj_by_id(in_obj_info[3],new_in_obj_list)
+        if in_obj is not None:
+            in_obj.obj = shift_object_by_bbox(in_obj.obj,in_obj.bounding_box, bbox)
+            # print(f"in_obj.obj 已经移动到新位置: {in_obj.obj}")
+            moved_objs.append(in_obj.obj)
+    # pretty_print(moved_objs)
+    return moved_objs
+
+def shift_object_by_bbox(obj_set,bbox0, bbox):
+    dr0, dc0 = bbox0[0], bbox0[1]
+    dr, dc = bbox[0], bbox[1]
+    new_obj_set = set()
+    for color, (r, c) in obj_set:
+        new_obj_set.add((color, (r -dr0 + dr, c -dc0 + dc)))
+    return new_obj_set
+
+
+def get_in_obj_by_id(obj_id, global_in_obj_list):
+    for obj in global_in_obj_list:
+        if obj.obj_ID == obj_id:
+            return obj
+    return None
+
+
