@@ -7,6 +7,36 @@ import logging
 import traceback
 from contextlib import contextmanager
 
+
+box
+snow
+repeat
+param
+recolor
+position
+mirror
+subpart
+upscale
+count
+downscale
+rotate
+shrink
+move
+frontiers
+line
+fill
+
+
+
+
+
+
+
+
+
+
+
+
 @contextmanager
 def safe_context():
     """安全上下文管理器，用于异常捕获和日志记录"""

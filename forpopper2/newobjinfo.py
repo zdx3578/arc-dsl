@@ -81,6 +81,7 @@ def test_solvers_correctness(data, solvers_module):
         # key = '8403a5d5'  # out out
         # key = "68b16354"  hmirror
         # key = '7468f01a'
+        key = "25d8a9c8"
 
         print(i, key)
         task = {}
