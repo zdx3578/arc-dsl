@@ -22,15 +22,19 @@ downscale
 rotate
 shrink
 move
+draw
+
 frontiers
 line
 fill
+param_repeat
+button
+recover
+denoise
 
-
-
-
-
-
+logic
+scaling
+diff
 
 
 
