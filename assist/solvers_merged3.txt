@@ -210,75 +210,75 @@
  param_repeat
  move upscale
  param_repeat
- f9012d9b
- 1caeab9d
- 178fcbfb
- 673ef223
- d89b689b
- d43fd935
- 8a004b2b
- 4938f0c2
- f8ff0b80
- 90f3ed37
- 9af7a82c
- f35d900a
- ae4f1146
- 22233c11
- e509e548
- fcc82909
- 234bbc79
- d037b0a7
- d13f3404
- 7b6016b9
- 846bdb03
- ea32f347
- f8a8fe49
- b6afb2da
- b548a754
- ae3edfdc
- 868de0fa
- d5d6de2d
+ subpart
+ move
+ param_repeat
+ param_repeat
+ move
+ param_repeat
+ param_repeat
+ param_repeat
+ count
+ param_repeat
+ count
+ param_repeat
+ count
+ param_repeat
+ shape
+ count
+ flow
+ param_repeat
+ param_repeat
+ fill
+ move
+ lenght count
+ move
+ param_repeat
+ param_repeat
+ move same num obj
+ recolor
+ recolor
  d0f5fe59
  ff28f65a
- feca6190
- d07ae81c
- 952a094c
- ddf7fa4f
+ param_repeat
+ param_repeat
+ move same num obj
+ recolor
  54d9e175
- 1a07d186
- d687bc17
- 7ddcd7ec
- 1f642eb9
- 6c434453
- d90796e8
- b27ca6d3
- 42a50994
- 3618c87e
- cbded52d
- e8593010
- b230c067
- 39a8645d
- ba97ae07
- 3bdb4ada
- 08ed6ac7
- 72ca375d
- 27a28665
- a3325580
- 6cf79266
- 4612dd53
- d06dbe63
- 363442ee
- 32597951
- d4f3cd78
- 6d0160f0
- e9614598
- 5168d44c
- a85d4709
- db3e9e38
- 4258a5f9
- bdad9b1f
- d4a91cb9
- dc433765
+ move same color num
+ move
+ param_repeat
+ recolor
+ recolor
+ recolor
+ param_repeat
+ filter
+ move
+ param_repeat
+ recolor shape
+ recolor
+ count obj same shape
+ recolor  whitewash
+ param_repeat
+ count recolor
+ mirror
+ recolor
+ count
+ bighole
+ param_repeat
+ param_repeat
+ param_repeat
+ snow
+ param_repeat
+ snow
+ param_repeat
+ move
+ param_repeat
+ param_repeat
+ param_repeat
+ param_repeat
+ param_repeat
+ move
  b0c4d837
  5c0a986e
  0ca9ddb6

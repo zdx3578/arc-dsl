@@ -35,6 +35,17 @@ denoise
 logic
 scaling
 diff
+shape
+flow
+lenght
+
+filter
+colorClassify
+
+bighole
+
+
+
 
 
 
