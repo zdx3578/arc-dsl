@@ -22,7 +22,7 @@ downscale
 rotate
 shrink
 move
-draw
+draw   move
 
 frontiers
 line
@@ -43,8 +43,8 @@ filter
 colorClassify
 
 bighole
-
-
+arithmetic
+concatinout
 
 
 
