@@ -11,47 +11,47 @@
  box
  snow
  snow
- repeat
- param
- param
- param
+ param_repeat
+ param_repeat
+ param_repeat
+ param_repeat
  snow
  recolor
- param
+ param_repeat
  subpart
  snow
- repeat
+ param_repeat
  mirror
  recolor
  subpart
  upscale
- repeat
+ param_repeat
  snow
- count
- count
+ colorcount
+ colorcount
  downscale
  recolor
  rotate
  snow
- count
- repeat
- param
- param
+ colorcount
+ param_repeat
+ param_repeat
+ param_repeat
  shrink
- param
+ param_repeat
  subpart
  snow
  move
  recolor
  frontiers
  line
- repeat
- param
- param
+ param_repeat
+ param_repeat
+ param_repeat
  fill
- repeat
- repeat
- repeat
+ param_repeat
+ param_repeat
+ param_repeat
  snow
  snow
  mirror
@@ -59,25 +59,25 @@
  subpart
  mapping
  subpart
- repeat
+ param_repeat
  snow
  snow
  bc1d5164
  10fcaaa3
- count
- param
- repeat
+ colorcount
+ param_repeat
+ param_repeat
  subpart
  button
  param_repeat
  fill
  param_repeat
- count
+ colorcount
  snow
  param_repeat
  recover
- count
- repeat
+ colorcount
+ param_repeat
  param_repeat
  param_repeat
  param_repeat
@@ -95,15 +95,15 @@
  75b8110e
  subpart
  cover
- count
+ colorcount
  move
  move
- count
- repeat
- repeat
+ colorcount
+ param_repeat
+ param_repeat
  6e02f1e3
  upscale
- repeat
+ param_repeat
  subpart
  param_repeat
  recolor
@@ -111,8 +111,8 @@
  move
  recolor
  param_repeat
- count
- count
+ colorcount
+ colorcount
  downscale
  param_repeat
  downscale
@@ -125,10 +125,10 @@
  snow
  param_repeat
  move
- count
+ colorcount
  diff
  param_repeat
- count
+ colorcount
  9aec4887
  box
  param_repeat
@@ -139,7 +139,7 @@
  param_repeat
  param_repeat
  recolor
- count
+ colorcount
  box
  box
  fill
@@ -172,31 +172,31 @@
  param_repeat
  upscale  downscale
  move obj mirror
- count
+ colorcount
  move
  subpart
  param_repeat downscale
  upscale
  fill
- count
+ colorcount
  param_repeat
  param_repeat
  box
  recolor  diff
  recolor
  239be575
- count distance
- count
+ colorcount distance
+ colorcount
  move
  param_repeat
  param_repeat
  fill
  fill
  param_repeat
- recolor   count
+ recolor   colorcount
  param_repeat
  param_repeat
- move param
+ move param_repeat
  param_repeat
  param_repeat
  move
@@ -218,20 +218,20 @@
  param_repeat
  param_repeat
  param_repeat
- count
+ colorcount
  param_repeat
- count
+ colorcount
  param_repeat
- count
+ colorcount
  param_repeat
  shape
- count
+ colorcount
  flow
  param_repeat
  param_repeat
  fill
  move
- lenght count
+ lenght colorcount
  move
  param_repeat
  param_repeat
@@ -257,13 +257,13 @@
  param_repeat
  recolor shape
  recolor
- count obj same shape
+ colorcount obj same shape
  recolor  whitewash
  param_repeat
- count recolor
+ colorcount recolor
  mirror
  recolor
- count
+ colorcount
  bighole
  param_repeat
  param_repeat
@@ -287,7 +287,7 @@
  param_repeat
  param_repeat
  move
- param_repeat diff param mirror
+ param_repeat diff param_repeat mirror
  param_repeat
  param_repeat
  move
@@ -304,83 +304,83 @@
  concatinout
  param_repeat
  param_repeat
- count
- 7c008303
- 77fdfe62
- 928ad970
- a65b410d
- f76d97a5
+ colorcount
+ recolor
+ recolor
+ param_repeat
+ param_repeat
+ recolor
  d9fac9be
- ec883f72
- f1cefba8
- 0e206a2e
- a78176bb
+ param_repeat
+ param_repeat   ？？矩行先验 特殊点
+ move
+ param_repeat
  d4469b4b
- d631b094
- 22168020
- 0b148d64
- 40853293
- 06df4c85
- bda2d7a6
- 7b7f7511
- 4be741c5
- b190f7f5
- 0a938d79
- e6721834
- ba26e723
- 5614dbcf
- b8825c91
- a8c38be5
- 8e1813be
- 46f33fce
- 681b3aeb
- 1e0a9b12
- 3906de3d
- e26a3af2
- 855e0971
- 1b60fb0c
+ colorcount
+ param_repeat
+ subpart colorcount
+ param_repeat
+ param_repeat
+ recolor
+ subpart
+ colorcount
+ param_repeat
+ param_repeat
+ move
+ param_repeat
+ denoise
+ snow
+ move
+ recolor  param_repeat
+ upscale
+ move
+ move
+ move
+ denoise
+ param_repeat
+ rotate
  46442a0e
- 9d9215db
- 49d1d64f
- 91714a58
- 539a4f51
- 9565186b
- 941d9a10
- beb8660c
- 99fa7670
- e48d4e1a
- a3df8b1e
- 3631a71a
- 0d3d703e
- 5bd6f4ac
+ param_repeat
+ param_repeat
+ snow
+ param_repeat
+ recolor
+ recolor
+ move
+ param_repeat
+ move
+ param_repeat
+ snow
+ recolor
+ subpart
  3428a4f5
  6430c8c4
  017c7c7b
  a68b268e
  e98196ab
  94f9d214
- 99b1bc43
- ce4f8723
- fafffa47
+ logic
+ logic
+ logic
  cce03e0d
  36fdfd69
  6d0aefbc
  44f52bb0
  ce602527
- 3af2c5a8
+ param_repeat
  8d5021e8
- 0520fde7
- 9ecd008a
- d406998b
- 662c240a
- 2dc579da
+ logic
+ bighole
+ recolor
+ subpart
+ subpart
  963e52fc
- 28e73c20
- e50d258f
- bd4472b8
- 496994bd
- 508bd3b6
- 6a1e5592
+ param_repeat
+ colorcount
+ param_repeat
+ mirror
+ param_repeat
+ move
  53b68214
  bbc9ae5d
  ea786f4a

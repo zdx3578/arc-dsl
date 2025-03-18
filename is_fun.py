@@ -8,6 +8,10 @@ import traceback
 from contextlib import contextmanager
 
 
+#! 特殊点是什么？
+
+#! weight 权重 先验权重 大小
+
 box
 snow
 repeat
@@ -17,7 +21,7 @@ position
 mirror
 subpart
 upscale
-count
+colorcount
 downscale
 rotate
 shrink
@@ -45,7 +49,7 @@ colorClassify
 bighole
 arithmetic
 concatinout
-
+denoise
 
 
 
