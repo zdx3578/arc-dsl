@@ -306,12 +306,22 @@ param_combinations: List[Tuple[bool, bool, bool]] = [
     (True, False, False),
     (True, False, True)  ]
 
+param_combinations2: List[Tuple[bool, bool, bool]] = [
+    (True, True, False),
+    (True, True, True),
+    (True, False, False),
+    (True, False, True),
+    (False, False, False),
+    (False, False, True),
+    (False, True, False),
+    (False, True, True) ]
+
 
 # all_objects_from_grid 函数
 def all_objects_from_grid(the_pair_id: int, in_or_out: str, grid: Grid, hw:list) -> FrozenSet[Object]:
     acc: FrozenSet[Object] = frozenset()  # 初始化空集合
     for params in param_combinations:
-        acc = acc.union(objects_with_params(the_pair_id, in_or_out, grid, params,hw))
+        acc = acc.union(objects_fromone_params(the_pair_id, in_or_out, grid, params,hw))
         # print()
     result = []
     bg = mostcolor(grid)

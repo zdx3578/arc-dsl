@@ -492,8 +492,8 @@ def do_check_train_get_test(
         # 使用传入的函数 fun 来检查是否满足条件
         transformed = do_4fun_task(
             input_grid, flags, fun1, args1, fun2, args2, fun3, args3, fun4, args4)
-        # display_diff_matrices(transformed)
-        # display_diff_matrices(output_grid)
+        # display_diff_color_ofa_matrices(transformed)
+        # display_diff_color_ofa_matrices(output_grid)
         if transformed == output_grid:
             # flags["is_fun_ok"].append(True)
             continue  # 结束本轮循环，直接进行下一个 data_pair

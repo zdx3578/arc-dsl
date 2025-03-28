@@ -525,7 +525,7 @@ def get_empty_box(I):
         for obj in x1:
             # if isinstance(obj, frozenset) and all(isinstance(item, tuple) and len(item) == 2 for item in obj):
             #     diff1 = [(value, pos) for value, pos in obj]  # 创建 diff1 列表
-            #     display_diff_matrices(diff1)
+            #     display_diff_color_ofa_matrices(diff1)
             # else:
             #     logging.error("对象格式不正确：%s", obj)
             if is_valid_empty_box(obj, I):
@@ -646,11 +646,11 @@ def getIO_same_fg(I, O):
     fg1 = fgpartition(I)
     fg2 = fgpartition(O)
     same_fg = fg1.intersection(fg2)
-    # display_diff_matrices(same_fg)
+    # display_diff_color_ofa_matrices(same_fg)
     same_objects_list = [(value, coord)
                          for obj in same_fg for value, coord in obj]
     print("fgpartition 相同对象的值和坐标:")
-    # display_diff_matrices(same_objects_list)
+    # display_diff_color_ofa_matrices(same_objects_list)
     return same_fg
 
 
@@ -860,13 +860,13 @@ def getIO_same_obj(I, O):
     same_objects_list = [(value, coord)
                          for obj in same_objects for value, coord in obj]
     print("相同对象的值和坐标:")
-    # display_diff_matrices(same_objects_list)
+    # display_diff_color_ofa_matrices(same_objects_list)
 
     # same_objects = [(value, coord)
     #                 for obj in same_objects for value, coord in obj]
     # print("单个对象 :")
     # for obj in same_objects:
-    #     display_diff_matrices([obj])
+    #     display_diff_color_ofa_matrices([obj])
     return same_objects
 
 def getIO_diff_task_flagslist(task, flags_list):
@@ -953,7 +953,7 @@ def getIO_diff(I: Grid, O: Grid, flags: Optional[Dict[str, bool]] = None):
     #         print(f"{key} - 值 {value} 的特有坐标:", positions)
 
     # print("比较结果:不同 diff 集合的坐标是否一致:")
-    # display_diff_matrices(diff1_unique, diff2_unique)
+    # display_diff_color_ofa_matrices(diff1_unique, diff2_unique)
 
     return diff1_unique, diff2_unique, diff_output_colorset, diff_output_color
 
@@ -1029,7 +1029,7 @@ def prepare_diff(task, flags: Dict[str, bool]):
         #     for value, positions in merged_diffs[key].items():
         #         print(f"{key} - 值 {value} 的特有坐标:", positions)
 
-        # display_diff_matrices(diff1_unique, diff2_unique)
+        # display_diff_color_ofa_matrices(diff1_unique, diff2_unique)
 
         if compare_positions(merged_diffs):
             flags["is_diff_same_posit"].append(True)
@@ -1117,7 +1117,7 @@ def is_position_swapped(diff1: defaultdict, diff2: defaultdict) -> bool:
     return True
 
 
-def display_diff_matrices(diff1: List[Tuple[int, Tuple[int, int]]],
+def display_diff_color_ofa_matrices(diff1: List[Tuple[int, Tuple[int, int]]],
                           diff2: Optional[List[Tuple[int,
                                                      Tuple[int, int]]]] = None,
                           diff3: Optional[List[Tuple[int, Tuple[int, int]]]] = None):

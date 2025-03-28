@@ -91,7 +91,7 @@ def process_single_data(task: List[Any]) -> bool:
         for out_param in param_combinations:  # 遍历 param_combinations
             all_out_obj_satisfied = True
 
-            out_obj_set = output_objects_with_params(the_pair_id=i,
+            out_obj_set = objects_info_from_one_params(the_pair_id=i,
                                                     in_or_out="out",
                                                     grid=O, bools=out_param, hw=(height_o, width_o) )
 
@@ -220,16 +220,16 @@ param_combinations: List[Tuple[bool, bool, bool]] = [
     (True, True, True)
 ]
 
-# objects_with_params 函数
-# def objects_with_params(the_pair_id: int, in_or_out: str, grid: Grid, bools: Tuple[bool, bool, bool]) -> Objects:
+# objects_fromone_params 函数
+# def objects_fromone_params(the_pair_id: int, in_or_out: str, grid: Grid, bools: Tuple[bool, bool, bool]) -> Objects:
     # b1, b2, b3 = bools  # 解包布尔值
     # return objects( grid, b1, b2, b3)  #the_pair_id, in_or_out,
 
-def objects_with_params(the_pair_id: int, in_or_out: str, grid: Grid, bools: Tuple[bool, bool, bool],hw:list) -> Objects:
+def objects_fromone_params(the_pair_id: int, in_or_out: str, grid: Grid, bools: Tuple[bool, bool, bool],hw:list) -> Objects:
     b1, b2, b3 = bools  # 解包布尔值
     return objects( grid, b1, b2, b3)
 
-def output_objects_with_params(the_pair_id: int, in_or_out: str, grid: Grid, bools: Tuple[bool, bool, bool],hw:list) -> Objects:
+def objects_info_from_one_params(the_pair_id: int, in_or_out: str, grid: Grid, bools: Tuple[bool, bool, bool],hw:list) -> Objects:
     b1, b2, b3 = bools  # 解包布尔值
     # return objects( grid, b1, b2, b3)
     result = []
@@ -260,7 +260,7 @@ def output_objects_with_params(the_pair_id: int, in_or_out: str, grid: Grid, boo
 def all_objects_from_grid(the_pair_id: int, in_or_out: str, grid: Grid, hw:list) -> FrozenSet[Object]:
     acc: FrozenSet[Object] = frozenset()  # 初始化空集合
     for params in param_combinations:
-        acc = acc.union(objects_with_params(the_pair_id, in_or_out, grid, params,hw))
+        acc = acc.union(objects_fromone_params(the_pair_id, in_or_out, grid, params,hw))
         # print()
     result = []
     for obj in acc:

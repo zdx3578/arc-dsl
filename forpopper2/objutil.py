@@ -13,6 +13,11 @@ pd.set_option('display.max_colwidth', None)  # 显示完整列内容
 from copy import deepcopy
 
 from objutil2plus import *
+import sys
+sys.path.append("bateson/")
+from bateson import bateson_algorithm
+
+
 
 
 
@@ -22,9 +27,9 @@ managerid = IdManager()
 
 def process_single_data(task: List[Any]) -> bool:
     # analysys_in_out_pattern_000(task)
-    result = analysys_in_out_pattern(task)
-    if result:
-        return True
+    # result = analysys_in_out_pattern(task)
+    # if result:
+    #     return True
 
     analysys_out_out_pattern(task)
 
@@ -37,7 +42,7 @@ def analysys_out_out_pattern(task) -> bool:
     df = pd.DataFrame(columns=columns_outout)
     temp_pd_data = []
 
-    for paramid, out_param in enumerate(param_combinations):  # 遍历 param_combinations
+    for paramid, out_param in enumerate(param_combinations2):  # 遍历 param_combinations
         obj_id_sets=[]
         for pair_id, data_pair in enumerate(train_data):
             I = input_grid = data_pair['input']
@@ -45,8 +50,14 @@ def analysys_out_out_pattern(task) -> bool:
             height_i, width_i = height(I), width(I)    # 输入对象的高度和宽度
             height_o, width_o = height(O), width(O)
 
-            out_obj_set = output_objects_with_params(the_pair_id=pair_id,in_or_out="out",grid=O, bools=out_param, hw=(height_o, width_o) )
-            in_obj_set = output_objects_with_params(the_pair_id=pair_id,in_or_out="in",grid=I, bools=out_param, hw=(height_i, width_i) )
+            out_obj_set = objects_info_from_one_params(the_pair_id=pair_id,in_or_out="out",grid=O, bools=out_param, hw=(height_o, width_o) )
+            for out_obj in out_obj_set:  # 遍历 out_obj_set
+                display_diff_color_ofa_matrices(out_obj.obj)
+                display_matrices(out_obj.obj)
+                bateson_algorithm(out_obj.obj)
+
+
+            in_obj_set = objects_info_from_one_params(the_pair_id=pair_id,in_or_out="in",grid=I, bools=out_param, hw=(height_i, width_i) )
             len_out_obj_set = len(out_obj_set),
             len_in_obj_set = len(in_obj_set)
             print(paramid, "\nOutput parameters:", out_param,"pair id : ",  pair_id  , "  | Number of output objects:", len_out_obj_set)
@@ -86,16 +97,16 @@ def analysys_in_out_pattern(task) -> bool:
             height_i, width_i = height(I), width(I)    # 输入对象的高度和宽度
             height_o, width_o = height(O), width(O)
 
-            out_obj_set = output_objects_with_params(the_pair_id=pair_id,in_or_out="out",grid=O, bools=out_param, hw=(height_o, width_o) )
-            # input_obj_set = output_objects_with_params(the_pair_id=pair_id,in_or_out="in",grid=I, bools=out_param, hw=(height_i, width_i) )
+            out_obj_set = objects_info_from_one_params(the_pair_id=pair_id,in_or_out="out",grid=O, bools=out_param, hw=(height_o, width_o) )
+            # input_obj_set = objects_info_from_one_params(the_pair_id=pair_id,in_or_out="in",grid=I, bools=out_param, hw=(height_i, width_i) )
 
-            input_obj_set = input_obj_setsparam = all_objects_from_grid2parma(the_pair_id=pair_id,in_or_out="in",grid=I, hw=(height_i, width_i))
+            input_obj_set = input_obj_setsparam = all_objects_from_grid_all_parma(the_pair_id=pair_id,in_or_out="in",grid=I, hw=(height_i, width_i))
 
             successful_obj = []
             # Check that all output objects are solvable with current parameter
             all_out_obj_satisfied = True
             for out_obj in out_obj_set:  # 遍历 out_obj_set
-                # display_diff_matrices(out_obj.obj)
+                # display_diff_color_ofa_matrices(out_obj.obj)
                 # display_matrices(out_obj.obj)
                 found_valid_in_outobj = False
                 if not found_valid_in_outobj:
@@ -246,7 +257,7 @@ def apply_rule(op1,op2,task,df):
             for i in range(len(df[0][3]))
             ):
             # print(f"\n\n！相同对象在相同的位置 ,test var: {df[0][3][0][0][2]}")
-            input_obj_set = output_objects_with_params(the_pair_id="test",in_or_out="in",grid=I, bools=df[0][3][0][0][2], hw=("test") )
+            input_obj_set = objects_info_from_one_params(the_pair_id="test",in_or_out="in",grid=I, bools=df[0][3][0][0][2], hw=("test") )
             moved_objs = move_in_obj_based_on_out(df,input_obj_set)
             output = paint_objects(moved_objs, background,height_widht)
             # display_matrices(output)
@@ -259,7 +270,7 @@ def apply_rule(op1,op2,task,df):
         #! if one op just run one op
         if all( len(d[3]) == 1 for d in df) :
             print
-            input_obj_set = output_objects_with_params(the_pair_id="",in_or_out="in",grid=I, bools=df[0][3][0][1][2], hw=("") )
+            input_obj_set = objects_info_from_one_params(the_pair_id="",in_or_out="in",grid=I, bools=df[0][3][0][1][2], hw=("") )
             obj = input_obj_set[0].obj
             obj00 = shift_pure_obj_to_00(obj)
             op2fun = globals()[op2]
@@ -318,13 +329,13 @@ class ObjInf:
 def lessforprintobj(obj):
     return (obj.pair_id,obj.in_or_out,obj.objparam,obj.obj_ID,obj.bounding_box, obj.color_ranking, obj.background, obj.grid_H_W)
 
-def objects_with_params(the_pair_id: int, in_or_out: str, grid: Grid, bools: Tuple[bool, bool, bool],hw:list) -> Objects:
+def objects_fromone_params(the_pair_id: int, in_or_out: str, grid: Grid, bools: Tuple[bool, bool, bool],hw:list) -> Objects:
     b1, b2, b3 = bools  # 解包布尔值
     return objects( grid, b1, b2, b3)
 
 
 
-def output_objects_with_params(the_pair_id: int, in_or_out: str, grid: Grid, bools: Tuple[bool, bool, bool],hw:list) -> Objects:
+def objects_info_from_one_params(the_pair_id: int, in_or_out: str, grid: Grid, bools: Tuple[bool, bool, bool],hw:list) -> Objects:
     b1, b2, b3 = bools  # 解包布尔值
     # return objects( grid, b1, b2, b3)
     result = []
@@ -353,10 +364,10 @@ def output_objects_with_params(the_pair_id: int, in_or_out: str, grid: Grid, boo
         result.append(new_obj)
     return result
 
-def all_objects_from_grid2parma(the_pair_id: int, in_or_out: str, grid: Grid, hw: list):
+def all_objects_from_grid_all_parma(the_pair_id: int, in_or_out: str, grid: Grid, hw: list):
     result = []  # 初始化空列表存放所有结果
     for params in param_combinations:
-        objs = output_objects_with_params(the_pair_id, in_or_out, grid, params, hw)
+        objs = objects_info_from_one_params(the_pair_id, in_or_out, grid, params, hw)
         result.extend(objs)  # 将当前参数组合的结果加入 result
     return result
 
